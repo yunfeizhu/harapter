@@ -1,0 +1,61 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: release-please-main
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Prepare or publish release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Run Release Please
+        id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - name: Resolve release pull request branch
+        id: release-pr
+        if: steps.release.outputs.prs_created == 'true'
+        env:
+          RELEASE_PR: ${{ steps.release.outputs.pr }}
+        run: |
+          node -e 'const fs = require("node:fs"); const pullRequest = JSON.parse(process.env.RELEASE_PR); const branch = pullRequest.headBranchName; const number = pullRequest.number; if (!/^release-please--[a-zA-Z0-9._/-]+$/.test(branch)) throw new Error("Release Please returned an invalid headBranchName"); if (!Number.isSafeInteger(number) || number < 1) throw new Error("Release Please returned an invalid pull request number"); fs.appendFileSync(process.env.GITHUB_OUTPUT, `branch=${branch}\nnumber=${number}\n`);'
+
+      - name: Run repository checks for release pull request
+        if: steps.release.outputs.prs_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_BRANCH: ${{ steps.release-pr.outputs.branch }}
+          RELEASE_NUMBER: ${{ steps.release-pr.outputs.number }}
+        run: |
+          pull_request_json="$(gh pr view "$RELEASE_NUMBER" --repo "$GITHUB_REPOSITORY" --json author,baseRefOid,body,headRefName,headRefOid,title)"
+          pr_author="$(jq -r '.author.login' <<<"$pull_request_json")"
+          pr_body="$(jq -r '.body // ""' <<<"$pull_request_json")"
+          pr_branch="$(jq -r '.headRefName' <<<"$pull_request_json")"
+          pr_title="$(jq -r '.title' <<<"$pull_request_json")"
+          base_sha="$(jq -r '.baseRefOid' <<<"$pull_request_json")"
+          head_sha="$(jq -r '.headRefOid' <<<"$pull_request_json")"
+          test "$pr_branch" = "$RELEASE_BRANCH"
+          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$RELEASE_BRANCH" \
+            -f pr_author="$pr_author" \
+            -f pr_body="$pr_body" \
+            -f pr_branch="$pr_branch" \
+            -f pr_title="$pr_title" \
+            -f base_sha="$base_sha" \
+            -f head_sha="$head_sha"

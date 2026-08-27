@@ -1,0 +1,6 @@
+interface:
+  display_name: 'Harapter Provider Implementation'
+  short_description: 'Implement and validate a Harapter provider adapter'
+  default_prompt:
+    'Use $harapter-provider-implementation to add this harness provider to
+    Harapter.'

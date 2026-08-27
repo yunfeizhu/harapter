@@ -1,0 +1,66 @@
+name: Bug report
+description: Report reproducible behavior in an implemented Harapter component.
+title: 'bug: '
+labels:
+  - bug
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. Do not include credentials, prompts, private files, or unredacted provider traffic.
+  - type: input
+    id: version
+    attributes:
+      label: Harapter version or commit
+      placeholder: v0.1.0 or commit SHA
+    validations:
+      required: true
+  - type: input
+    id: component
+    attributes:
+      label: Component
+      placeholder: core, schema, transport, conformance, or provider package
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the actual and expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include the smallest redacted example and exact commands.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: runtime
+    attributes:
+      label: Runtime identity
+      description:
+        Provider ID, adapter version, connection strategy, runtime version or
+        protocol fingerprint, and operating system.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Redacted diagnostics
+      description:
+        Remove prompts, file content, tokens, cookies, headers, paths, and
+        environment values.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I removed secrets and private user content.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true

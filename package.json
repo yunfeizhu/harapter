@@ -1,0 +1,30 @@
+{
+  "name": "harapter-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "description": "One API for every agent harness.",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@11.23.0",
+  "scripts": {
+    "check": "pnpm format:check && pnpm lint:markdown && pnpm check:links && pnpm check:repository && pnpm check:agents",
+    "check:agent-guidance": "node scripts/check-agent-guidance.mjs",
+    "check:agent-notes": "node scripts/check-agent-notes.mjs",
+    "check:agents": "pnpm check:agent-guidance && pnpm check:agent-notes && pnpm check:doc-budgets && pnpm check:policy-tests",
+    "check:doc-budgets": "node scripts/check-doc-budgets.mjs",
+    "check:links": "node scripts/check-links.mjs",
+    "check:pr-metadata": "node scripts/check-pr-metadata.mjs",
+    "check:policy-tests": "node scripts/test-policy-checks.mjs",
+    "check:repository": "node scripts/check-repository.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"#node_modules\""
+  },
+  "devDependencies": {
+    "js-yaml": "5.4.0",
+    "markdownlint-cli2": "0.23.2",
+    "prettier": "3.9.6"
+  }
+}

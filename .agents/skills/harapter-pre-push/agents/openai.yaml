@@ -1,0 +1,5 @@
+interface:
+  display_name: 'Harapter Pre-Push'
+  short_description: 'Select and run evidence for a Harapter change'
+  default_prompt:
+    'Use $harapter-pre-push to validate this branch before I push it.'

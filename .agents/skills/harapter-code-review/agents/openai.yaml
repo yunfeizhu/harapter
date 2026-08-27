@@ -1,0 +1,6 @@
+interface:
+  display_name: 'Harapter Code Review'
+  short_description: 'Run full-diff or P0/P1 termination review'
+  default_prompt:
+    'Use $harapter-code-review to review this Harapter change against its real
+    base.'

@@ -1,0 +1,54 @@
+name: Provider request
+description:
+  Propose support for an agent harness with a public machine interface.
+title: 'provider: '
+labels:
+  - provider
+  - needs-triage
+body:
+  - type: input
+    id: provider
+    attributes:
+      label: Harness and vendor
+    validations:
+      required: true
+  - type: textarea
+    id: interfaces
+    attributes:
+      label: Official machine interfaces
+      description:
+        Link to public SDK, RPC, HTTP, streaming, or headless protocol
+        documentation.
+    validations:
+      required: true
+  - type: textarea
+    id: lifecycle
+    attributes:
+      label: Session and run lifecycle
+      description:
+        Explain create, resume, stream, terminal result, cancel, and interaction
+        support.
+    validations:
+      required: true
+  - type: textarea
+    id: license
+    attributes:
+      label: License and runtime prerequisites
+      description:
+        Include SDK license, authentication, installation, and distribution
+        constraints.
+    validations:
+      required: true
+  - type: textarea
+    id: extensions
+    attributes:
+      label: Provider-specific capabilities
+      description: List features that should remain extensions or native access.
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label:
+            I am willing to help with fixtures, implementation, or live
+            conformance testing.

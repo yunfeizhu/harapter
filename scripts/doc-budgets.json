@@ -1,0 +1,22 @@
+{
+  "AGENTS.md": 1800,
+  ".agents/AGENTS.md": 600,
+  ".agents/notes/AGENTS.md": 600,
+  ".github/AGENTS.md": 800,
+  ".agents/skills/AGENTS.md": 700,
+  "docs/AGENTS.md": 1000,
+  "packages/AGENTS.md": 1000,
+  "providers/AGENTS.md": 1200,
+  "fixtures/AGENTS.md": 700,
+  "examples/AGENTS.md": 600,
+  "scripts/AGENTS.md": 600,
+  "docs/development.md": 1500,
+  "CONTRIBUTING.md": 1000,
+  "RELEASING.md": 800,
+  ".agents/notes/README.md": 1500,
+  ".agents/skills/harapter-pre-push/SKILL.md": 1100,
+  ".agents/skills/harapter-code-review/SKILL.md": 1100,
+  ".agents/skills/harapter-provider-implementation/SKILL.md": 1100,
+  ".agents/skills/harapter-agent-notes/SKILL.md": 900,
+  ".agents/skills/harapter-release/SKILL.md": 900
+}

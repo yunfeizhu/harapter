@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types:
+      - edited
+      - opened
+      - reopened
+      - synchronize
+  workflow_dispatch:
+    inputs:
+      pr_author:
+        description: Pull request author login for a Release Please dispatch
+        required: false
+        type: string
+      pr_body:
+        description: Pull request body for a Release Please dispatch
+        required: false
+        type: string
+      pr_branch:
+        description: Pull request head branch for a Release Please dispatch
+        required: false
+        type: string
+      pr_title:
+        description: Pull request title for a Release Please dispatch
+        required: false
+        type: string
+      base_sha:
+        description: Pull request base SHA for dependency review
+        required: false
+        type: string
+      head_sha:
+        description: Pull request head SHA for dependency review
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository-checks:
+    name: Repository checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run repository checks
+        run: pnpm check
+
+  pull-request-metadata:
+    name: Pull request metadata
+    if: >-
+      github.event_name == 'pull_request' || inputs.pr_branch != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
+      - name: Validate pull request metadata
+        env:
+          PR_AUTHOR: >-
+            ${{ github.event.pull_request.user.login || inputs.pr_author }}
+          PR_BODY: ${{ github.event.pull_request.body || inputs.pr_body }}
+          PR_BRANCH: ${{ github.head_ref || inputs.pr_branch }}
+          PR_TITLE: ${{ github.event.pull_request.title || inputs.pr_title }}
+        run: node scripts/check-pr-metadata.mjs
+
+  dependency-review:
+    name: Dependency review
+    if: >-
+      github.event_name == 'pull_request' || inputs.pr_branch != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          base-ref: ${{ github.event.pull_request.base.sha || inputs.base_sha }}
+          head-ref: ${{ github.event.pull_request.head.sha || inputs.head_sha }}
+          fail-on-severity: moderate
+          license-check: true
+          deny-licenses:
+            AGPL-1.0-only, AGPL-1.0-or-later, AGPL-3.0-only, AGPL-3.0-or-later,
+            SSPL-1.0

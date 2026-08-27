@@ -1,0 +1,5 @@
+interface:
+  display_name: 'Harapter Agent Notes'
+  short_description: 'Create and maintain Harapter decision records'
+  default_prompt:
+    'Use $harapter-agent-notes to record this Harapter design decision.'
