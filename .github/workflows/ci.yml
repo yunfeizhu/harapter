@@ -52,6 +52,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - name: Verify dispatched pull request head
+        if: github.event_name == 'workflow_dispatch' && inputs.pr_branch != ''
+        env:
+          ACTUAL_HEAD_SHA: ${{ github.sha }}
+          EXPECTED_HEAD_SHA: ${{ inputs.head_sha }}
+        run: |
+          test -n "$EXPECTED_HEAD_SHA"
+          test "$ACTUAL_HEAD_SHA" = "$EXPECTED_HEAD_SHA"
+
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -79,6 +88,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
+      - name: Verify dispatched pull request head
+        if: github.event_name == 'workflow_dispatch' && inputs.pr_branch != ''
+        env:
+          ACTUAL_HEAD_SHA: ${{ github.sha }}
+          EXPECTED_HEAD_SHA: ${{ inputs.head_sha }}
+        run: |
+          test -n "$EXPECTED_HEAD_SHA"
+          test "$ACTUAL_HEAD_SHA" = "$EXPECTED_HEAD_SHA"
+
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -108,6 +126,15 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Verify dispatched pull request head
+        if: github.event_name == 'workflow_dispatch' && inputs.pr_branch != ''
+        env:
+          ACTUAL_HEAD_SHA: ${{ github.sha }}
+          EXPECTED_HEAD_SHA: ${{ inputs.head_sha }}
+        run: |
+          test -n "$EXPECTED_HEAD_SHA"
+          test "$ACTUAL_HEAD_SHA" = "$EXPECTED_HEAD_SHA"
+
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

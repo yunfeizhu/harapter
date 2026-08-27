@@ -15,6 +15,7 @@ import {
   findForbiddenTextViolations,
   findWorkspaceDirectories,
   listRepositoryFiles,
+  validateReleaseAutomation,
   validateToolchain,
   validateWorkspacePackageManifest,
 } from './lib/repository-policy.mjs';
@@ -116,6 +117,16 @@ assert.match(ciWorkflow, /inputs\.pr_branch != ''/u);
 assert.match(ciWorkflow, /base-ref: .*inputs\.base_sha/u);
 assert.match(ciWorkflow, /head-ref: .*inputs\.head_sha/u);
 assert.match(ciWorkflow, / {2}pull_request:\n(?:.|\n)*? {6}- edited\n/u);
+assert.equal(
+  (ciWorkflow.match(/- name: Verify dispatched pull request head/gu) ?? [])
+    .length,
+  3,
+);
+assert.equal(
+  (ciWorkflow.match(/test "\$ACTUAL_HEAD_SHA" = "\$EXPECTED_HEAD_SHA"/gu) ?? [])
+    .length,
+  3,
+);
 
 const releaseWorkflow = readFileSync(
   resolve(repositoryRoot, '.github/workflows/release-please.yml'),
@@ -125,6 +136,10 @@ assert.match(releaseWorkflow, /--repo "\$GITHUB_REPOSITORY"/u);
 assert.match(releaseWorkflow, /-f pr_author="\$pr_author"/u);
 assert.match(releaseWorkflow, /-f base_sha="\$base_sha"/u);
 assert.match(releaseWorkflow, /-f head_sha="\$head_sha"/u);
+assert.match(releaseWorkflow, /^\s{2}workflow_dispatch:/mu);
+assert.doesNotMatch(releaseWorkflow, /^\s{2}push:/mu);
+assert.match(releaseWorkflow, /if: github\.ref == 'refs\/heads\/main'/u);
+assert.match(releaseWorkflow, /target-branch: main/u);
 
 function write(path, content) {
   const absolutePath = resolve(fixtureRoot, path);
@@ -179,6 +194,28 @@ assert.deepEqual(
     '.node-version must pin 24.19.0.',
     'package.json engines.node must be >=24.',
     'package.json must pin pnpm@11.23.0.',
+  ],
+);
+
+assert.deepEqual(
+  validateReleaseAutomation({
+    prettierIgnore: 'node_modules\nCHANGELOG.md\n',
+    releasePleaseConfig: {
+      packages: { '.': { 'initial-version': '0.1.0' } },
+    },
+  }),
+  [],
+);
+assert.deepEqual(
+  validateReleaseAutomation({
+    prettierIgnore: 'node_modules\n',
+    releasePleaseConfig: {
+      packages: { '.': { 'initial-version': '1.0.0' } },
+    },
+  }),
+  [
+    'release-please-config.json must set packages["."].initial-version to 0.1.0.',
+    '.prettierignore must exclude Release Please-owned CHANGELOG.md.',
   ],
 );
 
@@ -407,6 +444,19 @@ The positive path is deterministic.
       'github-actions[bot]',
     ]),
     'Release Please metadata case',
+  );
+  requireSuccess(
+    run(prChecker, [
+      '--title',
+      'chore(main): release harapter 0.1.0',
+      '--body',
+      '',
+      '--branch',
+      'release-please--branches--main--components--harapter',
+      '--author',
+      'app/github-actions',
+    ]),
+    'Release Please GitHub App metadata case',
   );
 } finally {
   rmSync(fixtureRoot, { recursive: true, force: true });

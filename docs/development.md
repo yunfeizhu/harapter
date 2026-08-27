@@ -189,11 +189,19 @@ three deterministic checks or unresolved conversations.
 
 ## Release flow
 
-The squash pull request title determines release impact. Release Please creates
-or updates one release pull request after a releasable commit reaches `main`.
-Maintainers review and merge that pull request when the accumulated changes are
-ready. Release Please then creates the version update, changelog, tag, and
-GitHub Release. Do not create those artifacts manually.
+The squash pull request title determines eventual release impact. While Harapter
+is establishing its first portable contracts and provider adapters, ordinary
+`main` pushes do not start Release Please. After approving the first usable
+pre-alpha milestone, a maintainer enables Actions-created pull requests and
+manually dispatches the Release Please workflow. Enabling an automatic `main`
+trigger requires a separate reviewed repository-policy change.
+
+Maintainers review and manually merge the generated release pull request when
+the accumulated changes are ready, then dispatch the workflow from `main` a
+second time to create the tag and GitHub Release. The first dispatch prepares
+the version update and changelog; the second publishes them after the release
+pull request is merged. Do not create those artifacts manually. See
+[RELEASING.md](../RELEASING.md) for the activation and verification procedure.
 
 Package publication is enabled per package only after its build, conformance,
 trusted-publishing, provenance, and rollback requirements are implemented.

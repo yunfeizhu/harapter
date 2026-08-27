@@ -37,8 +37,8 @@ pnpm check
 
 仓库使用 Conventional Commits。Pull
 Request 会自动运行格式、类型感知代码检查、严格 TypeScript 检查、Vitest 覆盖率、工作区构建、Markdown、仓库完整性和链接检查；Release
-Please 会维护发布 PR，合并该 PR 后自动生成版本标签、CHANGELOG 和 GitHub
-Release。
+Please 在维护者明确批准首个可用的 pre-alpha 里程碑后才会由 `main`
+手动启动并准备发布 PR。在此之前，普通的 `main` push 不会运行发布自动化。
 
 完整流程见 [贡献指南](./CONTRIBUTING.md) 与 [发布指南](./RELEASING.md)。
 

@@ -5,6 +5,7 @@ import {
   findForbiddenTextViolations,
   findWorkspaceDirectories,
   listRepositoryFiles,
+  validateReleaseAutomation,
   validateToolchain,
   validateWorkspacePackageManifest,
 } from './lib/repository-policy.mjs';
@@ -30,6 +31,7 @@ const requiredPaths = [
   '.github/dependabot.yml',
   '.github/workflows/ci.yml',
   '.github/workflows/release-please.yml',
+  '.prettierignore',
   'eslint.config.mjs',
   'AGENTS.md',
   'CHANGELOG.md',
@@ -90,10 +92,22 @@ for (const path of [
 const packageJson = JSON.parse(
   readFileSync(resolve(repositoryRoot, 'package.json'), 'utf8'),
 );
+const releasePleaseConfig = JSON.parse(
+  readFileSync(resolve(repositoryRoot, 'release-please-config.json'), 'utf8'),
+);
 failures.push(
   ...validateToolchain({
     nodeVersion: readFileSync(resolve(repositoryRoot, '.node-version'), 'utf8'),
     packageJson,
+  }),
+);
+failures.push(
+  ...validateReleaseAutomation({
+    prettierIgnore: readFileSync(
+      resolve(repositoryRoot, '.prettierignore'),
+      'utf8',
+    ),
+    releasePleaseConfig,
   }),
 );
 

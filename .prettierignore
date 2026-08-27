@@ -1,5 +1,6 @@
 node_modules
 pnpm-lock.yaml
+CHANGELOG.md
 dist
 build
 coverage
