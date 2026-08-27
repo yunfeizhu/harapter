@@ -95,8 +95,13 @@ Adapter 不把所有 Harness 强行压成完全相同的功能集合，而采用
 每项能力还要声明实现方式：
 
 - `native`：目标 Harness 官方接口直接支持；
+- `emulated`：Adapter 通过有证据的等价实现满足 portable 语义，但不宣称具有 Provider 原生状态或生命周期；
 - `adapter_controlled`：Adapter 只能控制自己拥有的连接或进程，不能冒充 Provider 原生语义；
 - `unsupported`：当前 Provider、版本或连接方式无法可靠实现。
+- `unknown`：当前连接认识该能力名称，但没有足够证据判定是否支持。
+
+Capability 字段缺失表示当前 Manifest 不认识该能力名称，与显式 `unknown`
+不同。调用方必须明确选择可接受的模式；默认只接受 `native`。
 
 因此，“八个 Harness 都可接入”表示它们可以进入统一的任务主链路，不表示它们都支持 Fork、审批、插件市场或运行中模式切换。
 

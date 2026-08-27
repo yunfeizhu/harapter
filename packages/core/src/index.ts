@@ -1,0 +1,57 @@
+export type {
+  CancelResult,
+  CapabilityManifest,
+  CapabilityMode,
+  CapabilityProbeOptions,
+  CapabilityRequirement,
+  CapabilityStatus,
+  ClientDescriptor,
+  CompatibilityWarning,
+  ConnectionKind,
+  CreateSessionInput,
+  HarnessClient,
+  HarnessEvent,
+  HarnessEventType,
+  HarnessInput,
+  HarnessProfile,
+  HarnessRun,
+  HarnessSession,
+  InputPart,
+  InteractionRequest,
+  InteractionResponse,
+  ModelSelection,
+  ProviderAdapterFactory,
+  ProviderConnection,
+  ProviderDescriptor,
+  ProviderExtensionDescriptor,
+  ProviderExtensionRegistry,
+  RunOptions,
+  RunRef,
+  RunResult,
+  SecretRef,
+  SessionRef,
+  UsageSummary,
+  WorkspaceRef,
+} from './contracts.js';
+export {
+  HarnessError,
+  isHarnessError,
+  type HarnessErrorCode,
+  type HarnessErrorOptions,
+} from './errors.js';
+export { ExtensionRegistry } from './extensions.js';
+export {
+  profileId,
+  providerId,
+  providerSessionId,
+  runId,
+  type ProfileId,
+  type ProviderId,
+  type ProviderSessionId,
+  type RunId,
+} from './identifiers.js';
+export {
+  assertSessionCompatibility,
+  assertSessionOwnership,
+} from './ownership.js';
+export { HarnessRegistry } from './registry.js';

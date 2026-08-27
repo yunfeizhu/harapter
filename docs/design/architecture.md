@@ -200,6 +200,12 @@ SessionRef 交给 OpenCode，也不通过重放聊天历史伪造“原生恢复
 Adapter 终止自己拥有的进程属于 `connection.abort`，不自动等同于 Provider 原生
 `run.cancel`。
 
+`emulated` 只表示 portable 结果经过证据证明等价，不继承 Provider 原生状态；
+`adapter_controlled` 只表示 Adapter 拥有的连接控制；`unsupported`
+表示已确认无法可靠实现； `unknown`
+表示证据不足。Manifest 中缺失的名称表示当前连接不认识该能力，不能与 `unknown`
+合并。
+
 ### 9.3 Provider Extension
 
 DSH 插件市场、Goose Recipe、Qwen Goal、Codex App 和 Copilot Slash

@@ -2,6 +2,7 @@
   "compilerOptions": {
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
+    "baseUrl": ".",
     "declaration": true,
     "declarationMap": true,
     "exactOptionalPropertyTypes": true,
@@ -19,6 +20,10 @@
     "noUncheckedSideEffectImports": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+    "paths": {
+      "@harapter/conformance": ["packages/conformance/src/index.ts"],
+      "@harapter/core": ["packages/core/src/index.ts"]
+    },
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "sourceMap": true,
