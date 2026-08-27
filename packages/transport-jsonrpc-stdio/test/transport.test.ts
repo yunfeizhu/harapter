@@ -164,6 +164,102 @@ describe('JsonRpcStdioTransport', () => {
     await disposePair(pair);
   });
 
+  it('releases Provider-resolved inbound requests without a wire response', async () => {
+    const readable = new PassThrough();
+    const writable = new PassThrough();
+    const transport = new JsonRpcStdioTransport({
+      maxPendingInboundRequests: 1,
+      readable,
+      writable,
+    });
+    const incoming = iterator(transport);
+
+    readable.write('{"id":7,"method":"provider/request"}\n');
+    const first = expectMessage(await incoming.next());
+    if (first.kind !== 'request') throw new Error('Expected a request.');
+    expect(transport.abandonInboundRequest(first.id)).toBe(true);
+    expect(transport.abandonInboundRequest(first.id)).toBe(false);
+
+    readable.write('{"id":7,"method":"provider/request"}\n');
+    const reused = expectMessage(await incoming.next());
+    expect(reused).toMatchObject({ id: 7, kind: 'request' });
+    expect(transport.isOpen()).toBe(true);
+    expect(transport.abandonInboundRequest(7)).toBe(true);
+    await transport.close();
+    expect(transport.isOpen()).toBe(false);
+    readable.destroy();
+    writable.destroy();
+  });
+
+  it('defers Provider abandonment until an in-progress response settles', async () => {
+    let releaseWrite: (() => void) | undefined;
+    const readable = new PassThrough();
+    const writable = new Writable({
+      write(_chunk, _encoding, callback) {
+        releaseWrite = callback;
+      },
+    });
+    const transport = new JsonRpcStdioTransport({
+      maxPendingInboundRequests: 1,
+      maxPendingWrites: 1,
+      readable,
+      writable,
+    });
+    const incoming = iterator(transport);
+    const heldWrite = transport.notify('held');
+    await new Promise((resolve) => setImmediate(resolve));
+
+    readable.write('{"id":11,"method":"provider/request"}\n');
+    const request = expectMessage(await incoming.next());
+    if (request.kind !== 'request') throw new Error('Expected a request.');
+    const failedResponse = transport.respond(request.id, { accepted: true });
+    expect(transport.abandonInboundRequest(request.id)).toBe(true);
+    await expect(failedResponse).rejects.toMatchObject({
+      code: 'capacity_exceeded',
+    });
+
+    readable.write('{"id":11,"method":"provider/request"}\n');
+    const reused = expectMessage(await incoming.next());
+    expect(reused).toMatchObject({ id: 11, kind: 'request' });
+    expect(transport.abandonInboundRequest(11)).toBe(true);
+    releaseWrite?.();
+    await heldWrite;
+    await transport.close();
+    readable.destroy();
+    writable.destroy();
+  });
+
+  it('releases reentrant abandonment when response serialization fails', async () => {
+    const readable = new PassThrough();
+    const writable = new PassThrough();
+    const transport = new JsonRpcStdioTransport({
+      maxPendingInboundRequests: 1,
+      readable,
+      writable,
+    });
+    const incoming = iterator(transport);
+
+    readable.write('{"id":13,"method":"provider/request"}\n');
+    const request = expectMessage(await incoming.next());
+    if (request.kind !== 'request') throw new Error('Expected a request.');
+    await expect(
+      transport.respond(request.id, {
+        toJSON() {
+          expect(transport.abandonInboundRequest(request.id)).toBe(true);
+          throw new Error('Synthetic serialization failure.');
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_outbound_message' });
+
+    readable.write('{"id":13,"method":"provider/request"}\n');
+    const reused = expectMessage(await incoming.next());
+    expect(reused).toMatchObject({ id: 13, kind: 'request' });
+    expect(transport.abandonInboundRequest(13)).toBe(true);
+    await transport.close();
+    readable.destroy();
+    writable.destroy();
+  });
+
   it('surfaces remote errors without using the remote text as the Error message', async () => {
     const pair = createPair();
     const incoming = iterator(pair.second);

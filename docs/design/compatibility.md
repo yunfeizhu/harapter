@@ -28,29 +28,31 @@ Adapter 不应要求发布新的 Core；修复 Cursor 事件解析也不应影�
 
 ## 3. 建连时兼容探测
 
-`connect()` 在创建用户 Session 前完成无副作用或低副作用探测：
+`connect()` 在创建用户 Session 前完成接口允许的无副作用或低副作用验证：
 
 1. 确认 Runtime 或 Endpoint 存在；
-2. 获取可用的版本、握手信息或协议 Schema；
-3. 选择兼容性策略；
-4. 校验必需方法、事件和错误结构；
+2. 读取公开的协议兼容承诺、握手信息和可用的运行时 Schema；
+3. 选择已具备 Fixture 和 Conformance 证据的兼容性策略；
+4. 在握手阶段校验可探测的必需结构；
 5. 生成 Client Descriptor 和 Capability Manifest；
 6. 对已知不兼容接口返回 `provider_api_incompatible`。
 
-不能通过执行真实用户任务来探测 Capability。无法安全判断时，应标记 `experimental`
-或失败关闭，而不是默认采用最新映射。
+无法通过握手枚举的响应和事件结构在对应操作首次出现时做结构校验。缺失必需字段返回
+`provider_api_incompatible`；新增可选字段按上游公开的前向兼容规则处理。不能通过执行真实用户任务来探测 Capability。无法安全判断时，应标记
+`experimental`、`unknown` 或失败关闭。
 
 ## 4. Schema 优先
 
 如果 Provider 能生成或发布机器可读 Schema，应优先使用它：
 
-- Codex App Server 可以按当前 Runtime 生成 TypeScript 或 JSON Schema；
+- Codex App Server 按当前 Runtime 生成 TypeScript 或 JSON
+  Schema，用于 Fixture、Mapping 和 Conformance 证据；
 - OpenCode 提供 OpenAPI；
 - ACP Provider 遵循 ACP 基础协议，同时探测 Provider 通知和扩展；
 - JSONL CLI 使用公开 Event Schema 和 Recorded Fixture；
 - SDK Provider 使用官方导出类型和最小运行时特征探测。
 
-版本范围只能说明“可能兼容”，Schema 和 Conformance 才能证明 Adapter 所依赖的接口存在。
+版本范围只能说明“可能兼容”。官方稳定协议承诺、当前 Schema、操作时结构校验和 Conformance 共同界定 Adapter 支持的接口。
 
 ## 5. Compatibility Strategy
 

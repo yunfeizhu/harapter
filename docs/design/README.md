@@ -20,7 +20,7 @@ Harapter Core
         │
         ├── adapter-qwen ──────▶ Qwen Code
         ├── adapter-opencode ──▶ OpenCode
-        ├── adapter-codex ─────▶ Codex CLI
+        ├── adapter-codex ─────▶ Codex Harness
         ├── adapter-claude ────▶ Claude Code
         └── other adapters ────▶ Other Harnesses
 ```

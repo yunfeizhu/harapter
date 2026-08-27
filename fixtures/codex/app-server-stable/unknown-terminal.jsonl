@@ -1,0 +1,1 @@
+{"method":"turn/completed","params":{"threadId":"synthetic-thread","turn":{"id":"synthetic-turn","items":[],"itemsView":"full","status":"futureTerminalState","error":null,"startedAt":1,"completedAt":2,"durationMs":1000}}}

@@ -24,6 +24,9 @@ payloads.
   data for Provider-owned validation and redaction.
 - `JsonRpcDiagnostic` reports an unmatched or late response without exposing its
   identifier or body.
+- `abandonInboundRequest()` releases a remote request that the Provider has
+  authoritatively resolved without a client response; it emits no wire message.
+- `isOpen()` distinguishes request-local failures from terminal transport state.
 
 ## Framing and limits
 
@@ -70,6 +73,13 @@ The transport waits for each Node write callback before starting the next frame.
 A request that times out or is locally aborted before its queued write starts is
 not sent. Once a write has started, however, the peer may already have received
 the request.
+
+Each remote request remains capacity-accounted until a response finishes,
+connection termination clears it, or the consuming Adapter calls
+`abandonInboundRequest()` after an authoritative Provider-side resolution. A
+request with an in-progress response records deferred abandonment and remains
+capacity-accounted until that response attempt settles. Both successful and
+failed response attempts then release its local ownership.
 
 `AbortSignal` and request timeout control only the caller's local response wait.
 They do not send a Provider cancellation method and are never evidence of native

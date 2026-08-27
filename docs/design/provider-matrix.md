@@ -14,7 +14,7 @@ Test 和真实 Runtime 测试后，才能在发布物中标记为可用。
 | Provider           | Provider ID             | 首选接入面                           | 预计公共覆盖 | 主要限制                                                               |
 | ------------------ | ----------------------- | ------------------------------------ | ------------ | ---------------------------------------------------------------------- |
 | Claude Code        | `anthropic.claude-code` | Claude Agent SDK                     | 高           | SDK 和 CLI 进程生命周期、权限模式需要显式配置                          |
-| Codex CLI          | `openai.codex`          | Codex App Server                     | 很高         | 协议持续扩展，必须按运行时 Schema 探测                                 |
+| Codex Harness      | `openai.codex`          | Codex App Server                     | 很高         | 稳定协议持续扩展，必须验证必需结构和运行时 Schema                      |
 | OpenCode           | `opencode`              | Headless HTTP/OpenAPI；ACP 可选      | 很高         | HTTP 服务生命周期和认证由宿主管理                                      |
 | Goose              | `goose`                 | ACP Server 或官方 API                | 高           | Extension、Recipe、Subagent 等保留为 Provider Extension                |
 | Qwen Code          | `qwen.code`             | SDK、ACP、HTTP daemon 或 Stream JSON | 中高         | 接口快速演进，部分 SDK/双向流能力仍可能处于实验状态                    |
@@ -58,16 +58,18 @@ Session、消息流、Tool 事件和结果映射到公共契约，并通过 SDK 
 官方入口：[Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview)、
 [流式输出](https://code.claude.com/docs/en/agent-sdk/streaming-output)。
 
-### 4.2 Codex CLI
+### 4.2 Codex Harness
 
-首选
-`codex app-server`。它提供双向 JSON-RPC 风格协议，并公开 Thread、Turn、Item、流式 Delta、Interrupt、Approval、Skill、App 和认证等接口。
+首选 `codex app-server`。它把开源 Codex
+Harness 暴露为双向 JSON-RPC 风格协议，并公开 Thread、Turn、Item、流式 Delta、Interrupt、Approval、Skill、App 和认证等接口。
 
-Codex Adapter 应优先使用目标 Runtime 自己生成的 TypeScript 或 JSON
-Schema，不能长期复制某个提交的内部类型。Thread 映射为 Session，Turn 映射为 Run，Server
+Codex Adapter 面向当前稳定 App
+Server 接口，不固定 Codex 可执行程序版本。当前 Runtime 生成的 TypeScript 或 JSON
+Schema 用作 Fixture、Mapping 和 Conformance 证据；握手和每个已使用响应、事件的必需结构接受运行时校验。Thread 映射为 Session，Turn 映射为 Run，Server
 Request 映射为 Interaction。
 
-官方入口：[Codex App Server](https://github.com/openai/codex/blob/main/codex-rs/app-server/README.md)。
+官方入口：[Codex App Server](https://developers.openai.com/codex/app-server)、
+[Codex Harness](https://openai.com/index/unlocking-the-codex-harness/)。
 
 ### 4.3 OpenCode
 

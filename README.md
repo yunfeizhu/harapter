@@ -12,9 +12,10 @@ contracts to public SDKs and machine protocols.
 
 ## Project status
 
-Harapter is currently **pre-alpha and design-first**. The architecture and API
-contracts are being validated before the first provider implementation is
-published. No npm, PyPI, or CLI package is available yet.
+Harapter is currently **pre-alpha**. Portable Core, shared conformance, bounded
+JSONL RPC transport, and the first Codex Provider Adapter are implemented in
+source while the API is validated against additional Provider shapes. No npm,
+PyPI, or CLI package is available yet.
 
 ## Why Harapter
 
@@ -62,8 +63,8 @@ fixtures/   Redacted protocol fixtures
 licenses/   Third-party notices and license records
 ```
 
-Only `docs/` is populated today. The other directories reserve the reviewed
-project boundaries and will be filled through pull requests.
+Implemented package and Provider contracts are documented in their own READMEs;
+reviewed target behavior that has not shipped remains in `docs/design`.
 
 ## Development
 

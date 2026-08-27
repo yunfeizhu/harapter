@@ -1,0 +1,2 @@
+{"method":"error","params":{"threadId":"synthetic-thread","turnId":"synthetic-turn","willRetry":false,"error":{"message":"Synthetic upstream detail that must not escape raw mapping.","codexErrorInfo":"serverOverloaded","additionalDetails":"Synthetic private detail."}}}
+{"method":"turn/completed","params":{"threadId":"synthetic-thread","turn":{"id":"synthetic-turn","items":[],"itemsView":"full","status":"failed","error":{"message":"Synthetic failure detail.","codexErrorInfo":"serverOverloaded","additionalDetails":null},"startedAt":1,"completedAt":2,"durationMs":1000}}}
