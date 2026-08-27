@@ -13,9 +13,10 @@ interactions, terminal results, or a particular event stream.
 
 Harapter will report capabilities from the connected runtime, public interface,
 and active configuration. Capability declarations will distinguish native,
-emulated, unsupported, and unknown behavior where those distinctions affect
-lifecycle or safety. Compatibility evidence will record the upstream runtime
-version or protocol fingerprint that was exercised.
+emulated, Adapter-controlled, unsupported, and unknown behavior where those
+distinctions affect lifecycle or safety. A missing Capability name will remain
+distinct from an explicit unknown result. Compatibility evidence will record the
+upstream runtime version or protocol fingerprint that was exercised.
 
 A session reference will remain bound to the provider, adapter connection
 profile, and native state that created it. Resume will validate those bindings

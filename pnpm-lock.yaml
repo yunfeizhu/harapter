@@ -51,6 +51,17 @@ importers:
         specifier: 4.1.11
         version: 4.1.11(@types/node@24.13.3)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@24.13.3))
 
+  packages/conformance:
+    dependencies:
+      '@harapter/core':
+        specifier: workspace:*
+        version: link:../core
+      vitest:
+        specifier: 4.1.11
+        version: 4.1.11(@types/node@24.13.3)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@24.13.3))
+
+  packages/core: {}
+
 packages:
 
   '@babel/helper-string-parser@7.29.7':

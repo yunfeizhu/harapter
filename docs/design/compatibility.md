@@ -121,6 +121,11 @@ Provider 使用 HTTP 和 ACP 时也可能不同。
 Capability 缓存必须以 Runtime
 Identity 和关键非敏感配置摘要为键，不能只以 Provider ID 为键。
 
+Capability 结果必须区分 `native`、有证据的 `emulated`、
+`adapter_controlled`、`unsupported` 和
+`unknown`。Manifest 缺少某个名称表示当前 Adapter 不认识该能力，而显式 `unknown`
+表示认识名称但证据不足；两者都不能默认通过只接受 `native` 的宿主要求。
+
 ## 8. Runtime Identity
 
 诊断和兼容缓存可以使用以下非敏感身份：

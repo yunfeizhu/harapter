@@ -1,4 +1,5 @@
 import { globSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 const sourcePatterns = ['packages/*/src', 'providers/*/src'].flatMap((root) =>
@@ -11,6 +12,16 @@ const hasExecutableSource = sourcePatterns.some((pattern) =>
 );
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@harapter/conformance': fileURLToPath(
+        new URL('./packages/conformance/src/index.ts', import.meta.url),
+      ),
+      '@harapter/core': fileURLToPath(
+        new URL('./packages/core/src/index.ts', import.meta.url),
+      ),
+    },
+  },
   test: {
     clearMocks: true,
     coverage: {

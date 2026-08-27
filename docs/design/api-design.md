@@ -38,6 +38,11 @@ interface ProviderDescriptor {
 }
 ```
 
+Registry 在调用 Adapter 前保存隔离的 Profile 校验快照。Client 建立后，无论 Profile 是否声明
+`requiredCapabilities`，Registry 都必须探测 Descriptor 和 Capability
+Manifest，并验证它们仍属于请求的 Provider、Profile 和连接类型；探测失败或身份错配时先关闭 Client，再返回脱敏的 portable
+error。
+
 Core 不包含
 `switch (providerId)`。Provider 包通过 Factory 注册，新增 Provider 不需要发布新的 Core。
 
@@ -146,7 +151,8 @@ interface ClientDescriptor {
 ## 6. Capability Manifest
 
 ```ts
-type CapabilityMode = 'native' | 'adapter_controlled' | 'unsupported';
+type CapabilityMode =
+  'native' | 'emulated' | 'adapter_controlled' | 'unsupported' | 'unknown';
 
 interface CapabilityStatus {
   mode: CapabilityMode;
@@ -195,9 +201,16 @@ event.raw
 语义规则：
 
 - `native` 表示官方机器接口直接提供等价行为；
+- `emulated`
+  表示 Adapter 通过已验证的等价实现满足 portable 语义，但不继承 Provider 原生状态或生命周期保证；
 - `adapter_controlled`
   只用于 Adapter 确实拥有的连接控制或可靠映射，不能冒充原生语义；
 - `unsupported` 表示当前 Runtime 版本、配置或连接形态无法可靠实现；
+- `unknown`
+  表示当前连接认识该能力名称，但现有握手、Schema、版本或配置证据不足以判定；
+- Capability 字段缺失表示 Manifest 不认识该名称，不等同于显式 `unknown`；
+- `CapabilityRequirement.acceptedModes` 缺失时只接受 `native`，接受 `emulated`
+  或 `adapter_controlled` 必须由宿主明确声明；
 - UI 必须根据 Capability 显示功能，不根据 `providerId` 硬编码；
 - Provider 独有能力使用 Provider 命名空间，例如 `qwen.code.goal`。
 
@@ -232,7 +245,10 @@ interface SessionRef {
 ```
 
 `providerState` 是交给同一 Provider
-Adapter 的不透明、可选状态。Core 不读取它，也不能把它交给不同 Provider。宿主持久化前必须应用 Provider 提供的序列化和脱敏规则。
+Adapter 的不透明、可选状态。Core 不读取它，也不能把它交给不同 Provider。宿主持久化前必须应用 Provider 提供的序列化和脱敏规则。当 Adapter 写入
+`compatibilityRef`
+时，原生 Resume 必须在发送 Provider 流量前验证它与当前 Runtime 或协议指纹一致；缺失和错配都返回
+`session_provider_mismatch`。
 
 ## 8. Run
 
@@ -259,12 +275,17 @@ interface RunOptions {
 }
 
 interface CancelResult {
-  mode: 'native' | 'connection_aborted' | 'already_terminal';
+  mode: 'native' | 'emulated' | 'connection_aborted' | 'already_terminal';
 }
 ```
 
-当 `run.cancel` 不为 `native` 时，`cancel()` 不能返回 `native`。宿主可以选择调用
-`HarnessClient.close()` 中止 Adapter 拥有的连接，但结果必须映射为
+`cancel()` 的结果不能强于 `run.cancel` Capability：只有 `native` 可以返回
+`native`，只有 `emulated` 可以返回 `emulated`，`adapter_controlled`
+只能报告它实际造成的 `connection_aborted`。Capability 缺失、`unknown` 或
+`unsupported` 时，非终态 Run 返回
+`unsupported_capability`；任何已经结束的 Run 都可以返回
+`already_terminal`。宿主也可以选择调用 `HarnessClient.close()`
+中止 Adapter 拥有的连接，但结果必须映射为
 `connection.aborted`，不能伪装成 Provider 已确认取消。
 
 ## 9. 输入

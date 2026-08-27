@@ -9,4 +9,5 @@
     "MD060": false,
   },
   "globs": ["**/*.md", "#node_modules"],
+  "ignores": ["**/node_modules/**"],
 }
