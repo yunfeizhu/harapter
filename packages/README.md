@@ -11,6 +11,10 @@ Implemented packages:
   extension lookup.
 - [`conformance`](./conformance/README.md) owns the reusable portable behavior
   suite and deterministic Fake Provider.
+- [`transport-jsonrpc-stdio`](./transport-jsonrpc-stdio/README.md) owns bounded
+  bidirectional JSONL framing, request correlation, ordered inbound delivery,
+  backpressure, and stream lifecycle without Provider semantics.
 
-Schema and transport packages remain unimplemented. Their target boundaries are
-defined in the [implementation guide](../docs/design/implementation-guide.md).
+Schema and additional transport packages remain unimplemented. Their target
+boundaries are defined in the
+[implementation guide](../docs/design/implementation-guide.md).
