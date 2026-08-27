@@ -138,7 +138,7 @@ UI，没有公开机器接口，Adapter 不宣称支持管理功能。已经由�
 | DeepSeek Harness   | `deepseek.harness.plugins.marketplace`     | Cordis 插件和 Profile 是 DSH 原生体系              |
 | Goose              | `goose.recipes`、`goose.extensions`        | Recipe 和 Extension 生命周期由 Goose 定义          |
 | Qwen Code          | `qwen.code.goal`、`qwen.code.subagents`    | Goal 和自定义 Subagent 不是所有 Harness 的共同语义 |
-| Codex CLI          | `openai.codex.apps`、`openai.codex.skills` | App 和 Skill 由 Codex App Server 定义              |
+| Codex Harness      | `openai.codex.apps`、`openai.codex.skills` | App 和 Skill 由 Codex App Server 定义              |
 | GitHub Copilot CLI | `github.copilot.commands`                  | 可用 Slash Command 由 ACP Server 动态发布          |
 | Crush              | `charm.crush.lsp`、`charm.crush.mcp`       | LSP、MCP 和共享 Workspace 属于 Crush 服务模型      |
 | OpenCode           | `opencode.commands`、`opencode.plugins`    | Command 和 Plugin 保留 OpenCode 原生结构           |

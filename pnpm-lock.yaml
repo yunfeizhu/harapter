@@ -64,6 +64,19 @@ importers:
 
   packages/transport-jsonrpc-stdio: {}
 
+  providers/codex:
+    dependencies:
+      '@harapter/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@harapter/transport-jsonrpc-stdio':
+        specifier: workspace:*
+        version: link:../../packages/transport-jsonrpc-stdio
+    devDependencies:
+      '@harapter/conformance':
+        specifier: workspace:*
+        version: link:../../packages/conformance
+
 packages:
 
   '@babel/helper-string-parser@7.29.7':

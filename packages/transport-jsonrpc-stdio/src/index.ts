@@ -214,6 +214,7 @@ export class JsonRpcStdioTransport {
   private readonly pendingRequests = new Map<JsonRpcId, PendingRequest>();
   private readonly pendingInboundRequestIds = new Set<string>();
   private readonly respondingInboundRequestIds = new Set<string>();
+  private readonly abandoningInboundRequestIds = new Set<string>();
   private readonly terminalGuardStreams = new Set<Readable | Writable>();
   private readonly activeWriteRejectors = new Set<
     (error: JsonRpcTransportError) => void
@@ -466,6 +467,27 @@ export class JsonRpcStdioTransport {
     return this.respondWithEnvelope(id, { error, id }, 'error');
   }
 
+  /**
+   * Release a remote request that the Provider authoritatively resolved without
+   * a client response. No wire message is emitted.
+   */
+  abandonInboundRequest(id: JsonRpcId): boolean {
+    if (!isJsonRpcId(id)) return false;
+    const key = requestIdKey(id);
+    if (!this.pendingInboundRequestIds.has(key)) return false;
+    if (this.respondingInboundRequestIds.has(key)) {
+      this.abandoningInboundRequestIds.add(key);
+      return true;
+    }
+    this.pendingInboundRequestIds.delete(key);
+    return true;
+  }
+
+  /** Whether the logical transport can still accept operations. */
+  isOpen(): boolean {
+    return this.open;
+  }
+
   /** Close the logical transport and run caller-provided cleanup once. */
   async close(): Promise<void> {
     if (this.open) {
@@ -521,15 +543,24 @@ export class JsonRpcStdioTransport {
       return this.enqueueWrite(frame).then(
         () => {
           this.respondingInboundRequestIds.delete(key);
+          this.abandoningInboundRequestIds.delete(key);
           this.pendingInboundRequestIds.delete(key);
         },
         (error: unknown) => {
           this.respondingInboundRequestIds.delete(key);
+          if (this.abandoningInboundRequestIds.delete(key)) {
+            this.pendingInboundRequestIds.delete(key);
+          }
           throw asTransportError(error);
         },
       );
     } catch (error) {
-      if (reservedKey) this.respondingInboundRequestIds.delete(reservedKey);
+      if (reservedKey) {
+        this.respondingInboundRequestIds.delete(reservedKey);
+        if (this.abandoningInboundRequestIds.delete(reservedKey)) {
+          this.pendingInboundRequestIds.delete(reservedKey);
+        }
+      }
       return Promise.reject(asTransportError(error));
     }
   }
@@ -879,6 +910,7 @@ export class JsonRpcStdioTransport {
     this.lineBytes = 0;
     this.pendingInboundRequestIds.clear();
     this.respondingInboundRequestIds.clear();
+    this.abandoningInboundRequestIds.clear();
     for (const id of [...this.pendingRequests.keys()]) {
       this.settlePending(id, (pending) => {
         pending.reject(operationFailure);

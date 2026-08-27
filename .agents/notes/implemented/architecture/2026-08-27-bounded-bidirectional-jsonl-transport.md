@@ -37,6 +37,14 @@ does not interpret either outcome as native Harapter cancellation. Late and
 unknown responses produce only a bounded diagnostic; unknown remote methods
 remain observable for Adapter-level mapping.
 
+An inbound request remains owned by the transport until its response finishes,
+the connection terminates, or the Provider Adapter records an authoritative
+Provider-side resolution through the explicit abandon operation. Abandoning a
+request releases only local correlation and capacity; it never emits a response
+or claims that the host supplied one. An abandon racing with an in-progress
+response remains capacity-accounted until that response attempt settles, then
+releases ownership on either outcome.
+
 The transport keeps its Error object safe for ordinary JSON and Node inspection
 and exposes remote error fields only through an explicit extraction method.
 Those fields and inbound parameters remain untrusted and potentially sensitive;
