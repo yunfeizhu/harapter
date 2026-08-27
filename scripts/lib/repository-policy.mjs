@@ -28,6 +28,31 @@ export function validateToolchain({ nodeVersion, packageJson }) {
   return failures;
 }
 
+export function findWorkspaceDirectories(paths) {
+  return [
+    ...new Set(
+      paths.flatMap((path) => {
+        const match = path.match(/^(examples|packages|providers)\/([^/]+)\//u);
+        return match ? [`${match[1]}/${match[2]}`] : [];
+      }),
+    ),
+  ].sort();
+}
+
+export function validateWorkspacePackageManifest({
+  manifestPath,
+  packageJson,
+}) {
+  if (
+    typeof packageJson.scripts?.build !== 'string' ||
+    packageJson.scripts.build.trim() === ''
+  ) {
+    return [`${manifestPath} must define a non-empty build script.`];
+  }
+
+  return [];
+}
+
 export function listRepositoryFiles(repositoryRoot) {
   const output = execFileSync(
     'git',

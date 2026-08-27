@@ -4,15 +4,18 @@
   "private": true,
   "description": "One API for every agent harness.",
   "license": "Apache-2.0",
+  "type": "module",
   "engines": {
     "node": ">=24"
   },
   "packageManager": "pnpm@11.23.0",
   "scripts": {
-    "check": "pnpm format:check && pnpm lint:markdown && pnpm check:links && pnpm check:repository && pnpm check:agents",
+    "build": "pnpm --recursive --if-present run build",
+    "check": "pnpm format:check && pnpm check:code && pnpm lint:markdown && pnpm check:links && pnpm check:repository && pnpm check:agents",
     "check:agent-guidance": "node scripts/check-agent-guidance.mjs",
     "check:agent-notes": "node scripts/check-agent-notes.mjs",
     "check:agents": "pnpm check:agent-guidance && pnpm check:agent-notes && pnpm check:doc-budgets && pnpm check:policy-tests",
+    "check:code": "pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build",
     "check:doc-budgets": "node scripts/check-doc-budgets.mjs",
     "check:links": "node scripts/check-links.mjs",
     "check:pr-metadata": "node scripts/check-pr-metadata.mjs",
@@ -20,11 +23,28 @@
     "check:repository": "node scripts/check-repository.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"#node_modules\""
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --max-warnings 0 --fix",
+    "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"#node_modules\"",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.3",
+    "@vitest/coverage-v8": "4.1.11",
+    "@vitest/eslint-plugin": "1.6.27",
+    "eslint": "10.9.1",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-node-import": "1.2.0",
+    "globals": "17.11.0",
     "js-yaml": "5.4.0",
     "markdownlint-cli2": "0.23.2",
-    "prettier": "3.9.6"
+    "prettier": "3.9.6",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.68.0",
+    "vitest": "4.1.11"
   }
 }

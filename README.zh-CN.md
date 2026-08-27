@@ -36,7 +36,7 @@ pnpm check
 ```
 
 仓库使用 Conventional Commits。Pull
-Request 会自动运行格式、Markdown、仓库完整性和链接检查；Release
+Request 会自动运行格式、类型感知代码检查、严格 TypeScript 检查、Vitest 覆盖率、工作区构建、Markdown、仓库完整性和链接检查；Release
 Please 会维护发布 PR，合并该 PR 后自动生成版本标签、CHANGELOG 和 GitHub
 Release。
 
