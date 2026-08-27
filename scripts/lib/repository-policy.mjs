@@ -28,6 +28,33 @@ export function validateToolchain({ nodeVersion, packageJson }) {
   return failures;
 }
 
+export function validateReleaseAutomation({
+  prettierIgnore,
+  releasePleaseConfig,
+}) {
+  const failures = [];
+
+  if (releasePleaseConfig.packages?.['.']?.['initial-version'] !== '0.1.0') {
+    failures.push(
+      'release-please-config.json must set packages["."].initial-version to 0.1.0.',
+    );
+  }
+
+  const ignoredPaths = new Set(
+    prettierIgnore
+      .split(/\r?\n/u)
+      .map((line) => line.trim())
+      .filter((line) => line !== '' && !line.startsWith('#')),
+  );
+  if (!ignoredPaths.has('CHANGELOG.md')) {
+    failures.push(
+      '.prettierignore must exclude Release Please-owned CHANGELOG.md.',
+    );
+  }
+
+  return failures;
+}
+
 export function findWorkspaceDirectories(paths) {
   return [
     ...new Set(

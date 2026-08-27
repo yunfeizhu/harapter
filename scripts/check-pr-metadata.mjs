@@ -47,6 +47,7 @@ if (!titleMatch || !allowedTypes.has(titleMatch[1])) {
 
 const botAuthor = new Set([
   'app/dependabot',
+  'app/github-actions',
   'dependabot[bot]',
   'github-actions[bot]',
 ]).has(author);

@@ -44,11 +44,22 @@ merge-state evaluation. If an enabled pull request later becomes ineligible, the
 contributor disables auto-merge immediately and re-enables it only after the
 eligibility issue is resolved.
 
-Release Please reads squash commit titles on `main`, maintains the release pull
-request and changelog, and creates the version tag and GitHub Release after that
-pull request is merged. Registry publication remains disabled until a package
-has reviewed build, conformance, provenance or trusted-publishing, and rollback
-controls. The operational workflow is documented in
+Release Please is staged but manual-only while Harapter establishes its first
+portable contracts and provider adapters. Feature commits on `main` do not
+automatically create a release pull request. After a maintainer approves the
+first usable pre-alpha milestone, they explicitly enable Actions-created pull
+requests and dispatch the reviewed Release Please workflow from `main` to
+prepare the release pull request. After manually merging that pull request, they
+dispatch the workflow from `main` a second time to create the version tag and
+GitHub Release. The release job rejects non-`main` refs, and the CI dispatch
+rejects a branch head that differs from the queried pull request head. Enabling
+an automatic `main` trigger is a separate reviewed repository-policy change. The
+first approved pre-alpha release is `0.1.0`. Release Please owns its generated
+changelog formatting, while Markdown and link validation remain in force, and
+repository metadata accepts both observed GitHub Actions bot login forms.
+Registry publication remains disabled until a package has reviewed build,
+conformance, provenance or trusted-publishing, and rollback controls. The
+operational workflow is documented in
 [development.md](../../../../docs/development.md).
 
 ## Alternatives considered
@@ -70,6 +81,14 @@ use an explicit documented exception rather than the default path.
 Manual release state is easy to make inconsistent with changelog and commit
 history. Release Please provides a reviewable release pull request and one owner
 for version artifacts.
+
+### Prepare a release after every releasable main commit
+
+This gives immediate version proposals, but the first feature commit can create
+a release pull request before the portable API and a usable provider slice are
+ready. Keeping the workflow manual during initial development avoids presenting
+an incomplete foundation as a release while preserving the commit history that
+Release Please will evaluate at activation.
 
 ### Human-only review and merge
 
@@ -104,11 +123,14 @@ the local process a stable stopping rule.
 
 ## Consequences
 
-`main` remains the single integration and release source. Contributors create
-more short-lived branches and must keep pull request titles accurate because the
-title determines the squash commit and release impact. Release publication still
-has an explicit maintainer merge gate. Package publication needs additional
-automation before any registry artifact is released. Maintainers preserve
+`main` remains the single integration and eventual release source. Contributors
+create more short-lived branches and must keep pull request titles accurate
+because the title determines the eventual squash commit and release impact.
+Early feature work accumulates without creating release pull requests until a
+maintainer explicitly activates the first pre-alpha release. Release preparation
+and publication require separate explicit workflow dispatches around the manual
+release pull request merge. Package publication needs additional automation
+before any registry artifact is released. Maintainers preserve
 `Repository checks`, `Pull request metadata`, and `Dependency review` as
 required status checks. Local delivery retains one independent model review and
 test rerun while its termination rule prevents P2 churn. Pull requests no longer

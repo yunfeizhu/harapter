@@ -1,16 +1,10 @@
 name: Release Please
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
-  actions: write
-  contents: write
-  issues: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: release-please-main
@@ -19,8 +13,14 @@ concurrency:
 jobs:
   release-please:
     name: Prepare or publish release
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      actions: write
+      contents: write
+      issues: write
+      pull-requests: write
     steps:
       - name: Run Release Please
         id: release
@@ -28,6 +28,7 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          target-branch: main
 
       - name: Resolve release pull request branch
         id: release-pr

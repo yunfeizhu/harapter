@@ -75,9 +75,10 @@ pnpm check
 
 The repository uses Conventional Commits. Pull requests run formatting,
 type-aware linting, strict TypeScript checks, Vitest coverage, workspace builds,
-Markdown, repository-integrity, and link checks. Release Please maintains a
-release pull request and creates the Git tag, changelog, and GitHub Release when
-that pull request is merged.
+Markdown, repository-integrity, and link checks. After an explicitly approved
+first usable pre-alpha milestone, maintainers can start Release Please to
+prepare a release pull request; no release automation runs on ordinary `main`
+pushes before then.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) and [RELEASING.md](./RELEASING.md) for
 the complete workflow.
