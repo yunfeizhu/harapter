@@ -5,6 +5,7 @@ import {
   type HarnessEvent,
   type HarnessRun,
 } from '@harapter/core';
+import { inspect } from 'node:util';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   CODEX_PROVIDER_ID,
@@ -715,6 +716,21 @@ describe('Codex App Server adapter', () => {
         providerOptions: { unknown: true },
       }),
     ).rejects.toMatchObject({ code: 'profile_invalid' });
+    const sensitiveOptionName = '/private/synthetic/secret\nPROMPT=do-not-log';
+    let sensitiveFailure: unknown;
+    try {
+      await factory.connect({
+        ...createTestProfile(profileId('codex-sensitive-option')),
+        providerOptions: { [sensitiveOptionName]: true },
+      });
+    } catch (error) {
+      sensitiveFailure = error;
+    }
+    expect(sensitiveFailure).toMatchObject({
+      code: 'profile_invalid',
+      message: 'Unsupported Codex Profile option.',
+    });
+    expect(inspect(sensitiveFailure)).not.toContain(sensitiveOptionName);
     await expect(
       factory.connect({
         ...createTestProfile(profileId('codex-capacity')),

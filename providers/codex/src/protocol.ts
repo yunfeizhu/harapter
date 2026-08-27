@@ -517,7 +517,7 @@ function validatedOptions(
   if (value === undefined) return {};
   const unknown = Object.keys(value).find((key) => !allowed.includes(key));
   if (unknown !== undefined) {
-    throw invalidRequest(`Unsupported Codex option: ${unknown}.`);
+    throw invalidRequest('Unsupported Codex option.');
   }
   return { ...value };
 }

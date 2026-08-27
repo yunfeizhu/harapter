@@ -1054,7 +1054,6 @@ function waitForChildExit(
     const timer = setTimeout(() => {
       finish(false);
     }, timeoutMs);
-    timer.unref();
     function finish(exited: boolean): void {
       if (settled) return;
       settled = true;
@@ -1134,7 +1133,7 @@ function connectionOptions(
   if (unknown !== undefined) {
     throw new HarnessError(
       'profile_invalid',
-      `Unsupported Codex Profile option: ${unknown}.`,
+      'Unsupported Codex Profile option.',
       { retryable: false, providerId: CODEX_PROVIDER_ID },
     );
   }

@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { inspect } from 'node:util';
 import { describe, expect, it } from 'vitest';
 import {
   codexCompatibilityIdentity,
@@ -282,6 +283,29 @@ describe('Codex stable protocol mapping', () => {
     expect(() =>
       prepareCodexSessionParams({ providerOptions: { unknownOption: true } }),
     ).toThrow(expect.objectContaining({ code: 'invalid_request' }));
+    const sensitiveOptionName = '/private/synthetic/secret\nPROMPT=do-not-log';
+    for (const prepare of [
+      () =>
+        prepareCodexSessionParams({
+          providerOptions: { [sensitiveOptionName]: true },
+        }),
+      () =>
+        prepareCodexTurnParams({
+          providerOptions: { [sensitiveOptionName]: true },
+        }),
+    ]) {
+      let sensitiveFailure: unknown;
+      try {
+        prepare();
+      } catch (error) {
+        sensitiveFailure = error;
+      }
+      expect(sensitiveFailure).toMatchObject({
+        code: 'invalid_request',
+        message: 'Unsupported Codex option.',
+      });
+      expect(inspect(sensitiveFailure)).not.toContain(sensitiveOptionName);
+    }
 
     expect(
       prepareCodexTurnParams({

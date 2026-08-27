@@ -22,7 +22,10 @@
     "noUnusedParameters": true,
     "paths": {
       "@harapter/conformance": ["packages/conformance/src/index.ts"],
-      "@harapter/core": ["packages/core/src/index.ts"]
+      "@harapter/core": ["packages/core/src/index.ts"],
+      "@harapter/transport-jsonrpc-stdio": [
+        "packages/transport-jsonrpc-stdio/src/index.ts"
+      ]
     },
     "resolveJsonModule": true,
     "skipLibCheck": true,
