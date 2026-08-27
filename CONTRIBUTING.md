@@ -29,6 +29,10 @@ pnpm install
 pnpm check
 ```
 
+`pnpm check` runs formatting, ESLint, TypeScript checking, Vitest coverage,
+workspace builds, documentation validation, and repository governance. Use
+`pnpm test:watch` while developing focused executable behavior.
+
 The complete branch, commit, pull request, and release procedure lives in the
 [development workflow](./docs/development.md). Coding agents also follow the
 root and nearest subtree [Agent Guides](./AGENTS.md).

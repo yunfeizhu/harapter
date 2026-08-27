@@ -3,8 +3,10 @@ import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   findForbiddenTextViolations,
+  findWorkspaceDirectories,
   listRepositoryFiles,
   validateToolchain,
+  validateWorkspacePackageManifest,
 } from './lib/repository-policy.mjs';
 import { validateWorkflowActionPins } from './lib/workflow-actions.mjs';
 
@@ -28,6 +30,7 @@ const requiredPaths = [
   '.github/dependabot.yml',
   '.github/workflows/ci.yml',
   '.github/workflows/release-please.yml',
+  'eslint.config.mjs',
   'AGENTS.md',
   'CHANGELOG.md',
   'CLAUDE.md',
@@ -57,7 +60,10 @@ const requiredPaths = [
   'scripts/lib/repository-policy.mjs',
   'scripts/lib/workflow-actions.mjs',
   'scripts/test-policy-checks.mjs',
+  'tsconfig.base.json',
+  'tsconfig.json',
   'version.txt',
+  'vitest.config.ts',
 ];
 
 const failures = [];
@@ -92,8 +98,10 @@ failures.push(
 );
 
 for (const script of [
+  'build',
   'check',
   'check:agents',
+  'check:code',
   'check:agent-guidance',
   'check:agent-notes',
   'check:doc-budgets',
@@ -101,6 +109,12 @@ for (const script of [
   'check:pr-metadata',
   'check:policy-tests',
   'check:repository',
+  'lint',
+  'lint:fix',
+  'test',
+  'test:coverage',
+  'test:watch',
+  'typecheck',
 ]) {
   if (typeof packageJson.scripts?.[script] !== 'string') {
     failures.push(`package.json is missing required script: ${script}`);
@@ -122,12 +136,31 @@ function collectFiles(path, predicate, output) {
   }
 }
 
-failures.push(
-  ...findForbiddenTextViolations(
-    repositoryRoot,
-    listRepositoryFiles(repositoryRoot),
-  ),
-);
+const repositoryFiles = listRepositoryFiles(repositoryRoot);
+failures.push(...findForbiddenTextViolations(repositoryRoot, repositoryFiles));
+
+for (const directory of findWorkspaceDirectories(repositoryFiles)) {
+  const manifestPath = `${directory}/package.json`;
+  const absoluteManifestPath = resolve(repositoryRoot, manifestPath);
+  if (!existsSync(absoluteManifestPath)) {
+    failures.push(`${directory} must define package.json.`);
+    continue;
+  }
+
+  try {
+    const workspacePackageJson = JSON.parse(
+      readFileSync(absoluteManifestPath, 'utf8'),
+    );
+    failures.push(
+      ...validateWorkspacePackageManifest({
+        manifestPath,
+        packageJson: workspacePackageJson,
+      }),
+    );
+  } catch (error) {
+    failures.push(`Invalid JSON in ${manifestPath}: ${error.message}`);
+  }
+}
 
 const workflowFiles = [];
 collectFiles(

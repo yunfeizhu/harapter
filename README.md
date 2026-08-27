@@ -74,6 +74,7 @@ pnpm check
 ```
 
 The repository uses Conventional Commits. Pull requests run formatting,
+type-aware linting, strict TypeScript checks, Vitest coverage, workspace builds,
 Markdown, repository-integrity, and link checks. Release Please maintains a
 release pull request and creates the Git tag, changelog, and GitHub Release when
 that pull request is merged.

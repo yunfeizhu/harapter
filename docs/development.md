@@ -21,6 +21,18 @@ pnpm install
 pnpm check
 ```
 
+The complete check includes formatting, type-aware ESLint, strict TypeScript,
+Vitest coverage, workspace package builds, documentation validation, and
+repository governance. During implementation, the focused commands are:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:coverage
+pnpm build
+```
+
 ## One task, one branch
 
 Harapter uses trunk-based development. `main` remains releasable; there is no

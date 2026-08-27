@@ -13,8 +13,10 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   findForbiddenTextViolations,
+  findWorkspaceDirectories,
   listRepositoryFiles,
   validateToolchain,
+  validateWorkspacePackageManifest,
 } from './lib/repository-policy.mjs';
 import { validateWorkflowActionPins } from './lib/workflow-actions.mjs';
 
@@ -109,11 +111,11 @@ const ciWorkflow = readFileSync(
   resolve(repositoryRoot, '.github/workflows/ci.yml'),
   'utf8',
 );
-assert.doesNotMatch(ciWorkflow, /  all-checks:/u);
+assert.doesNotMatch(ciWorkflow, / {2}all-checks:/u);
 assert.match(ciWorkflow, /inputs\.pr_branch != ''/u);
 assert.match(ciWorkflow, /base-ref: .*inputs\.base_sha/u);
 assert.match(ciWorkflow, /head-ref: .*inputs\.head_sha/u);
-assert.match(ciWorkflow, /  pull_request:\n(?:.|\n)*?      - edited\n/u);
+assert.match(ciWorkflow, / {2}pull_request:\n(?:.|\n)*? {6}- edited\n/u);
 
 const releaseWorkflow = readFileSync(
   resolve(repositoryRoot, '.github/workflows/release-please.yml'),
@@ -178,6 +180,31 @@ assert.deepEqual(
     'package.json engines.node must be >=24.',
     'package.json must pin pnpm@11.23.0.',
   ],
+);
+
+assert.deepEqual(
+  findWorkspaceDirectories([
+    'examples/basic/package.json',
+    'packages/README.md',
+    'packages/core/src/index.ts',
+    'packages/core/test/index.test.ts',
+    'providers/dsh/src/index.ts',
+  ]),
+  ['examples/basic', 'packages/core', 'providers/dsh'],
+);
+assert.deepEqual(
+  validateWorkspacePackageManifest({
+    manifestPath: 'packages/core/package.json',
+    packageJson: { scripts: { build: 'tsc --build' } },
+  }),
+  [],
+);
+assert.deepEqual(
+  validateWorkspacePackageManifest({
+    manifestPath: 'providers/dsh/package.json',
+    packageJson: { scripts: { build: '  ' } },
+  }),
+  ['providers/dsh/package.json must define a non-empty build script.'],
 );
 
 const repositoryFiles = listRepositoryFiles(repositoryRoot);
