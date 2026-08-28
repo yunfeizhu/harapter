@@ -80,8 +80,8 @@ Connection Strategy。
 使用 HTTP 还是 ACP 是连接策略，不应该创建两个不同 Provider
 ID。两种策略可以暴露不同 Capability。
 
-官方入口：[OpenCode Server](https://dev.opencode.ai/docs/server/)、
-[OpenCode CLI](https://dev.opencode.ai/docs/cli/)。
+官方入口：[OpenCode Server](https://opencode.ai/docs/server/)、
+[OpenCode CLI](https://opencode.ai/docs/cli/)。
 
 ### 4.4 Goose
 

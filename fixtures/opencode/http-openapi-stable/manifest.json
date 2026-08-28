@@ -1,0 +1,13 @@
+{
+  "fixtureFormatVersion": 1,
+  "providerId": "opencode",
+  "interface": "OpenCode stable HTTP/OpenAPI and Server-Sent Events interface",
+  "upstreamEvidence": {
+    "repository": "https://github.com/anomalyco/opencode",
+    "release": "v1.18.24",
+    "commit": "57e80556975fca613a116447ddecc8dcbc1f33b2",
+    "openApiSha256": "c0af493bae06c8f50ae05474921570eb05f301c92a5f68f6a6365f530b719ad7"
+  },
+  "captureMethod": "The published stable OpenAPI document was fingerprinted locally; fixture payloads are deterministic synthetic examples authored from the documented schemas.",
+  "redactionMethod": "All identifiers, text, paths, errors, permissions, and usage values are synthetic; no Provider traffic, credentials, authorization headers, or host paths are stored."
+}

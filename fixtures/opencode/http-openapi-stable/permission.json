@@ -1,0 +1,23 @@
+{
+  "events": [
+    {
+      "type": "permission.asked",
+      "properties": {
+        "id": "permission_fixture",
+        "sessionID": "ses_fixture",
+        "permission": "bash",
+        "patterns": ["pnpm check"],
+        "metadata": {},
+        "always": ["pnpm check"]
+      }
+    },
+    {
+      "type": "permission.replied",
+      "properties": {
+        "sessionID": "ses_fixture",
+        "requestID": "permission_fixture",
+        "reply": "once"
+      }
+    }
+  ]
+}

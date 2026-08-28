@@ -79,6 +79,19 @@ importers:
         specifier: workspace:*
         version: link:../../packages/conformance
 
+  providers/opencode:
+    dependencies:
+      '@harapter/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@harapter/transport-http-sse':
+        specifier: workspace:*
+        version: link:../../packages/transport-http-sse
+    devDependencies:
+      '@harapter/conformance':
+        specifier: workspace:*
+        version: link:../../packages/conformance
+
 packages:
 
   '@babel/helper-string-parser@7.29.7':

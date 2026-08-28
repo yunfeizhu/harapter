@@ -1,0 +1,12 @@
+{
+  "events": [
+    {
+      "type": "future.event",
+      "properties": {
+        "sessionID": "ses_fixture",
+        "prompt": "synthetic content that must be redacted",
+        "nested": { "token": "synthetic credential" }
+      }
+    }
+  ]
+}
