@@ -1,0 +1,19 @@
+{
+  "name": "@harapter/transport-http-sse",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Bounded HTTP and Server-Sent Events transport for Harapter providers.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json"
+  }
+}

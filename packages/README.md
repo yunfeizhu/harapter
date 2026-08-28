@@ -14,7 +14,9 @@ Implemented packages:
 - [`transport-jsonrpc-stdio`](./transport-jsonrpc-stdio/README.md) owns bounded
   bidirectional JSONL framing, request correlation, ordered inbound delivery,
   backpressure, and stream lifecycle without Provider semantics.
+- [`transport-http-sse`](./transport-http-sse/README.md) owns endpoint-bound,
+  bounded HTTP requests and pull-driven Server-Sent Events parsing without
+  Provider semantics.
 
-Schema and additional transport packages remain unimplemented. Their target
-boundaries are defined in the
-[implementation guide](../docs/design/implementation-guide.md).
+Schema and additional packages remain unimplemented. Their target boundaries are
+defined in the [implementation guide](../docs/design/implementation-guide.md).
