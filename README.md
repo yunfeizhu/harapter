@@ -13,9 +13,9 @@ contracts to public SDKs and machine protocols.
 ## Project status
 
 Harapter is currently **pre-alpha**. Portable Core, shared conformance, bounded
-JSONL RPC transport, and the first Codex Provider Adapter are implemented in
-source while the API is validated against additional Provider shapes. No npm,
-PyPI, or CLI package is available yet.
+JSONL RPC and HTTP/SSE transports, and the first Codex Provider Adapter are
+implemented in source while the API is validated against additional Provider
+shapes. No npm, PyPI, or CLI package is available yet.
 
 ## Why Harapter
 

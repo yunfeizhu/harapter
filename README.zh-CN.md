@@ -10,8 +10,8 @@ Harness 的开源有状态适配层。宿主应用面向稳定的 Client、Sessi
 
 ## 当前状态
 
-项目目前处于 **Pre-alpha** 阶段。Portable Core、公共 Conformance、有界 JSONL RPC
-Transport 和第一个 Codex Provider
+项目目前处于 **Pre-alpha** 阶段。Portable Core、公共 Conformance、有界 JSONL
+RPC 与 HTTP/SSE Transport 和第一个 Codex Provider
 Adapter 已有源码实现，公共 API 仍需通过更多接入形态验证。当前尚未发布 npm、PyPI 或 CLI 包。
 
 ## Harapter 提供什么
