@@ -20,6 +20,9 @@ export default defineConfig({
       '@harapter/core': fileURLToPath(
         new URL('./packages/core/src/index.ts', import.meta.url),
       ),
+      '@harapter/transport-http-sse': fileURLToPath(
+        new URL('./packages/transport-http-sse/src/index.ts', import.meta.url),
+      ),
       '@harapter/transport-jsonrpc-stdio': fileURLToPath(
         new URL(
           './packages/transport-jsonrpc-stdio/src/index.ts',

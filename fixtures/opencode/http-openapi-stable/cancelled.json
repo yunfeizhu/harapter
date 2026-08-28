@@ -1,0 +1,32 @@
+{
+  "events": [
+    {
+      "type": "session.error",
+      "properties": {
+        "sessionID": "ses_fixture",
+        "error": {
+          "name": "MessageAbortedError",
+          "data": { "message": "synthetic abort" }
+        }
+      }
+    }
+  ],
+  "response": {
+    "info": {
+      "id": "msg_fixture_cancelled",
+      "sessionID": "ses_fixture",
+      "role": "assistant",
+      "error": {
+        "name": "MessageAbortedError",
+        "data": { "message": "synthetic abort" }
+      },
+      "tokens": {
+        "input": 3,
+        "output": 0,
+        "reasoning": 0,
+        "cache": { "read": 0, "write": 0 }
+      }
+    },
+    "parts": []
+  }
+}

@@ -6,6 +6,16 @@
     "declaration": false,
     "declarationMap": false,
     "noEmit": true,
+    "paths": {
+      "@harapter/conformance": ["packages/conformance/src/index.ts"],
+      "@harapter/core": ["packages/core/src/index.ts"],
+      "@harapter/transport-http-sse": [
+        "packages/transport-http-sse/src/index.ts"
+      ],
+      "@harapter/transport-jsonrpc-stdio": [
+        "packages/transport-jsonrpc-stdio/src/index.ts"
+      ]
+    },
     "sourceMap": false
   },
   "include": [

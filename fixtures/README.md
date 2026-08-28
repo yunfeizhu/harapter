@@ -10,3 +10,7 @@ provider traffic.
   generated stable Schema fingerprint plus synthetic completed, failed, and
   unknown-terminal App Server traces. Provider tests load these files without
   treating them as live traffic.
+- [`opencode/http-openapi-stable`](./opencode/http-openapi-stable/manifest.json)
+  records a published stable OpenAPI fingerprint plus synthetic completed,
+  cancelled, permission, and unknown-event payloads. Provider tests load these
+  files without treating them as live traffic.

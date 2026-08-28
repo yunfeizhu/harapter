@@ -1,0 +1,71 @@
+{
+  "events": [
+    {
+      "type": "message.part.updated",
+      "properties": {
+        "sessionID": "ses_fixture",
+        "part": {
+          "id": "part_fixture_completed",
+          "sessionID": "ses_fixture",
+          "messageID": "msg_fixture_completed",
+          "type": "text",
+          "text": ""
+        },
+        "time": 1
+      }
+    },
+    {
+      "type": "message.updated",
+      "properties": {
+        "sessionID": "ses_fixture",
+        "info": {
+          "id": "msg_fixture_completed",
+          "role": "assistant",
+          "tokens": {
+            "input": 12,
+            "output": 4,
+            "reasoning": 1,
+            "cache": { "read": 2, "write": 0 }
+          }
+        }
+      }
+    },
+    {
+      "type": "message.part.delta",
+      "properties": {
+        "sessionID": "ses_fixture",
+        "messageID": "msg_fixture_completed",
+        "partID": "part_fixture_completed",
+        "field": "text",
+        "delta": "synthetic answer"
+      }
+    },
+    {
+      "type": "session.idle",
+      "properties": { "sessionID": "ses_fixture" }
+    }
+  ],
+  "response": {
+    "info": {
+      "id": "msg_fixture_completed",
+      "sessionID": "ses_fixture",
+      "role": "assistant",
+      "finish": "stop",
+      "tokens": {
+        "input": 12,
+        "output": 4,
+        "reasoning": 1,
+        "cache": { "read": 2, "write": 0 }
+      }
+    },
+    "parts": [
+      {
+        "id": "part_fixture_completed",
+        "sessionID": "ses_fixture",
+        "messageID": "msg_fixture_completed",
+        "type": "text",
+        "text": "synthetic answer"
+      }
+    ]
+  }
+}
