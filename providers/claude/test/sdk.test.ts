@@ -1,31 +1,20 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-const official = vi.hoisted(() => ({
-  getSessionInfo: vi.fn(),
-  query: vi.fn(),
-}));
-
-vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
-  getSessionInfo: official.getSessionInfo,
-  query: official.query,
-}));
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   createClaudeNativeClient,
   isClaudeSdkBinding,
-  officialClaudeSdkBinding,
+  loadOfficialClaudeSdkBinding,
   parseClaudeSdkSessionInfo,
   type ClaudeSdkBinding,
   type ClaudeSdkQuery,
 } from '../src/sdk.js';
 
 describe('Claude Agent SDK boundary', () => {
-  beforeEach(() => {
-    official.getSessionInfo.mockReset();
-    official.query.mockReset();
-  });
-
-  it('adapts the installed official functions through the narrow binding', async () => {
+  it('dynamically adapts host-installed official functions', async () => {
+    const official = {
+      getSessionInfo: vi.fn(),
+      query: vi.fn(),
+    };
     const nativeQuery: ClaudeSdkQuery = {
       [Symbol.asyncIterator]: () =>
         ({
@@ -39,11 +28,13 @@ describe('Claude Agent SDK boundary', () => {
     });
     official.query.mockReturnValue(nativeQuery);
 
+    const binding = await loadOfficialClaudeSdkBinding(() =>
+      Promise.resolve(official),
+    );
     await expect(
-      officialClaudeSdkBinding.getSessionInfo(
-        '00000000-0000-4000-8000-000000000001',
-        { dir: '/synthetic/workspace' },
-      ),
+      binding.getSessionInfo('00000000-0000-4000-8000-000000000001', {
+        dir: '/synthetic/workspace',
+      }),
     ).resolves.toMatchObject({
       sessionId: '00000000-0000-4000-8000-000000000001',
     });
@@ -62,7 +53,7 @@ describe('Claude Agent SDK boundary', () => {
       },
     };
     expect(
-      officialClaudeSdkBinding.query({
+      binding.query({
         prompt,
         options: {
           abortController: new AbortController(),
@@ -77,13 +68,31 @@ describe('Claude Agent SDK boundary', () => {
     expect(official.getSessionInfo).toHaveBeenCalledOnce();
     expect(official.query).toHaveBeenCalledOnce();
 
-    const native = createClaudeNativeClient(
-      'synthetic-runtime',
-      officialClaudeSdkBinding,
-    );
-    expect(native.official).toEqual({
-      getSessionInfo: official.getSessionInfo,
-      query: official.query,
+    const native = createClaudeNativeClient('synthetic-runtime', binding);
+    expect(Object.keys(native.official ?? {}).sort()).toEqual([
+      'getSessionInfo',
+      'query',
+    ]);
+  });
+
+  it('fails closed without retaining dynamic import diagnostics', async () => {
+    await expect(
+      loadOfficialClaudeSdkBinding(() =>
+        Promise.reject(new Error('sensitive provider diagnostic')),
+      ),
+    ).rejects.toMatchObject({
+      code: 'runtime_not_found',
+      cause: undefined,
+      providerCode: 'sdk_peer_missing',
+    });
+    await expect(
+      loadOfficialClaudeSdkBinding(() =>
+        Promise.resolve({ query: () => undefined }),
+      ),
+    ).rejects.toMatchObject({
+      code: 'provider_api_incompatible',
+      cause: undefined,
+      providerCode: 'sdk_peer_shape',
     });
   });
 

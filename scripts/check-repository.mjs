@@ -3,9 +3,12 @@ import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   findForbiddenTextViolations,
+  findProviderRuntimeLockfileViolations,
   findWorkspaceDirectories,
   listRepositoryFiles,
   validateReleaseAutomation,
+  validateProviderRuntimeBoundary,
+  validateProviderRuntimePolicy,
   validateToolchain,
   validateWorkspacePackageManifest,
 } from './lib/repository-policy.mjs';
@@ -60,6 +63,7 @@ const requiredPaths = [
   'scripts/check-pr-metadata.mjs',
   'scripts/doc-budgets.json',
   'scripts/lib/repository-policy.mjs',
+  'scripts/provider-runtime-policy.json',
   'scripts/lib/workflow-actions.mjs',
   'scripts/test-policy-checks.mjs',
   'tsconfig.base.json',
@@ -69,38 +73,70 @@ const requiredPaths = [
 ];
 
 const failures = [];
+const missingRequiredPaths = new Set();
 
 for (const path of requiredPaths) {
   if (!existsSync(resolve(repositoryRoot, path))) {
     failures.push(`Missing required repository file: ${path}`);
+    missingRequiredPaths.add(path);
   }
 }
 
+const jsonDocuments = new Map();
 for (const path of [
   'package.json',
   'release-please-config.json',
   '.release-please-manifest.json',
   'scripts/doc-budgets.json',
+  'scripts/provider-runtime-policy.json',
 ]) {
+  const absolutePath = resolve(repositoryRoot, path);
+  if (!existsSync(absolutePath)) {
+    if (!missingRequiredPaths.has(path)) {
+      failures.push(`Missing required repository file: ${path}`);
+    }
+    continue;
+  }
   try {
-    JSON.parse(readFileSync(resolve(repositoryRoot, path), 'utf8'));
+    jsonDocuments.set(path, JSON.parse(readFileSync(absolutePath, 'utf8')));
   } catch (error) {
     failures.push(`Invalid JSON in ${path}: ${error.message}`);
   }
 }
 
-const packageJson = JSON.parse(
-  readFileSync(resolve(repositoryRoot, 'package.json'), 'utf8'),
+exitWithFailures();
+
+const packageJson = jsonDocuments.get('package.json');
+const releasePleaseConfig = jsonDocuments.get('release-please-config.json');
+const providerRuntimePolicy = jsonDocuments.get(
+  'scripts/provider-runtime-policy.json',
 );
-const releasePleaseConfig = JSON.parse(
-  readFileSync(resolve(repositoryRoot, 'release-please-config.json'), 'utf8'),
+const providerRuntimePolicyFailures = validateProviderRuntimePolicy(
+  providerRuntimePolicy,
 );
+failures.push(...providerRuntimePolicyFailures);
 failures.push(
   ...validateToolchain({
     nodeVersion: readFileSync(resolve(repositoryRoot, '.node-version'), 'utf8'),
     packageJson,
   }),
 );
+if (providerRuntimePolicyFailures.length === 0) {
+  failures.push(
+    ...validateProviderRuntimeBoundary({
+      manifestPath: 'package.json',
+      packageJson,
+      policy: providerRuntimePolicy,
+    }),
+  );
+  failures.push(
+    ...findProviderRuntimeLockfileViolations({
+      lockfile: readFileSync(resolve(repositoryRoot, 'pnpm-lock.yaml'), 'utf8'),
+      lockfilePath: 'pnpm-lock.yaml',
+      policy: providerRuntimePolicy,
+    }),
+  );
+}
 failures.push(
   ...validateReleaseAutomation({
     prettierIgnore: readFileSync(
@@ -171,6 +207,15 @@ for (const directory of findWorkspaceDirectories(repositoryFiles)) {
         packageJson: workspacePackageJson,
       }),
     );
+    if (providerRuntimePolicyFailures.length === 0) {
+      failures.push(
+        ...validateProviderRuntimeBoundary({
+          manifestPath,
+          packageJson: workspacePackageJson,
+          policy: providerRuntimePolicy,
+        }),
+      );
+    }
   } catch (error) {
     failures.push(`Invalid JSON in ${manifestPath}: ${error.message}`);
   }
@@ -190,11 +235,15 @@ for (const file of workflowFiles) {
   );
 }
 
-if (failures.length > 0) {
-  console.error(failures.join('\n'));
-  process.exit(1);
-}
+exitWithFailures();
 
 console.log(
   'Repository structure, documentation, and workflow pins are consistent.',
 );
+
+function exitWithFailures() {
+  if (failures.length > 0) {
+    console.error(failures.join('\n'));
+    process.exit(1);
+  }
+}

@@ -44,7 +44,7 @@ import {
 import {
   createClaudeNativeClient,
   isClaudeSdkBinding,
-  officialClaudeSdkBinding,
+  loadOfficialClaudeSdkBinding,
   parseClaudeSdkSessionInfo,
   type ClaudeNativeClient,
   type ClaudeSdkBinding,
@@ -111,18 +111,17 @@ export function createClaudeProviderFactory(
 
   return {
     descriptor: () => cloneDescriptor(descriptor),
-    connect: (profile) =>
-      Promise.resolve().then(() => {
-        validateProfile(profile);
-        const binding = resolveBinding(profile, options.binding);
-        return new ClaudeClient(
-          profile,
-          binding,
-          validateProfileOptions(profile.providerOptions),
-          createUuid,
-          now,
-        );
-      }),
+    connect: async (profile) => {
+      validateProfile(profile);
+      const binding = await resolveBinding(profile, options.binding);
+      return new ClaudeClient(
+        profile,
+        binding,
+        validateProfileOptions(profile.providerOptions),
+        createUuid,
+        now,
+      );
+    },
   };
 }
 
@@ -1407,15 +1406,17 @@ function validateProfile(profile: HarnessProfile): void {
   }
 }
 
-function resolveBinding(
+async function resolveBinding(
   profile: HarnessProfile,
   injected: ClaudeSdkBinding | undefined,
-): ClaudeSdkBinding {
-  if (profile.connection.kind !== 'sdk') return officialClaudeSdkBinding;
+): Promise<ClaudeSdkBinding> {
+  if (profile.connection.kind !== 'sdk') {
+    return loadOfficialClaudeSdkBinding();
+  }
   if (profile.connection.ownership === 'host') {
     return profile.connection.factory as ClaudeSdkBinding;
   }
-  return injected ?? officialClaudeSdkBinding;
+  return injected ?? loadOfficialClaudeSdkBinding();
 }
 
 function validateProfileOptions(

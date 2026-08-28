@@ -1,0 +1,8 @@
+{
+  "hostOwnedRuntimePackages": [
+    {
+      "packageName": "@anthropic-ai/claude-agent-sdk",
+      "lockfileFamilyPrefix": "@anthropic-ai/claude-agent-sdk"
+    }
+  ]
+}

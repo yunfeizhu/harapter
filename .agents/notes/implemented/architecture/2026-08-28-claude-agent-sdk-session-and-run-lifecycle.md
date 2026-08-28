@@ -20,9 +20,11 @@ already exists.
 
 [`@harapter/adapter-claude`](../../../../providers/claude/README.md) uses the
 official Agent SDK `query()` interface in streaming-input mode. The SDK remains
-a host-installed peer dependency governed by Anthropic's terms. Adapter-owned
-connections use the installed official functions; host-owned connections supply
-the narrow `ClaudeSdkBinding`. Core has no SDK import or Claude-specific branch.
+a host-installed optional peer governed by Anthropic's terms. The default
+Harapter workspace install does not resolve the SDK or its platform-specific
+Claude Code runtime. Adapter-owned connections dynamically load and validate the
+host peer; host-owned connections supply the narrow `ClaudeSdkBinding`. Core has
+no SDK import or Claude-specific branch.
 
 Session creation allocates an SDK-compatible UUID and binds the workspace,
 model, system context, allowed tools, permission mode, Provider, Profile, and
@@ -77,12 +79,15 @@ the managed runtime supplies a valid initialization identity. Source-level
 Provider status remains experimental until the documented API-key live test is
 recorded for the declared interface.
 
-The current SDK and its platform artifacts use exact-version minimum-release-age
-exceptions so the reviewed upstream baseline can be installed while retaining
-the repository policy for every other version. Those entries are removed once
-that exact release satisfies the repository waiting period.
-
 ## Alternatives considered
+
+### Install the SDK as a workspace development dependency
+
+The upstream package resolves a platform-specific Claude Code executable. A
+workspace dependency would make the default Harapter install own that runtime's
+download, native supply-chain surface, disk footprint, and terms. The host-owned
+optional peer keeps official runtime selection outside the repository while
+fixture and conformance tests exercise the narrow binding.
 
 ### Use the single-message Query form
 
@@ -132,4 +137,11 @@ Provider content from bypassing host data policy.
   own authorization, storage, and redaction policy.
 - Support evidence consists of public SDK types and documentation, synthetic
   fixtures, Provider negatives, shared conformance, and a credential-gated live
-  runtime test. A skipped live test does not establish supported status.
+  runtime test supplied with a host SDK module. A skipped live test does not
+  establish supported status.
+- Default type checking deliberately does not install the official SDK. Runtime
+  module-shape validation and explicit live compatibility evidence detect an
+  incompatible host peer.
+- Repository policy rejects host-owned runtime packages from workspace install
+  dependencies and the shared lockfile. Workspace peer auto-installation is
+  disabled, so every ordinary development peer must be declared explicitly.

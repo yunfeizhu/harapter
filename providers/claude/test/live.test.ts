@@ -8,10 +8,13 @@ import {
   CLAUDE_PROVIDER_ID,
   createClaudeProviderFactory,
 } from '../src/index.js';
+import { loadOfficialClaudeSdkBinding } from '../src/sdk.js';
 
+const sdkModuleUrl = process.env['HARAPTER_CLAUDE_SDK_MODULE_URL'];
 const liveEnabled =
   process.env['HARAPTER_CLAUDE_LIVE'] === '1' &&
-  process.env['ANTHROPIC_API_KEY'] !== undefined;
+  process.env['ANTHROPIC_API_KEY'] !== undefined &&
+  sdkModuleUrl !== undefined;
 const temporaryDirectories: string[] = [];
 
 afterEach(async () => {
@@ -24,9 +27,15 @@ afterEach(async () => {
 
 describe.runIf(liveEnabled)('Claude Agent SDK live runtime', () => {
   it('completes a synthetic no-tool turn with API-key authentication', async () => {
+    if (sdkModuleUrl === undefined) {
+      throw new Error('The host SDK module URL is required for the live test.');
+    }
+    const binding = await loadOfficialClaudeSdkBinding(
+      () => import(sdkModuleUrl),
+    );
     const workspace = await mkdtemp(join(tmpdir(), 'harapter-claude-live-'));
     temporaryDirectories.push(workspace);
-    const client = await createClaudeProviderFactory().connect({
+    const client = await createClaudeProviderFactory({ binding }).connect({
       profileId: profileId('claude-live-local'),
       providerId: CLAUDE_PROVIDER_ID,
       displayName: 'Local Claude Agent SDK',

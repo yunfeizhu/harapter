@@ -13,8 +13,11 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   findForbiddenTextViolations,
+  findProviderRuntimeLockfileViolations,
   findWorkspaceDirectories,
   listRepositoryFiles,
+  validateProviderRuntimeBoundary,
+  validateProviderRuntimePolicy,
   validateReleaseAutomation,
   validateToolchain,
   validateWorkspacePackageManifest,
@@ -244,9 +247,167 @@ assert.deepEqual(
   ['providers/dsh/package.json must define a non-empty build script.'],
 );
 
+const providerRuntimePolicy = {
+  hostOwnedRuntimePackages: [
+    {
+      packageName: '@anthropic-ai/claude-agent-sdk',
+      lockfileFamilyPrefix: '@anthropic-ai/claude-agent-sdk',
+    },
+  ],
+};
+assert.deepEqual(validateProviderRuntimePolicy(providerRuntimePolicy), []);
+assert.deepEqual(
+  validateProviderRuntimePolicy({
+    hostOwnedRuntimePackages: [
+      {
+        packageName: '',
+        lockfileFamilyPrefix: '',
+        unexpected: true,
+      },
+    ],
+    unexpected: true,
+  }),
+  [
+    'scripts/provider-runtime-policy.json contains unknown key unexpected.',
+    'scripts/provider-runtime-policy.json hostOwnedRuntimePackages[0] contains unknown key unexpected.',
+    'scripts/provider-runtime-policy.json hostOwnedRuntimePackages[0].packageName must be a non-empty string.',
+    'scripts/provider-runtime-policy.json hostOwnedRuntimePackages[0].lockfileFamilyPrefix must be a non-empty string.',
+  ],
+);
+assert.deepEqual(
+  validateProviderRuntimeBoundary({
+    manifestPath: 'providers/claude/package.json',
+    packageJson: {
+      peerDependencies: {
+        '@anthropic-ai/claude-agent-sdk': '>=0.3.250 <0.4.0',
+      },
+      peerDependenciesMeta: {
+        '@anthropic-ai/claude-agent-sdk': { optional: true },
+      },
+    },
+    policy: providerRuntimePolicy,
+  }),
+  [],
+);
+assert.deepEqual(
+  validateProviderRuntimeBoundary({
+    manifestPath: 'providers/claude/package.json',
+    packageJson: {
+      devDependencies: { '@anthropic-ai/claude-agent-sdk': '0.3.250' },
+      peerDependencies: {
+        '@anthropic-ai/claude-agent-sdk': '>=0.3.250 <0.4.0',
+      },
+    },
+    policy: providerRuntimePolicy,
+  }),
+  [
+    'providers/claude/package.json must not install host-owned runtime package @anthropic-ai/claude-agent-sdk through devDependencies.',
+    'providers/claude/package.json must mark host-owned runtime peer @anthropic-ai/claude-agent-sdk as optional.',
+  ],
+);
+assert.deepEqual(
+  findProviderRuntimeLockfileViolations({
+    lockfile: `packages:\n\n  '@anthropic-ai/claude-agent-sdk@0.3.250':\n    resolution: {}\n`,
+    lockfilePath: 'pnpm-lock.yaml',
+    policy: providerRuntimePolicy,
+  }),
+  [
+    'pnpm-lock.yaml must not resolve host-owned runtime family @anthropic-ai/claude-agent-sdk.',
+  ],
+);
+assert.deepEqual(
+  findProviderRuntimeLockfileViolations({
+    lockfile: `packages:\n\n  "@anthropic-ai/claude-agent-sdk@0.3.250":\n    resolution: {}\n`,
+    lockfilePath: 'pnpm-lock.yaml',
+    policy: providerRuntimePolicy,
+  }),
+  [
+    'pnpm-lock.yaml must not resolve host-owned runtime family @anthropic-ai/claude-agent-sdk.',
+  ],
+);
+assert.deepEqual(
+  findProviderRuntimeLockfileViolations({
+    lockfile: `importers:\n\n  providers/claude:\n    devDependencies:\n      claude-runtime:\n        specifier: npm:@anthropic-ai/claude-agent-sdk@0.3.250\n        version: npm:@anthropic-ai/claude-agent-sdk@0.3.250\n`,
+    lockfilePath: 'pnpm-lock.yaml',
+    policy: providerRuntimePolicy,
+  }),
+  [
+    'pnpm-lock.yaml must not resolve host-owned runtime family @anthropic-ai/claude-agent-sdk.',
+  ],
+);
+assert.deepEqual(
+  findProviderRuntimeLockfileViolations({
+    lockfile: 'packages:\n\n  eslint@10.9.1:\n    resolution: {}\n',
+    lockfilePath: 'pnpm-lock.yaml',
+    policy: providerRuntimePolicy,
+  }),
+  [],
+);
+const malformedLockfileFailures = findProviderRuntimeLockfileViolations({
+  lockfile: 'packages:\n  secret-value: [\n',
+  lockfilePath: 'pnpm-lock.yaml',
+  policy: providerRuntimePolicy,
+});
+assert.equal(malformedLockfileFailures.length, 1);
+assert.match(malformedLockfileFailures[0], /at line 3, column 1/u);
+assert.doesNotMatch(malformedLockfileFailures[0], /secret-value/u);
+
 const repositoryFiles = listRepositoryFiles(repositoryRoot);
 assert(repositoryFiles.includes('.github/dependabot.yml'));
 assert(repositoryFiles.includes('scripts/check-repository.mjs'));
+
+const repositoryCheckerFixtureRoot = mkdtempSync(
+  join(repositoryRoot, '.harapter-repository-checks-'),
+);
+try {
+  mkdirSync(resolve(repositoryCheckerFixtureRoot, 'scripts/lib'), {
+    recursive: true,
+  });
+  for (const path of [
+    'scripts/check-repository.mjs',
+    'scripts/lib/repository-policy.mjs',
+    'scripts/lib/workflow-actions.mjs',
+  ]) {
+    copyFileSync(
+      resolve(repositoryRoot, path),
+      resolve(repositoryCheckerFixtureRoot, path),
+    );
+  }
+
+  const fixtureChecker = resolve(
+    repositoryCheckerFixtureRoot,
+    'scripts/check-repository.mjs',
+  );
+  requireFailure(
+    spawnSync(process.execPath, [fixtureChecker], {
+      cwd: repositoryCheckerFixtureRoot,
+      encoding: 'utf8',
+      env: process.env,
+    }),
+    'Missing required repository file: scripts/provider-runtime-policy.json',
+    'Missing provider runtime policy case',
+  );
+
+  writeFileSync(
+    resolve(
+      repositoryCheckerFixtureRoot,
+      'scripts/provider-runtime-policy.json',
+    ),
+    '{"hostOwnedRuntimePackages": [',
+    'utf8',
+  );
+  requireFailure(
+    spawnSync(process.execPath, [fixtureChecker], {
+      cwd: repositoryCheckerFixtureRoot,
+      encoding: 'utf8',
+      env: process.env,
+    }),
+    'Invalid JSON in scripts/provider-runtime-policy.json:',
+    'Malformed provider runtime policy case',
+  );
+} finally {
+  rmSync(repositoryCheckerFixtureRoot, { recursive: true, force: true });
+}
 
 write(
   'src/provider.ts',
