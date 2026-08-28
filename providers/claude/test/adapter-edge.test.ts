@@ -709,7 +709,7 @@ describe('Claude Agent SDK adapter edge behavior', () => {
     }
   });
 
-  it('accepts a valid host-owned binding and can inspect the default native boundary', async () => {
+  it('accepts valid host-owned and explicitly injected bindings', async () => {
     const hostBinding = new FixtureClaudeSdk();
     const hostProfile: HarnessProfile = {
       ...createTestProfile('host-owned'),
@@ -723,13 +723,14 @@ describe('Claude Agent SDK adapter edge behavior', () => {
     clients.push(hostClient);
     expect(hostClient.native()).toMatchObject({ binding: hostBinding });
 
-    const defaultClient = await createClaudeProviderFactory().connect(
-      createTestProfile('default-binding'),
-    );
-    clients.push(defaultClient);
-    expect(
-      typeof defaultClient.native<ClaudeNativeClient>()?.official?.query,
-    ).toBe('function');
+    const adapterBinding = new FixtureClaudeSdk();
+    const adapterClient = await createClaudeProviderFactory({
+      binding: adapterBinding,
+    }).connect(createTestProfile('adapter-binding'));
+    clients.push(adapterClient);
+    expect(adapterClient.native<ClaudeNativeClient>()).toMatchObject({
+      binding: adapterBinding,
+    });
   });
 });
 

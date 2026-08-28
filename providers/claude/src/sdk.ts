@@ -1,9 +1,11 @@
-import {
-  getSessionInfo as officialGetSessionInfo,
-  query as officialQuery,
-  type Options as OfficialOptions,
-  type SDKUserMessage,
-} from '@anthropic-ai/claude-agent-sdk';
+import { HarnessError } from '@harapter/core';
+import { CLAUDE_PROVIDER_ID } from './protocol.js';
+
+const officialSdkSpecifier = '@anthropic-ai/claude-agent-sdk';
+const officialBindings = new WeakMap<
+  ClaudeSdkBinding,
+  Readonly<Pick<ClaudeSdkBinding, 'getSessionInfo' | 'query'>>
+>();
 
 /** Minimal permission result understood by the official SDK callback. */
 export type ClaudeSdkPermissionResult =
@@ -80,41 +82,110 @@ export interface ClaudeSdkBinding {
 export interface ClaudeNativeClient {
   readonly runtimeIdentity: string;
   readonly binding: ClaudeSdkBinding;
-  readonly official?: {
-    readonly getSessionInfo: typeof officialGetSessionInfo;
-    readonly query: typeof officialQuery;
-  };
+  readonly official?: Readonly<
+    Pick<ClaudeSdkBinding, 'getSessionInfo' | 'query'>
+  >;
 }
 
-/** Official installed SDK boundary used when the host does not inject one. */
-export const officialClaudeSdkBinding: ClaudeSdkBinding = {
-  sdkVersion: '0.3.x',
-  getSessionInfo: async (sessionId, options) =>
-    officialGetSessionInfo(sessionId, options),
-  query: (parameters) =>
-    officialQuery({
-      prompt: parameters.prompt as AsyncIterable<SDKUserMessage>,
-      options: parameters.options as unknown as OfficialOptions,
-    }),
-};
+type ClaudeSdkModuleImporter = (specifier: string) => Promise<unknown>;
+
+/** Dynamically load the optional host-owned peer without bundling it. */
+export async function loadOfficialClaudeSdkBinding(
+  importModule: ClaudeSdkModuleImporter = importProviderModule,
+): Promise<ClaudeSdkBinding> {
+  let imported: unknown;
+  try {
+    imported = await importModule(officialSdkSpecifier);
+  } catch {
+    throw sdkBoundaryError(
+      'runtime_not_found',
+      'The host-installed Claude Agent SDK peer could not be loaded.',
+      'sdk_peer_missing',
+    );
+  }
+  if (!isOfficialSdkModule(imported)) {
+    throw sdkBoundaryError(
+      'provider_api_incompatible',
+      'The host-installed Claude Agent SDK does not expose the required public functions.',
+      'sdk_peer_shape',
+    );
+  }
+
+  const official = {
+    getSessionInfo: (sessionId: string, options?: { readonly dir?: string }) =>
+      Promise.resolve(imported.getSessionInfo(sessionId, options)),
+    query: (parameters: ClaudeSdkQueryParameters) => {
+      const query = imported.query(parameters);
+      if (!isClaudeSdkQuery(query)) {
+        throw sdkBoundaryError(
+          'provider_api_incompatible',
+          'The host-installed Claude Agent SDK returned an incompatible Query.',
+          'sdk_query_shape',
+        );
+      }
+      return query;
+    },
+  } satisfies Pick<ClaudeSdkBinding, 'getSessionInfo' | 'query'>;
+  const binding: ClaudeSdkBinding = {
+    sdkVersion: 'host-installed',
+    ...official,
+  };
+  officialBindings.set(binding, official);
+  return binding;
+}
 
 /** Construct the explicit native escape hatch for the installed SDK. */
 export function createClaudeNativeClient(
   runtimeIdentity: string,
   binding: ClaudeSdkBinding,
 ): ClaudeNativeClient {
+  const official = officialBindings.get(binding);
   return {
     runtimeIdentity,
     binding,
-    ...(binding === officialClaudeSdkBinding
-      ? {
-          official: {
-            getSessionInfo: officialGetSessionInfo,
-            query: officialQuery,
-          },
-        }
-      : {}),
+    ...(official === undefined ? {} : { official }),
   };
+}
+
+async function importProviderModule(specifier: string): Promise<unknown> {
+  return import(specifier);
+}
+
+function isOfficialSdkModule(value: unknown): value is {
+  readonly getSessionInfo: (
+    sessionId: string,
+    options?: { readonly dir?: string },
+  ) => unknown;
+  readonly query: (parameters: ClaudeSdkQueryParameters) => unknown;
+} {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Readonly<Record<string, unknown>>;
+  return (
+    typeof candidate['getSessionInfo'] === 'function' &&
+    typeof candidate['query'] === 'function'
+  );
+}
+
+function isClaudeSdkQuery(value: unknown): value is ClaudeSdkQuery {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Partial<ClaudeSdkQuery>;
+  return (
+    typeof candidate[Symbol.asyncIterator] === 'function' &&
+    typeof candidate.close === 'function' &&
+    typeof candidate.interrupt === 'function'
+  );
+}
+
+function sdkBoundaryError(
+  code: 'provider_api_incompatible' | 'runtime_not_found',
+  message: string,
+  providerCode: string,
+): HarnessError {
+  return new HarnessError(code, message, {
+    retryable: false,
+    providerId: CLAUDE_PROVIDER_ID,
+    providerCode,
+  });
 }
 
 /** Narrow an unknown host-supplied SDK binding. */

@@ -8,7 +8,9 @@ versioned `0.0.0` during pre-alpha.
 
 ## Runtime, authentication, and compatibility
 
-The host installs the Claude Agent SDK and owns authentication, account policy,
+The Claude Agent SDK is a host-installed optional peer. The default Harapter
+workspace install does not resolve the SDK or its platform-specific Claude Code
+runtime. The host owns runtime installation, authentication, account policy,
 workspace access, and every credential source. Harapter does not read, retain,
 or return API keys, tokens, environment values, account identifiers, or SDK
 configuration files. Hosts embedding this Adapter for other users must provide
@@ -32,10 +34,10 @@ Commercial Terms. Harapter does not bundle or publish them; see the
 - `createClaudeProviderFactory()` creates the independently registrable Provider
   factory.
 - `ClaudeSdkBinding` is the narrow injectable boundary used for a host-owned SDK
-  connection and deterministic tests.
+  connection, isolated live verification, and deterministic tests.
 - `ClaudeNativeClient` exposes the Provider-bound SDK binding, non-sensitive
-  runtime identity, and the typed official functions when the Adapter owns the
-  installed SDK boundary.
+  runtime identity, and the structurally typed official functions when the
+  Adapter dynamically loads the optional peer.
 
 ```ts
 import { HarnessRegistry, profileId } from '@harapter/core';
@@ -75,8 +77,10 @@ await client.close();
 
 The Adapter accepts only `sdk` connections.
 
-- `ownership: "adapter"` uses the installed official peer dependency. The host
-  still owns authentication and the surrounding process environment.
+- `ownership: "adapter"` dynamically imports the optional peer supplied by the
+  host, validates its public `query()` and `getSessionInfo()` functions, and
+  fails with `runtime_not_found` when it is unavailable. Harapter does not
+  install the peer or its managed runtime.
 - `ownership: "host"` requires `connection.factory` to be a `ClaudeSdkBinding`.
   Harapter never closes or mutates an unrelated host SDK object; each `Query`
   created for a Run still has deterministic local cleanup.
@@ -178,11 +182,16 @@ Evidence for this Adapter includes:
   Tool access, stores no Provider traffic, and emits no credential diagnostics.
 
 Run the live test only in a host environment that supplies the documented API
-key:
+key and a file URL for its installed SDK module:
 
 ```bash
-HARAPTER_CLAUDE_LIVE=1 pnpm vitest run providers/claude/test/live.test.ts
+HARAPTER_CLAUDE_LIVE=1 \
+HARAPTER_CLAUDE_SDK_MODULE_URL=file:///host/sdk/sdk.mjs \
+pnpm vitest run providers/claude/test/live.test.ts
 ```
+
+The default workspace test command does not install that module. A skipped live
+test is not compatibility evidence.
 
 This source baseline remains experimental until the opt-in live test is recorded
 against the declared interface. Portable file/image input, Session fork, native

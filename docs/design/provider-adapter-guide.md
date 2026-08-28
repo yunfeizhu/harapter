@@ -103,6 +103,8 @@ ID，而不是冒充底层基础框架。
 ### SDK
 
 - 明确 SDK Client 由宿主还是 Adapter 创建；
+- 会携带 Provider
+  Runtime 的 SDK 必须是宿主提供的可选 Peer，不得进入默认 Workspace 依赖或锁文件；Adapter 使用动态加载或显式 Binding；
 - 不读取未声明的全局配置和环境变量；
 - 关闭时不释放宿主拥有的 SDK Client；
 - 官方 SDK 内部启动子进程时，在 Descriptor 中说明真实运行形态。
