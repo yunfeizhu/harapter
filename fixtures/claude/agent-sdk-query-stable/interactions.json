@@ -1,0 +1,39 @@
+{
+  "approval": {
+    "toolName": "SyntheticTool",
+    "input": {
+      "path": "/synthetic/private/file",
+      "secret": "synthetic-sensitive-value"
+    },
+    "options": {
+      "requestId": "synthetic-approval-request",
+      "toolUseID": "synthetic-tool-use"
+    }
+  },
+  "userInput": {
+    "toolName": "AskUserQuestion",
+    "input": {
+      "questions": [
+        {
+          "question": "Choose a synthetic option.",
+          "header": "Synthetic choice",
+          "multiSelect": false,
+          "options": [
+            {
+              "label": "Synthetic A",
+              "description": "Use the first synthetic option."
+            },
+            {
+              "label": "Synthetic B",
+              "description": "Use the second synthetic option."
+            }
+          ]
+        }
+      ]
+    },
+    "options": {
+      "requestId": "synthetic-user-input-request",
+      "toolUseID": "synthetic-question-tool-use"
+    }
+  }
+}
