@@ -1,0 +1,6 @@
+{"type":"system","subtype":"init","session_id":"00000000-0000-4000-8000-000000000001","claude_code_version":"2.1.250-synthetic","cwd":"/synthetic/workspace","model":"claude-synthetic","permissionMode":"default","capabilities":["interrupt_receipt_v1"]}
+{"type":"stream_event","session_id":"00000000-0000-4000-8000-000000000001","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Synthetic Claude reply."}}}
+{"type":"system","subtype":"future_synthetic","session_id":"00000000-0000-4000-8000-000000000001","secret":"synthetic-sensitive-value","path":"/synthetic/private/file"}
+{"type":"assistant","session_id":"00000000-0000-4000-8000-000000000001","message":{"content":[{"type":"tool_use","id":"synthetic-tool-1","name":"SyntheticTool","input":{"secret":"synthetic-sensitive-value"}}]}}
+{"type":"user","session_id":"00000000-0000-4000-8000-000000000001","message":{"content":[{"type":"tool_result","tool_use_id":"synthetic-tool-1","is_error":false,"content":"synthetic-sensitive-value"}]}}
+{"type":"result","subtype":"success","is_error":false,"session_id":"00000000-0000-4000-8000-000000000001","result":"Synthetic Claude reply.","terminal_reason":"completed","usage":{"input_tokens":11,"output_tokens":7},"uuid":"00000000-0000-4000-8000-000000000002"}
