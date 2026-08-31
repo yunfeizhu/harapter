@@ -14,3 +14,7 @@ provider traffic.
   records a published stable OpenAPI fingerprint plus synthetic completed,
   cancelled, permission, and unknown-event payloads. Provider tests load these
   files without treating them as live traffic.
+- [`dsh/sdk-jsonrpc-current`](./dsh/sdk-jsonrpc-current/manifest.json) records
+  the inspected current SDK protocol revision plus synthetic completed, failed,
+  missing-terminal, and unknown-terminal JSONL traces. The recorded package
+  version identifies fixture provenance; it is not a runtime version pin.

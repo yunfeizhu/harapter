@@ -89,6 +89,19 @@ importers:
         specifier: workspace:*
         version: link:../../packages/conformance
 
+  providers/dsh:
+    dependencies:
+      '@harapter/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@harapter/transport-jsonrpc-stdio':
+        specifier: workspace:*
+        version: link:../../packages/transport-jsonrpc-stdio
+    devDependencies:
+      '@harapter/conformance':
+        specifier: workspace:*
+        version: link:../../packages/conformance
+
   providers/opencode:
     dependencies:
       '@harapter/core':

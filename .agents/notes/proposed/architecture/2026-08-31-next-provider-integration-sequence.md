@@ -33,21 +33,10 @@ under the existing
 Provider SDK and runtime packages do not enter the default Workspace
 dependencies.
 
-The Adapter for DeepSeek Harness treats process termination as connection abort.
-It does not claim native mid-run cancellation while the official SDK protocol
-does not expose a verified prompt-cancel operation. The initial connection
-permits at most one active Harapter Run and accepts only Session activity that
-the Adapter owns exclusively. A host-supplied Cordis composition with competing
-prompts, steering, or injected queued work is outside the compatible profile
-unless it can prove that isolation.
-
-The DSH prompt response is an enqueue receipt, not a prompt result. Whole-agent
-idle and the last Assistant Message cannot establish Harapter success. The
-Adapter requires exactly one structurally valid `turn/end.data.reason.kind`
-inside the owned activity interval and maps only a tested, explicit success
-reason to `run.completed`. A missing, duplicate, unknown, or contradictory
-terminal fails closed. Process loss settles every active Run on that connection
-as `connection.aborted`.
+The first module is implemented under the
+[DeepSeek Harness SDK protocol boundary](../../implemented/compatibility/2026-08-31-deepseek-harness-sdk-protocol.md).
+The remaining sequence does not weaken its process ownership, exclusive Run
+interval, terminal authority, or compatibility evidence requirements.
 
 The Hermes Agent Adapter uses runtime capability discovery and the documented
 Session, Run, event-stream, stop, and approval endpoints. It does not infer
