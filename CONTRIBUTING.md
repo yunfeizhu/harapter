@@ -41,8 +41,10 @@ root and nearest subtree [Agent Guides](./AGENTS.md).
 
 - Create one focused, short-lived task branch from the latest `main`; do not use
   a long-lived `develop` branch.
-- Use the repository branch naming scheme and a Conventional Commit pull request
-  title.
+- Choose the Conventional Commit pull request type before creating the branch.
+  Use `<type>/<description>` or `<type>/<issue-number>-<description>`, and keep
+  the branch type identical to the pull request title type. Tool-specific
+  prefixes such as `codex/` are not valid task branch types.
 - Add tests before executable behavior and update the owning documentation.
 - Add or update an [Agent Note](./.agents/notes/README.md) for every non-trivial
   durable decision.

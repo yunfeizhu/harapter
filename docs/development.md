@@ -36,7 +36,9 @@ pnpm build
 ## One task, one branch
 
 Harapter uses trunk-based development. `main` remains releasable; there is no
-long-lived `develop` branch. Start every task from the latest `main`:
+long-lived `develop` branch. Choose the intended pull request Conventional
+Commit type before creating the branch, then start every task from the latest
+`main`:
 
 ```bash
 git status --short --branch
@@ -46,9 +48,12 @@ git switch -c feat/12-dsh-client
 ```
 
 When an issue exists, use `<type>/<issue-number>-<short-kebab-description>`.
-Trivial documentation or maintenance work may omit the issue number. Allowed
-types are `feat`, `fix`, `docs`, `refactor`, `test`, `perf`, `build`, `ci`, and
-`chore`.
+Trivial documentation or maintenance work may omit the issue number. The first
+branch segment must equal the pull request title type. This repository rule
+overrides tools or agents that normally prepend their own namespace: a
+`docs(design):` pull request uses `docs/provider-roadmap`, not
+`codex/docs-provider-roadmap`. Allowed types are `feat`, `fix`, `docs`,
+`refactor`, `test`, `perf`, `build`, `ci`, `chore`, and `revert`.
 
 Examples:
 
@@ -58,6 +63,10 @@ fix/18-session-cancel
 docs/provider-acceptance
 ci/pr-metadata
 ```
+
+Before committing or opening the pull request, compare the current branch with
+the planned title. `scripts/check-pr-metadata.mjs` rejects an unknown branch
+prefix or a branch type that differs from the title type.
 
 Do not mix unrelated changes into the branch. If the worktree contains user
 changes that cannot be isolated safely, stop rather than stashing, resetting, or
