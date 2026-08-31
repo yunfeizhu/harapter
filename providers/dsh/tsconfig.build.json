@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "dist",
+    "paths": {
+      "@harapter/core": ["../../packages/core/dist/index.d.ts"],
+      "@harapter/transport-jsonrpc-stdio": [
+        "../../packages/transport-jsonrpc-stdio/dist/index.d.ts"
+      ]
+    },
+    "rootDir": "src",
+    "tsBuildInfoFile": "dist/tsconfig.build.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"]
+}

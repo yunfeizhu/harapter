@@ -1,0 +1,10 @@
+{"method":"session.event","params":{"sessionId":"session-fixture","event":{"type":"agent/inbox/spliced","seq":0,"time":1,"data":{"target":"next-turn","start":0,"inserted":[{"id":"message-fixture","role":"user","content":[{"type":"text","text":"synthetic input"}],"source":{"kind":"user"}}]}}}}
+{"method":"session.status","params":{"sessionId":"session-fixture","status":"running"}}
+{"method":"session.event","params":{"sessionId":"session-fixture","event":{"type":"turn/start","seq":1,"time":2,"data":{"turn":1}}}}
+{"method":"session.event","params":{"sessionId":"session-fixture","event":{"type":"assistant/chunk","seq":2,"time":3,"data":{"turn":1,"step":1,"chunk":{"type":"reasoning-delta","index":0,"text":"synthetic reasoning"}}}}}
+{"method":"session.event","params":{"sessionId":"session-fixture","event":{"type":"assistant/chunk","seq":3,"time":4,"data":{"turn":1,"step":1,"chunk":{"type":"text-delta","index":0,"text":"synthetic answer"}}}}}
+{"method":"session.event","params":{"sessionId":"session-fixture","event":{"type":"assistant/chunk","seq":4,"time":5,"data":{"turn":1,"step":1,"chunk":{"type":"usage","usage":{"inputTokens":12,"outputTokens":4,"totalTokens":16}}}}}}
+{"method":"session.event","params":{"sessionId":"session-fixture","event":{"type":"future/ignorable","seq":5,"time":6,"ignorable":true,"data":{"secret":"synthetic secret","path":"/synthetic/private/path"}}}}
+{"method":"session.event","params":{"sessionId":"session-fixture","event":{"type":"assistant/message","seq":6,"time":7,"data":{"turn":1,"step":1,"message":{"id":"assistant-fixture","role":"assistant","content":[{"type":"text","text":"synthetic answer"}],"source":{"kind":"model","provider":"synthetic-provider","model":"synthetic-model"}},"usage":{"inputTokens":12,"outputTokens":4,"totalTokens":16}}}}}
+{"method":"session.event","params":{"sessionId":"session-fixture","event":{"type":"turn/end","seq":7,"time":8,"data":{"turn":1,"reason":{"kind":"completed"}}}}}
+{"method":"session.status","params":{"sessionId":"session-fixture","status":"idle"}}

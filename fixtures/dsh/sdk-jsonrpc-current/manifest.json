@@ -1,0 +1,13 @@
+{
+  "fixtureFormatVersion": 1,
+  "providerId": "deepseek.harness",
+  "interface": "DeepSeek Harness SDK stdio JSON-RPC protocol",
+  "upstreamEvidence": {
+    "repository": "https://github.com/deepseek-ai/deepseek-harness",
+    "commit": "0a53fb55bea101816fa226bb964ae2bed71c343b",
+    "protocolPackage": "@deepseek-ai/dsh-sdk-protocol",
+    "protocolPackageVersion": "0.1.2-alpha.2"
+  },
+  "captureMethod": "The official current protocol types were inspected at the recorded commit; JSONL traces are deterministic synthetic examples authored from those types.",
+  "redactionMethod": "All identifiers, content, paths, failures, and usage values are synthetic; no Provider traffic, credentials, environment values, or host paths are stored."
+}
