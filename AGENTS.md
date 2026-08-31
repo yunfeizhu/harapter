@@ -55,6 +55,10 @@ nearest subtree `AGENTS.md` before changing files in that subtree.
   changes and stop if safe isolation is not possible.
 - Prefer `rg` and `rg --files` for discovery. Read the owning design, note,
   package README, and tests before changing a public contract.
+- Choose the intended pull request Conventional Commit type before creating a
+  task branch. A non-bot branch starts with that same type, such as `docs/` for
+  a `docs:` pull request. This repository rule overrides tool or agent defaults:
+  do not prepend `codex/` or another owner namespace.
 - Keep one logical task per short-lived branch. Do not work directly on `main`
   or create a long-lived `develop` branch.
 - Use test-driven changes for executable behavior. A regression fix begins with

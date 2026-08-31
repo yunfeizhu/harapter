@@ -13,9 +13,11 @@ release state for a project intended to support independently evolving packages.
 
 Harapter uses trunk-based development with one short-lived branch per task.
 Changes reach `main` through pull requests, automated checks, and squash merge.
-Branch and pull request titles use Conventional Commit types, and commits carry
-a Developer Certificate of Origin sign-off. There is no long-lived `develop`
-branch and no manually maintained release branch.
+The contributor chooses the pull request Conventional Commit type before
+creating the branch, and the branch's first segment uses that same type.
+Repository branch types override tool-specific prefixes such as `codex/`.
+Commits carry a Developer Certificate of Origin sign-off. There is no long-lived
+`develop` branch and no manually maintained release branch.
 
 Before push, the implementer completes the change and all risk-matched tests,
 including repository checks. A model in an independent context then reviews the
@@ -76,6 +78,13 @@ Direct commits reduce ceremony but bypass the public review record, PR metadata,
 dependency review, and evidence attached to the change. Maintainer emergencies
 use an explicit documented exception rather than the default path.
 
+### Tool-specific branch namespaces
+
+Prefixes such as `codex/` identify the tool that created a branch, but they do
+not describe the change or match the Conventional Commit type that controls the
+squash commit and release impact. Harapter uses the change type as the branch
+namespace and leaves authorship to Git metadata and the pull request record.
+
 ### Manual versioning and tags
 
 Manual release state is easy to make inconsistent with changelog and commit
@@ -124,19 +133,20 @@ the local process a stable stopping rule.
 ## Consequences
 
 `main` remains the single integration and eventual release source. Contributors
-create more short-lived branches and must keep pull request titles accurate
-because the title determines the eventual squash commit and release impact.
-Early feature work accumulates without creating release pull requests until a
-maintainer explicitly activates the first pre-alpha release. Release preparation
-and publication require separate explicit workflow dispatches around the manual
-release pull request merge. Package publication needs additional automation
-before any registry artifact is released. Maintainers preserve
-`Repository checks`, `Pull request metadata`, and `Dependency review` as
-required status checks. Local delivery retains one independent model review and
-test rerun while its termination rule prevents P2 churn. Pull requests no longer
-wait for a second model review or permit automated review-comment repair.
-Eligible contributors explicitly enable native auto-merge, and GitHub waits for
-the deterministic requirements and resolved conversations. The migration first
-removes the synthetic `AI code review` required context while preserving strict
-updates and the three deterministic contexts, then deletes its workflow
-producer.
+create more short-lived branches, choose the pull request type before branch
+creation, and keep the branch and title types aligned. The pull request title
+determines the eventual squash commit and release impact, while the metadata
+check rejects tool-specific or mismatched branch prefixes. Early feature work
+accumulates without creating release pull requests until a maintainer explicitly
+activates the first pre-alpha release. Release preparation and publication
+require separate explicit workflow dispatches around the manual release pull
+request merge. Package publication needs additional automation before any
+registry artifact is released. Maintainers preserve `Repository checks`,
+`Pull request metadata`, and `Dependency review` as required status checks.
+Local delivery retains one independent model review and test rerun while its
+termination rule prevents P2 churn. Pull requests no longer wait for a second
+model review or permit automated review-comment repair. Eligible contributors
+explicitly enable native auto-merge, and GitHub waits for the deterministic
+requirements and resolved conversations. The migration first removes the
+synthetic `AI code review` required context while preserving strict updates and
+the three deterministic contexts, then deletes its workflow producer.
