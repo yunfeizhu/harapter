@@ -1,0 +1,90 @@
+{
+  "capabilities": {
+    "object": "hermes.api_server.capabilities",
+    "platform": "hermes-agent",
+    "model": "synthetic-model",
+    "auth": { "type": "bearer", "required": true },
+    "runtime": {
+      "mode": "server_agent",
+      "tool_execution": "server",
+      "split_runtime": false
+    },
+    "features": {
+      "run_submission": true,
+      "run_status": true,
+      "run_events_sse": true,
+      "run_stop": true,
+      "run_approval_response": true,
+      "approval_events": true,
+      "session_resources": true
+    },
+    "endpoints": {
+      "runs": { "method": "POST", "path": "/v1/runs" },
+      "run_status": { "method": "GET", "path": "/v1/runs/{run_id}" },
+      "run_events": {
+        "method": "GET",
+        "path": "/v1/runs/{run_id}/events"
+      },
+      "run_approval": {
+        "method": "POST",
+        "path": "/v1/runs/{run_id}/approval"
+      },
+      "run_stop": { "method": "POST", "path": "/v1/runs/{run_id}/stop" },
+      "session_create": { "method": "POST", "path": "/api/sessions" },
+      "session": {
+        "method": "GET",
+        "path": "/api/sessions/{session_id}"
+      }
+    }
+  },
+  "createSession": {
+    "object": "hermes.session",
+    "session": {
+      "id": "session_fixture_completed",
+      "source": "api_server",
+      "model": "synthetic-model",
+      "has_system_prompt": true,
+      "has_model_config": false
+    }
+  },
+  "startRun": { "run_id": "run_fixture_completed", "status": "started" },
+  "events": [
+    {
+      "event": "message.delta",
+      "run_id": "run_fixture_completed",
+      "timestamp": 1788134400,
+      "delta": "synthetic response"
+    },
+    {
+      "event": "tool.started",
+      "run_id": "run_fixture_completed",
+      "timestamp": 1788134401,
+      "tool": "synthetic_tool",
+      "preview": "synthetic preview"
+    },
+    {
+      "event": "tool.completed",
+      "run_id": "run_fixture_completed",
+      "timestamp": 1788134402,
+      "tool": "synthetic_tool",
+      "duration": 0.25,
+      "error": false
+    },
+    {
+      "event": "run.completed",
+      "run_id": "run_fixture_completed",
+      "timestamp": 1788134403,
+      "output": "synthetic final response",
+      "usage": { "input_tokens": 10, "output_tokens": 20, "total_tokens": 30 }
+    }
+  ],
+  "status": {
+    "object": "hermes.run",
+    "run_id": "run_fixture_completed",
+    "status": "completed",
+    "session_id": "session_fixture_completed",
+    "output": "synthetic final response",
+    "usage": { "input_tokens": 10, "output_tokens": 20, "total_tokens": 30 },
+    "last_event": "run.completed"
+  }
+}

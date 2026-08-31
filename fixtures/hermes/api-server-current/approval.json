@@ -1,0 +1,16 @@
+{
+  "event": {
+    "event": "approval.request",
+    "run_id": "run_fixture_approval",
+    "timestamp": 1788134410,
+    "command": "synthetic command",
+    "description": "synthetic approval",
+    "choices": ["once", "session", "always", "deny"]
+  },
+  "response": {
+    "object": "hermes.run.approval_response",
+    "run_id": "run_fixture_approval",
+    "choice": "once",
+    "resolved": 1
+  }
+}

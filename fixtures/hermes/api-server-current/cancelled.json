@@ -1,0 +1,15 @@
+{
+  "stop": { "run_id": "run_fixture_cancelled", "status": "stopping" },
+  "event": {
+    "event": "run.cancelled",
+    "run_id": "run_fixture_cancelled",
+    "timestamp": 1788134420
+  },
+  "status": {
+    "object": "hermes.run",
+    "run_id": "run_fixture_cancelled",
+    "status": "cancelled",
+    "session_id": "session_fixture_cancelled",
+    "last_event": "run.cancelled"
+  }
+}
