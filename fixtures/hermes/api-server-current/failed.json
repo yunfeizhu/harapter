@@ -1,0 +1,16 @@
+{
+  "event": {
+    "event": "run.failed",
+    "run_id": "run_fixture_failed",
+    "timestamp": 1788134430,
+    "error": "synthetic provider failure"
+  },
+  "status": {
+    "object": "hermes.run",
+    "run_id": "run_fixture_failed",
+    "status": "failed",
+    "session_id": "session_fixture_failed",
+    "error": "synthetic provider failure",
+    "last_event": "run.failed"
+  }
+}

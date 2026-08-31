@@ -1,0 +1,12 @@
+{
+  "event": {
+    "event": "provider.future.notice",
+    "run_id": "run_fixture_unknown",
+    "timestamp": 1788134450,
+    "token": "synthetic-secret-placeholder",
+    "nested": {
+      "message": "synthetic provider detail",
+      "count": 9
+    }
+  }
+}

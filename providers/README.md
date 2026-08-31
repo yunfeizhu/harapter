@@ -11,6 +11,7 @@ compatibility probes, redacted fixtures, extensions, and native escape hatch.
 | [`claude`](./claude/README.md)     | `anthropic.claude-code` | Agent SDK `query()`         | Experimental in source |
 | [`codex`](./codex/README.md)       | `openai.codex`          | Stable Codex App Server     | Supported in source    |
 | [`dsh`](./dsh/README.md)           | `deepseek.harness`      | Current SDK stdio JSON-RPC  | Experimental in source |
+| [`hermes`](./hermes/README.md)     | `nous.hermes-agent`     | Current API Server HTTP/SSE | Experimental in source |
 | [`opencode`](./opencode/README.md) | `opencode`              | Stable HTTP/OpenAPI and SSE | Supported in source    |
 
 “Supported in source” means implementation, redacted fixtures, Provider

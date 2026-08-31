@@ -10,8 +10,8 @@ Test 和真实 Runtime 测试后，才能在发布物中标记为可用。
 “可接入”表示可以覆盖统一的创建 Session、提交输入、消费事件和获得终态主链路；“原生高级能力”仍取决于目标 Harness 的公开机器接口。
 
 DeepSeek Harness、Hermes
-Agent 和 OpenClaw 的接口观察日期为 2026-08-31。实现仍需根据连接时探测、脱敏 Fixture 和真实 Runtime
-Test 声明实际兼容范围。
+Agent 和 OpenClaw 的接口观察日期为 2026-08-31。实际兼容范围由连接时探测、脱敏 Fixture、Conformance
+Test、真实 Runtime Test 和对应 Provider README 共同声明。
 
 ## 2. 目标 Provider
 

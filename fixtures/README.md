@@ -18,3 +18,8 @@ provider traffic.
   the inspected current SDK protocol revision plus synthetic completed, failed,
   missing-terminal, and unknown-terminal JSONL traces. The recorded package
   version identifies fixture provenance; it is not a runtime version pin.
+- [`hermes/api-server-current`](./hermes/api-server-current/manifest.json)
+  records the inspected current API Server source revision plus synthetic
+  capability, completed, failed, cancelled, approval, late-child, and unknown
+  event payloads. The revision identifies fixture provenance; it is not a
+  runtime version pin.

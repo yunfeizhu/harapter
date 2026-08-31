@@ -1,0 +1,29 @@
+{
+  "events": [
+    {
+      "event": "run.completed",
+      "run_id": "run_fixture_parent",
+      "timestamp": 1788134440,
+      "output": "synthetic parent response",
+      "usage": { "input_tokens": 4, "output_tokens": 8, "total_tokens": 12 }
+    },
+    {
+      "event": "subagent.complete",
+      "run_id": "run_fixture_parent",
+      "timestamp": 1788134441,
+      "subagent_id": "subagent_fixture",
+      "child_session_id": "session_fixture_child",
+      "status": "completed",
+      "summary": "synthetic child summary"
+    }
+  ],
+  "status": {
+    "object": "hermes.run",
+    "run_id": "run_fixture_parent",
+    "status": "completed",
+    "session_id": "session_fixture_parent",
+    "output": "synthetic parent response",
+    "usage": { "input_tokens": 4, "output_tokens": 8, "total_tokens": 12 },
+    "last_event": "run.completed"
+  }
+}

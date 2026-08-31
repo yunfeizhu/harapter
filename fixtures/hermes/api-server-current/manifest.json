@@ -1,0 +1,13 @@
+{
+  "fixtureFormatVersion": 1,
+  "providerId": "nous.hermes-agent",
+  "interface": "Hermes Agent API Server HTTP and Server-Sent Events interface",
+  "upstreamEvidence": {
+    "repository": "https://github.com/NousResearch/hermes-agent",
+    "commit": "a9c783f21995723c812dcb2f8ae58bc6a4323e2f",
+    "documentation": "https://hermes-agent.nousresearch.com/docs/user-guide/features/api-server",
+    "license": "MIT"
+  },
+  "captureMethod": "The official API Server documentation, implementation, and tests were inspected at the recorded commit; fixture payloads are deterministic synthetic examples authored from that public interface.",
+  "redactionMethod": "All identifiers, text, commands, errors, model names, timestamps, and usage values are synthetic; no Provider traffic, credentials, authorization headers, environment values, user paths, or file bodies are stored."
+}
