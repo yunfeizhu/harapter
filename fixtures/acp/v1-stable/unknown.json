@@ -1,0 +1,25 @@
+{
+  "unknownNotification": {
+    "jsonrpc": "2.0",
+    "method": "future/vendor-notification",
+    "params": {
+      "sessionId": "synthetic-session",
+      "enabled": true,
+      "authorization": "synthetic-secret-must-not-survive",
+      "nested": {
+        "prompt": "synthetic-prompt-must-not-survive"
+      }
+    }
+  },
+  "unknownSessionUpdate": {
+    "jsonrpc": "2.0",
+    "method": "session/update",
+    "params": {
+      "sessionId": "synthetic-session",
+      "update": {
+        "sessionUpdate": "future_update",
+        "text": "synthetic-content-must-not-survive"
+      }
+    }
+  }
+}

@@ -23,3 +23,7 @@ provider traffic.
   capability, completed, failed, cancelled, approval, late-child, and unknown
   event payloads. The revision identifies fixture provenance; it is not a
   runtime version pin.
+- [`acp/v1-stable`](./acp/v1-stable/manifest.json) records the inspected stable
+  ACP v1 schema revision plus synthetic unknown-notification and future-update
+  payloads used to prove bounded structural redaction. The schema revision is
+  evidence provenance, not a Provider runtime version pin.

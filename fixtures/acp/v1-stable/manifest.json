@@ -1,0 +1,9 @@
+{
+  "fixtureFormatVersion": 1,
+  "protocol": "Agent Client Protocol",
+  "protocolVersion": 1,
+  "schemaSource": "https://github.com/agentclientprotocol/agent-client-protocol/tree/dc5d4cad78c11bec6b7bcc10426b54f832806bce/schema/v1",
+  "schemaCommit": "dc5d4cad78c11bec6b7bcc10426b54f832806bce",
+  "captureMethod": "Synthetic messages derived from the public stable v1 schema.",
+  "redactionMethod": "All identifiers, content, paths, and extension values are synthetic placeholders."
+}
