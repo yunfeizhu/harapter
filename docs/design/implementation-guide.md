@@ -22,7 +22,10 @@ harapter/
 │   ├── qwen/
 │   ├── crush/
 │   ├── copilot/
-│   └── cursor/
+│   ├── cursor/
+│   ├── dsh/
+│   ├── hermes/
+│   └── openclaw/
 ├── examples/
 │   ├── single-provider/
 │   └── multi-provider-client/
@@ -71,19 +74,46 @@ Fake Provider 用于固定：
 
 公共 API 只有在 SDK、Process 和 Service 三种形态都能自然实现时才适合稳定。
 
-### 2.3 共享 ACP Transport
+### 2.3 下一组纵向切片
+
+第一组参考 Provider 完成后，后续模块按以下顺序独立实现：
+
+1. **DeepSeek Harness**：通过官方 SDK stdio
+   JSON-RPC 接口验证受限的进程 Harness；没有原生运行中取消证据时，只能关闭连接并报告连接中止；
+2. **Hermes Agent**：通过宿主提供的 API Server 验证 Session
+   REST、Run 状态、SSE、停止和审批控制面；
+3. **ACP Transport**：组合现有 JSON-RPC stdio
+   Transport，实现 Provider-neutral 的 ACP
+   Schema、方法、协商和 Capability 校验；
+4. **OpenClaw**：通过宿主提供的 `openclaw acp` 复用 ACP Transport，并保持 ACP
+   Session 与 Gateway Session 的所有权映射。
+
+每项是一个独立模块和 Pull Request。Provider
+Adapter 与对应文档、脱敏 Fixture、Conformance
+Test 和兼容性证据一起交付。第三方 SDK、CLI、Gateway 和 Runtime 均由宿主安装、认证和管理，不进入 Harapter 默认 Workspace 依赖。选择该顺序和接入面的理由由
+[对应 Agent Note](../../.agents/notes/proposed/architecture/2026-08-31-next-provider-integration-sequence.md)
+记录。
+
+### 2.4 共享 ACP Transport
 
 在 Provider 语义层之外实现 ACP Transport，并分别接入：
 
+- OpenClaw；
 - Goose；
 - GitHub Copilot CLI；
 - OpenCode ACP Strategy；
 - Qwen Code ACP Strategy。
 
 这些 Provider 共享协议收发和基础 ACP 类型，但不共享 Provider
-ID、启动参数、Capability、Command 和 Extension。
+ID、启动参数、Capability、Command 和 Extension。OpenClaw 的首个 Adapter 使用官方 ACP
+bridge，不直接实现 Gateway WebSocket 客户端。
 
-### 2.4 Headless JSONL 与本地服务
+ACP 层复用 `@harapter/transport-jsonrpc-stdio`
+已有的 framing、请求关联、背压、有界队列、等待超时和连接清理，不重复实现第二套 JSON-RPC
+Transport。Bridge 进程的创建、终止、重启和所有权属于 Provider
+Connection；ACP 层不把进程退出解释为 Provider 原生取消。
+
+### 2.5 Headless JSONL 与本地服务
 
 - Qwen Code 验证 SDK、Daemon 与 Stream JSON Strategy 的一致性；
 - Cursor Agent CLI 验证有限 Headless 接口、非零退出和不完整终态；
@@ -91,10 +121,9 @@ ID、启动参数、Capability、Command 和 Extension。
 
 这一组用于证明 Core 能准确表达受限 Provider，而不是迫使所有 Adapter 虚构完整控制面。
 
-### 2.5 其他 Harness
+### 2.6 其他 Harness
 
-LangGraph、DeepSeek
-Harness、OpenHands、Pi 和基于 Pi 的衍生 Harness 按同一 SPI 新增。它们可以复用 Transport 和测试工具，但不要求修改 Core。
+LangGraph、OpenHands、Pi 和基于 Pi 的衍生 Harness 按同一 SPI 新增。它们可以复用 Transport 和测试工具，但不要求修改 Core。
 
 ## 3. 测试结构
 
