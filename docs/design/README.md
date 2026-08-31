@@ -22,6 +22,9 @@ Harapter Core
         ├── adapter-opencode ──▶ OpenCode
         ├── adapter-codex ─────▶ Codex Harness
         ├── adapter-claude ────▶ Claude Code
+        ├── adapter-dsh ───────▶ DeepSeek Harness
+        ├── adapter-hermes ────▶ Hermes Agent
+        ├── adapter-openclaw ──▶ OpenClaw
         └── other adapters ────▶ Other Harnesses
 ```
 
@@ -103,7 +106,7 @@ Adapter 不把所有 Harness 强行压成完全相同的功能集合，而采用
 Capability 字段缺失表示当前 Manifest 不认识该能力名称，与显式 `unknown`
 不同。调用方必须明确选择可接受的模式；默认只接受 `native`。
 
-因此，“八个 Harness 都可接入”表示它们可以进入统一的任务主链路，不表示它们都支持 Fork、审批、插件市场或运行中模式切换。
+因此，“多个 Harness 都可接入”表示它们可以进入统一的任务主链路，不表示它们都支持 Fork、审批、插件市场或运行中模式切换。
 
 ## 会话与切换边界
 
@@ -118,7 +121,7 @@ Capability 字段缺失表示当前 Manifest 不认识该能力名称，与显�
 
 - [架构设计](./architecture.md)：组件、运行拓扑、状态所有权和多 Provider 关系。
 - [统一 API](./api-design.md)：Profile、Client、Session、Run、事件、能力和错误契约。
-- [Provider 接入矩阵](./provider-matrix.md)：首批 Harness 的官方接入面、覆盖等级和限制。
+- [Provider 接入矩阵](./provider-matrix.md)：目标 Harness 的官方接入面、覆盖等级和限制。
 - [Provider 特有能力](./provider-extensions.md)：三层能力模型、扩展接口和 Native
   Escape Hatch。
 - [Provider Adapter 开发指南](./provider-adapter-guide.md)：实现新 Provider 包的要求。

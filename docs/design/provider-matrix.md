@@ -9,7 +9,11 @@ Test 和真实 Runtime 测试后，才能在发布物中标记为可用。
 
 “可接入”表示可以覆盖统一的创建 Session、提交输入、消费事件和获得终态主链路；“原生高级能力”仍取决于目标 Harness 的公开机器接口。
 
-## 2. 首批 Provider
+DeepSeek Harness、Hermes
+Agent 和 OpenClaw 的接口观察日期为 2026-08-31。实现仍需根据连接时探测、脱敏 Fixture 和真实 Runtime
+Test 声明实际兼容范围。
+
+## 2. 目标 Provider
 
 | Provider           | Provider ID             | 首选接入面                           | 预计公共覆盖 | 主要限制                                                               |
 | ------------------ | ----------------------- | ------------------------------------ | ------------ | ---------------------------------------------------------------------- |
@@ -21,6 +25,9 @@ Test 和真实 Runtime 测试后，才能在发布物中标记为可用。
 | Crush              | `charm.crush`           | `crush serve` 本地 API               | 高           | 服务 API 较新，发布版本和主分支能力必须分别探测                        |
 | GitHub Copilot CLI | `github.copilot-cli`    | ACP Server                           | 高           | 一部分 Tool、Reasoning 配置固定在 Server 启动参数，不能按 Session 改变 |
 | Cursor Agent CLI   | `cursor.agent-cli`      | Headless Stream JSON                 | 中           | 当前为 Beta；失败流、审批、原生取消等控制面不如双向协议完整            |
+| DeepSeek Harness   | `deepseek.harness`      | SDK stdio JSON-RPC                   | 中高         | 官方接口未提供已验证的运行中取消；进程关闭只能作为连接中止             |
+| Hermes Agent       | `nous.hermes-agent`     | API Server HTTP/SSE                  | 很高         | Workspace 选择和后台 Subagent 终态不能从父 Run 终态推断                |
+| OpenClaw           | `openclaw`              | `openclaw acp`                       | 高           | Bridge 历史、Tool、Approval 和共享 Session 路由存在部分支持            |
 
 这里的 Cursor 仅指公开的 `cursor-agent`
 CLI。Cursor 桌面 IDE 不能因为存在 CLI 就被宣称已经完整适配。
@@ -36,6 +43,9 @@ adapter-qwen
 adapter-crush
 adapter-copilot
 adapter-cursor
+adapter-dsh
+adapter-hermes
+adapter-openclaw
 ```
 
 这些包只实现适配逻辑，不包含第三方 Runtime 二进制。用户或宿主负责安装、认证和许可；Profile 负责引用具体命令、SDK 实例、Socket 或 Endpoint。
@@ -148,6 +158,66 @@ Cursor 当前公开接口适合任务执行和进度展示，但不应默认宣�
 [输出格式](https://docs.cursor.com/en/cli/reference/output-format)、
 [命令参数](https://docs.cursor.com/en/cli/reference/parameters)。
 
+### 4.9 DeepSeek Harness
+
+首选官方 SDK 的 stdio
+JSON-RPC 接口。Adapter 连接宿主提供的 Runtime 命令和配置，不把 DSH
+SDK 或 Runtime 包加入默认 Workspace 依赖、不创建 Cordis 应用，也不复制 DSH Agent
+Loop。Session、Prompt、通知、终态和关闭语义必须以官方协议结构和脱敏 Fixture 验证。
+
+当前官方 TypeScript SDK 没有已验证的运行中 Prompt
+Cancel 操作。关闭 SDK 进程只能中止连接，Capability 不得标记为原生 Run
+Cancel。DSH 的插件、Profile 和 Cordis 生命周期保留为 Provider
+Extension 或 Native Client，不进入 Core。
+
+`session/prompt`
+只确认消息已持久入队，不返回该 Prompt 的结果。首个 Adapter 在一个 DSH
+Connection 上最多允许一个活动 Harapter
+Run，并要求目标 Session 的活动区间不接受宿主或插件注入的竞争 Prompt、Steering 或排队工作。自定义 Cordis 组合只有在能够证明这一独占边界时才能进入兼容范围。
+
+Whole-agent `idle` 和最后一条 Assistant
+Message 都不是成功终态。Adapter 必须在属于该活动区间的 Session
+Event 中找到唯一、结构有效的
+`turn/end.data.reason.kind`，再按照已测试的 reason 映射终态；只有明确的成功 reason 可以生成
+`run.completed`。缺失、重复、未知或与错误事件冲突的终态失败关闭，不能猜测为成功。共享 DSH 进程退出时，该连接上仍活动的所有 Run 都以
+`connection.aborted` 结束。
+
+官方入口：[DeepSeek Harness SDK](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/sdk/client/README.md)、
+[SDK Protocol](https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/sdk/protocol)。
+
+### 4.10 Hermes Agent
+
+首选宿主提供的 Hermes API Server。Adapter 使用 `GET /v1/capabilities`
+探测当前端点，再通过 Session REST、Run
+API 和 SSE 映射 Session、Run、Event、Stop 和 Approval。Bearer
+Secret、端点生命周期、模型配置、工具执行和认证策略均由宿主与 Hermes 拥有。
+
+SSE EOF 不是成功终态；断线后需要通过 Run 状态查询进行一致性确认。`stopping`
+只是停止请求已受理，只有权威终态才能映射为 `run.cancelled`。父 Run 的 portable
+trace 在权威终态结束，终态必须是最后一个事件。终态前到达的 Subagent 事件可以属于父 Run 的 Provider
+Event；终态后到达的 Child Event 只能进入按 `child_session_id` 关联的
+`nous.hermes-agent.subagents` 类型化 Extension 或 Native Session
+Observer，不能追加到已终止的父 Run，也不能延迟或改写父 Run 的权威终态。HTTP
+API 没有验证的 Workspace 选择能力时，Adapter 不得宣称原生支持 Workspace。
+
+官方入口：[Hermes Agent API Server](https://hermes-agent.nousresearch.com/docs/user-guide/features/api-server)、
+[Hermes Agent](https://github.com/NousResearch/hermes-agent)。
+
+### 4.11 OpenClaw
+
+首选宿主提供的 `openclaw acp`，通过通用 ACP stdio Transport 连接。OpenClaw
+Adapter 负责 Session 与 Gateway
+Session 的映射、事件、Capability、Interaction、Error 和兼容性；ACP
+Transport 不包含 OpenClaw 名称判断或 Gateway 语义。
+
+默认使用 bridge 创建的隔离 Session。显式绑定已有 Gateway
+Session 属于 Provider 配置；多个 ACP Client 共享同一 Gateway
+Session 时，事件和取消路由不能宣称严格隔离。历史加载、Tool 流、Usage 和 Approval 只按当前连接握手与已验证事件声明实际能力。首个 Adapter 不直接实现 Gateway
+WebSocket 客户端。
+
+官方入口：[OpenClaw ACP](https://docs.openclaw.ai/cli/acp)、
+[Agent Client Protocol](https://agentclientprotocol.com/protocol/overview)。
+
 ## 5. 公共能力预期
 
 | 能力               | Claude | Codex  | OpenCode | Goose  | Qwen   | Crush  | Copilot | Cursor |
@@ -165,6 +235,20 @@ Cursor 当前公开接口适合任务执行和进度展示，但不应默认宣�
 最终发布矩阵必须由目标版本的自动化测试生成，不能把本表直接当作运行时 Capability
 Manifest。
 
+下一组 Provider 的设计预期为：
+
+| 能力               | DeepSeek Harness | Hermes Agent | OpenClaw |
+| ------------------ | ---------------- | ------------ | -------- |
+| 创建任务会话       | 可评估           | 可评估       | 可评估   |
+| 流式事件           | 可评估           | 可评估       | 可评估   |
+| Session Resume     | 需实测           | 需实测       | 可评估   |
+| 原生 Run Cancel    | 不支持           | 可评估       | 需实测   |
+| 外部审批响应       | 不支持           | 可评估       | 需实测   |
+| Provider Extension | 可定义           | 可定义       | 可定义   |
+
+“不支持”表示当前官方机器接口明确没有可验证的对应行为。关闭进程、断开连接或丢弃本地 Run
+Handle 不会把该能力提升为原生取消。
+
 ## 6. 共享 Transport 与独立语义层
 
 可以复用的 Transport 包包括：
@@ -177,7 +261,7 @@ transport-http-sse
 transport-local-socket
 ```
 
-ACP 可以减少 Goose、Copilot、OpenCode 和 Qwen 的通信实现重复，但不能让它们共享同一个 Provider
+ACP 可以减少 OpenClaw、Goose、Copilot、OpenCode 和 Qwen 的通信实现重复，但不能让它们共享同一个 Provider
 Adapter。每个 Provider 仍需要独立处理：
 
 - 启动和认证参数；
@@ -186,14 +270,18 @@ Adapter。每个 Provider 仍需要独立处理：
 - Provider Command、Extension 和 Error；
 - 版本兼容与测试 Fixture。
 
+`transport-acp` 组合 `@harapter/transport-jsonrpc-stdio`，只拥有 ACP
+Schema、方法、协议协商和 Capability 语义。JSON-RPC
+framing、请求关联、背压、队列边界、等待超时和连接清理继续由现有 Transport 拥有；进程策略由调用它的 Provider
+Connection 拥有。
+
 ## 7. 其他 Provider
 
-LangGraph、DeepSeek Harness、OpenHands、Pi
+LangGraph、OpenHands、Pi
 Agent 及基于 Pi 的其他 Harness 也可以按照相同契约新增 Adapter。它们不需要进入 Core 枚举：
 
 ```text
 adapter-langgraph
-adapter-dsh
 adapter-openhands
 adapter-pi
 adapter-pi-derived-harness
