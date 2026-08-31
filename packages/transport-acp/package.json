@@ -1,0 +1,22 @@
+{
+  "name": "@harapter/transport-acp",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Provider-neutral stable ACP v1 client for Harapter providers.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json"
+  },
+  "dependencies": {
+    "@harapter/transport-jsonrpc-stdio": "workspace:*"
+  }
+}

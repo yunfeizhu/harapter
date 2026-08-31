@@ -14,6 +14,9 @@ const hasExecutableSource = sourcePatterns.some((pattern) =>
 export default defineConfig({
   resolve: {
     alias: {
+      '@harapter/transport-acp': fileURLToPath(
+        new URL('./packages/transport-acp/src/index.ts', import.meta.url),
+      ),
       '@harapter/conformance': fileURLToPath(
         new URL('./packages/conformance/src/index.ts', import.meta.url),
       ),

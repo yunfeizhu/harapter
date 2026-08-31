@@ -62,6 +62,12 @@ importers:
 
   packages/core: {}
 
+  packages/transport-acp:
+    dependencies:
+      '@harapter/transport-jsonrpc-stdio':
+        specifier: workspace:*
+        version: link:../transport-jsonrpc-stdio
+
   packages/transport-http-sse: {}
 
   packages/transport-jsonrpc-stdio: {}

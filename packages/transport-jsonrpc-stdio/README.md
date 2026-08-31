@@ -31,9 +31,12 @@ payloads.
 ## Framing and limits
 
 Each message is one UTF-8 JSON object followed by `\n`; inbound `\r\n` is also
-accepted. The transport accepts either an omitted `jsonrpc` member or the exact
-value `"2.0"`. It omits that member by default and can emit it with
-`emitJsonRpcVersion`. This accommodates official interfaces such as
+accepted. By default the transport accepts either an omitted `jsonrpc` member or
+the exact value `"2.0"`. `requireJsonRpcVersion` can require that exact member,
+while `emitJsonRpcVersion` adds it to every outbound envelope.
+`requireIntegerNumericIds` rejects fractional numeric request and response IDs
+while retaining string and `null` IDs. This accommodates strict schemas such as
+ACP v1 and official interfaces such as
 [Codex App Server](https://developers.openai.com/codex/app-server), whose stdio
 mode uses newline-delimited JSON and omits the standard JSON-RPC version member
 on the wire.

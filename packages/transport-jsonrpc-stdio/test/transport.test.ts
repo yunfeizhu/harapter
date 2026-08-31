@@ -347,6 +347,67 @@ describe('JsonRpcStdioTransport', () => {
     writable.destroy();
   });
 
+  it('can require the exact JSON-RPC version for strict protocol clients', async () => {
+    const readable = new PassThrough();
+    const writable = new PassThrough();
+    const transport = new JsonRpcStdioTransport({
+      readable,
+      requireJsonRpcVersion: true,
+      writable,
+    });
+    const incoming = iterator(transport);
+
+    readable.write('{"method":"event/unversioned","params":{}}\n');
+    await expect(incoming.next()).rejects.toMatchObject({
+      code: 'malformed_message',
+    });
+    expect(transport.isOpen()).toBe(false);
+    readable.destroy();
+    writable.destroy();
+  });
+
+  it('accepts and echoes JSON-RPC null request identifiers', async () => {
+    const readable = new PassThrough();
+    const writable = new PassThrough();
+    const transport = new JsonRpcStdioTransport({ readable, writable });
+    const incoming = iterator(transport);
+    readable.write('{"id":null,"method":"provider/request","params":{}}\n');
+    const request = expectMessage(await incoming.next());
+    if (request.kind !== 'request') throw new Error('Expected a request.');
+    expect(request.id).toBeNull();
+    const response = new Promise<Buffer>((resolve) => {
+      writable.once('data', (chunk: Buffer) => {
+        resolve(chunk);
+      });
+    });
+    await transport.respond(request.id, { accepted: true });
+    expect(JSON.parse((await response).toString('utf8'))).toEqual({
+      id: null,
+      result: { accepted: true },
+    });
+    await transport.close();
+    readable.destroy();
+    writable.destroy();
+  });
+
+  it('can require integer numeric request identifiers for strict protocols', async () => {
+    const readable = new PassThrough();
+    const writable = new PassThrough();
+    const transport = new JsonRpcStdioTransport({
+      readable,
+      requireIntegerNumericIds: true,
+      writable,
+    });
+    const incoming = iterator(transport);
+    readable.write('{"id":1.5,"jsonrpc":"2.0","method":"provider/request"}\n');
+    await expect(incoming.next()).rejects.toMatchObject({
+      code: 'malformed_message',
+    });
+    expect(transport.isOpen()).toBe(false);
+    readable.destroy();
+    writable.destroy();
+  });
+
   it('times out locally and reports a late response without treating it as success', async () => {
     vi.useFakeTimers();
     try {

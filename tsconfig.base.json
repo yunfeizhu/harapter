@@ -21,6 +21,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "paths": {
+      "@harapter/transport-acp": ["packages/transport-acp/src/index.ts"],
       "@harapter/conformance": ["packages/conformance/src/index.ts"],
       "@harapter/core": ["packages/core/src/index.ts"],
       "@harapter/transport-http-sse": [

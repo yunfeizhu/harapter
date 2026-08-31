@@ -33,10 +33,12 @@ under the existing
 Provider SDK and runtime packages do not enter the default Workspace
 dependencies.
 
-The first module is implemented under the
+The DeepSeek Harness module is defined by the
 [DeepSeek Harness SDK protocol boundary](../../implemented/compatibility/2026-08-31-deepseek-harness-sdk-protocol.md).
-The remaining sequence does not weaken its process ownership, exclusive Run
-interval, terminal authority, or compatibility evidence requirements.
+The shared ACP module is defined by the
+[stable ACP v1 protocol client](../../implemented/architecture/2026-08-31-stable-acp-v1-protocol-client.md).
+The sequence does not weaken Provider process ownership, exclusive Run
+intervals, terminal authority, or compatibility evidence requirements.
 
 The Hermes Agent Adapter uses runtime capability discovery and the documented
 Session, Run, event-stream, stop, and approval endpoints. It does not infer

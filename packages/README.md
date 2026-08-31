@@ -17,6 +17,10 @@ Implemented packages:
 - [`transport-http-sse`](./transport-http-sse/README.md) owns endpoint-bound,
   bounded HTTP requests and pull-driven Server-Sent Events parsing without
   Provider semantics.
+- [`transport-acp`](./transport-acp/README.md) composes the JSON-RPC stdio
+  transport with stable ACP v1 negotiation, capability validation, bidirectional
+  permission handling, typed Session updates, and bounded unknown observations
+  without Provider or process semantics.
 
-Schema and additional packages remain unimplemented. Their target boundaries are
-defined in the [implementation guide](../docs/design/implementation-guide.md).
+Additional packages remain unimplemented. Their target boundaries are defined in
+the [implementation guide](../docs/design/implementation-guide.md).

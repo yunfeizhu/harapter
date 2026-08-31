@@ -11,7 +11,7 @@ const defaultRequestTimeoutMs = 30_000;
 const maximumTimerMilliseconds = 2_147_483_647;
 
 /** JSON-RPC identifier supported by the transport. */
-export type JsonRpcId = string | number;
+export type JsonRpcId = string | number | null;
 
 /** JSON-RPC error object returned by a remote peer. */
 export interface JsonRpcErrorObject {
@@ -113,6 +113,8 @@ export interface JsonRpcStdioTransportOptions {
   readonly writable: Writable;
   readonly cleanup?: () => Promise<void> | void;
   readonly emitJsonRpcVersion?: boolean;
+  readonly requireJsonRpcVersion?: boolean;
+  readonly requireIntegerNumericIds?: boolean;
   readonly maxMessageBytes?: number;
   readonly maxBufferedMessages?: number;
   readonly maxPendingRequests?: number;
@@ -203,6 +205,8 @@ export class JsonRpcStdioTransport {
   private readonly writable: Writable;
   private readonly cleanup: (() => Promise<void> | void) | undefined;
   private readonly emitJsonRpcVersion: boolean;
+  private readonly requireJsonRpcVersion: boolean;
+  private readonly requireIntegerNumericIds: boolean;
   private readonly maxMessageBytes: number;
   private readonly maxPendingRequests: number;
   private readonly maxPendingInboundRequests: number;
@@ -317,6 +321,8 @@ export class JsonRpcStdioTransport {
     this.writable = options.writable;
     this.cleanup = options.cleanup;
     this.emitJsonRpcVersion = options.emitJsonRpcVersion ?? false;
+    this.requireJsonRpcVersion = options.requireJsonRpcVersion ?? false;
+    this.requireIntegerNumericIds = options.requireIntegerNumericIds ?? false;
     this.onDiagnostic = options.onDiagnostic;
     this.inboundQueue = new InboundQueue(maxBufferedMessages);
 
@@ -472,7 +478,7 @@ export class JsonRpcStdioTransport {
    * a client response. No wire message is emitted.
    */
   abandonInboundRequest(id: JsonRpcId): boolean {
-    if (!isJsonRpcId(id)) return false;
+    if (!isJsonRpcId(id, this.requireIntegerNumericIds)) return false;
     const key = requestIdKey(id);
     if (!this.pendingInboundRequestIds.has(key)) return false;
     if (this.respondingInboundRequestIds.has(key)) {
@@ -520,7 +526,7 @@ export class JsonRpcStdioTransport {
     let reservedKey: string | undefined;
     try {
       this.assertOpen();
-      if (!isJsonRpcId(id)) {
+      if (!isJsonRpcId(id, this.requireIntegerNumericIds)) {
         throw transportError(
           'invalid_outbound_message',
           'A JSON-RPC response identifier is invalid.',
@@ -539,7 +545,12 @@ export class JsonRpcStdioTransport {
       this.respondingInboundRequestIds.add(key);
       reservedKey = key;
       const frame = this.encode(this.outboundEnvelope(envelope));
-      assertSerializedResponse(frame, key, responseKind);
+      assertSerializedResponse(
+        frame,
+        key,
+        responseKind,
+        this.requireIntegerNumericIds,
+      );
       return this.enqueueWrite(frame).then(
         () => {
           this.respondingInboundRequestIds.delete(key);
@@ -722,7 +733,10 @@ export class JsonRpcStdioTransport {
   }
 
   private consumeEnvelope(value: unknown): void {
-    if (!isRecord(value) || !validJsonRpcVersion(value)) {
+    if (
+      !isRecord(value) ||
+      !validJsonRpcVersion(value, this.requireJsonRpcVersion)
+    ) {
       this.fail(malformedEnvelope());
       return;
     }
@@ -758,7 +772,7 @@ export class JsonRpcStdioTransport {
     }
 
     const id = envelope['id'];
-    if (!isJsonRpcId(id)) {
+    if (!isJsonRpcId(id, this.requireIntegerNumericIds)) {
       this.fail(malformedEnvelope());
       return;
     }
@@ -807,7 +821,7 @@ export class JsonRpcStdioTransport {
       this.emitDiagnostic({ code: 'unmatched_response' });
       return;
     }
-    if (!isJsonRpcId(id)) {
+    if (!isJsonRpcId(id, this.requireIntegerNumericIds)) {
       this.fail(malformedEnvelope());
       return;
     }
@@ -1023,14 +1037,25 @@ function hasOwn(value: JsonRecord, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(value, key);
 }
 
-function validJsonRpcVersion(value: JsonRecord): boolean {
-  return !hasOwn(value, 'jsonrpc') || value['jsonrpc'] === '2.0';
+function validJsonRpcVersion(
+  value: JsonRecord,
+  requireJsonRpcVersion: boolean,
+): boolean {
+  return requireJsonRpcVersion
+    ? value['jsonrpc'] === '2.0'
+    : !hasOwn(value, 'jsonrpc') || value['jsonrpc'] === '2.0';
 }
 
-function isJsonRpcId(value: unknown): value is JsonRpcId {
+function isJsonRpcId(
+  value: unknown,
+  requireIntegerNumericIds = false,
+): value is JsonRpcId {
   return (
+    value === null ||
     typeof value === 'string' ||
-    (typeof value === 'number' && Number.isFinite(value))
+    (typeof value === 'number' &&
+      Number.isFinite(value) &&
+      (!requireIntegerNumericIds || Number.isInteger(value)))
   );
 }
 
@@ -1058,9 +1083,10 @@ function assertSerializedResponse(
   frame: string,
   expectedIdKey: string,
   responseKind: 'error' | 'result',
+  requireIntegerNumericIds: boolean,
 ): void {
   const value: unknown = JSON.parse(frame);
-  if (!isRecord(value) || !isJsonRpcId(value['id'])) {
+  if (!isRecord(value) || !isJsonRpcId(value['id'], requireIntegerNumericIds)) {
     throw invalidSerializedResponse();
   }
   const hasError = hasOwn(value, 'error');
