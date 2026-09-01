@@ -25,6 +25,7 @@ Harapter Core
         ├── adapter-dsh ───────▶ DeepSeek Harness
         ├── adapter-hermes ────▶ Hermes Agent
         ├── adapter-openclaw ──▶ OpenClaw
+        ├── adapter-pi ────────▶ Pi Agent
         └── other adapters ────▶ Other Harnesses
 ```
 

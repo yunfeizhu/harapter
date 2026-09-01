@@ -152,6 +152,19 @@ importers:
         specifier: workspace:*
         version: link:../../packages/conformance
 
+  providers/pi:
+    dependencies:
+      '@harapter/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@harapter/transport-jsonl-process':
+        specifier: workspace:*
+        version: link:../../packages/transport-jsonl-process
+    devDependencies:
+      '@harapter/conformance':
+        specifier: workspace:*
+        version: link:../../packages/conformance
+
 packages:
 
   '@babel/helper-string-parser@7.29.7':

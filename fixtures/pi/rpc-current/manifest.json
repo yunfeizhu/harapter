@@ -1,0 +1,14 @@
+{
+  "fixtureFormatVersion": 1,
+  "providerId": "pi.agent",
+  "interface": "Pi Agent RPC mode over strict JSONL stdio",
+  "upstreamEvidence": {
+    "repository": "https://github.com/earendil-works/pi",
+    "commit": "853a80d26c90a14c1886f0ebb8ffaae133ca2185",
+    "runtimeVersion": "0.84.4",
+    "package": "@earendil-works/pi-coding-agent",
+    "license": "MIT"
+  },
+  "captureMethod": "The official RPC documentation, exported protocol types, JSON event conversion, session lifecycle source, and CLI argument parser were inspected at the recorded commit; fixtures are deterministic synthetic examples authored from that public interface.",
+  "redactionMethod": "All prompts, identifiers, content, paths, failures, usage values, model names, and interaction values are synthetic; no Pi traffic, credentials, environment values, account data, session files, or host paths are stored."
+}

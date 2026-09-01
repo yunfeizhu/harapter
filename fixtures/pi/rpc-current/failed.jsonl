@@ -1,0 +1,5 @@
+{"id":"synthetic-request-1","type":"response","command":"prompt","success":true}
+{"type":"agent_start"}
+{"type":"message_end","message":{"role":"assistant","content":[],"api":"synthetic","provider":"synthetic","model":"synthetic-model","usage":{"input":4,"output":0,"cacheRead":0,"cacheWrite":0,"totalTokens":4,"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0,"total":0}},"stopReason":"error","errorMessage":"synthetic provider failure","timestamp":0}}
+{"type":"agent_end","messages":[],"willRetry":false}
+{"type":"agent_settled"}
