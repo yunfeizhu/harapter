@@ -13,6 +13,9 @@
       "@harapter/transport-http-sse": [
         "packages/transport-http-sse/src/index.ts"
       ],
+      "@harapter/transport-jsonl-process": [
+        "packages/transport-jsonl-process/src/index.ts"
+      ],
       "@harapter/transport-jsonrpc-stdio": [
         "packages/transport-jsonrpc-stdio/src/index.ts"
       ]

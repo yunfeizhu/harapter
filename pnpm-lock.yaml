@@ -70,6 +70,8 @@ importers:
 
   packages/transport-http-sse: {}
 
+  packages/transport-jsonl-process: {}
+
   packages/transport-jsonrpc-stdio: {}
 
   providers/claude:

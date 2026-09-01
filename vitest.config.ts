@@ -26,6 +26,12 @@ export default defineConfig({
       '@harapter/transport-http-sse': fileURLToPath(
         new URL('./packages/transport-http-sse/src/index.ts', import.meta.url),
       ),
+      '@harapter/transport-jsonl-process': fileURLToPath(
+        new URL(
+          './packages/transport-jsonl-process/src/index.ts',
+          import.meta.url,
+        ),
+      ),
       '@harapter/transport-jsonrpc-stdio': fileURLToPath(
         new URL(
           './packages/transport-jsonrpc-stdio/src/index.ts',
