@@ -1,0 +1,14 @@
+{
+  "fixtureFormatVersion": 1,
+  "providerId": "openclaw",
+  "interface": "OpenClaw ACP stdio bridge",
+  "upstreamEvidence": {
+    "repository": "https://github.com/openclaw/openclaw",
+    "commit": "43e9a3d81776741a1a9978cc8ee9772b432fdf7b",
+    "runtimeVersion": "2026.8.1",
+    "acpSdkVersion": "1.4.0",
+    "license": "MIT"
+  },
+  "captureMethod": "The official ACP bridge documentation and source were inspected at the recorded commit; fixtures are deterministic synthetic examples authored from the public ACP surface.",
+  "redactionMethod": "All identifiers, content, paths, failures, and usage values are synthetic; no OpenClaw traffic, Gateway credentials, environment values, account data, or host paths are stored."
+}

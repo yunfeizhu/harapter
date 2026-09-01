@@ -26,6 +26,9 @@ payloads.
   identifier or body.
 - `abandonInboundRequest()` releases a remote request that the Provider has
   authoritatively resolved without a client response; it emits no wire message.
+- `requestAfterInbound()` resolves a response only after the sole inbound
+  consumer finishes handling every request or notification received earlier on
+  the wire.
 - `isOpen()` distinguishes request-local failures from terminal transport state.
 
 ## Framing and limits
@@ -83,6 +86,15 @@ connection termination clears it, or the consuming Adapter calls
 request with an in-progress response records deferred abandonment and remains
 capacity-accounted until that response attempt settles. Both successful and
 failed response attempts then release its local ownership.
+
+`requestAfterInbound()` adds an explicit ordering barrier for protocols whose
+response is a lifecycle boundary. The response parser snapshots the count of
+earlier inbound messages, and the request resolves after the async consumer
+advances past that snapshot. Messages received after the response are not part
+of the barrier. The request remains capacity-accounted, and its timeout and
+`AbortSignal` remain active, until the barrier settles. Connection termination
+rejects a pending barrier; it cannot turn missing event handling into a
+successful result.
 
 `AbortSignal` and request timeout control only the caller's local response wait.
 They do not send a Provider cancellation method and are never evidence of native

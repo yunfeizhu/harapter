@@ -58,8 +58,14 @@ Session-close wait remains blocked until connection closure because its late
 response cannot restore authority. Prompt success or cancellation requires a
 validated authoritative prompt response.
 
+When an event consumer is active, prompt settlement waits for the JSON-RPC
+inbound barrier and then for the ACP event checkpoint captured at the response.
+This includes every update received before the terminal response and excludes
+later events without using timing delays. The original prompt deadline and abort
+signal remain active through both bounded barriers.
+
 The broader Provider order remains owned by the
-[provider integration sequence](../../proposed/architecture/2026-08-31-next-provider-integration-sequence.md).
+[provider integration sequence](./2026-08-31-next-provider-integration-sequence.md).
 
 ## Alternatives considered
 

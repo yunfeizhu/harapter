@@ -1,0 +1,27 @@
+{
+  "name": "@harapter/adapter-openclaw",
+  "version": "0.0.0",
+  "private": true,
+  "description": "OpenClaw ACP provider adapter for Harapter.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json"
+  },
+  "dependencies": {
+    "@harapter/core": "workspace:*",
+    "@harapter/transport-acp": "workspace:*",
+    "@harapter/transport-jsonrpc-stdio": "workspace:*"
+  },
+  "devDependencies": {
+    "@harapter/conformance": "workspace:*"
+  }
+}

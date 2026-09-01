@@ -45,6 +45,14 @@ or claims that the host supplied one. An abandon racing with an in-progress
 response remains capacity-accounted until that response attempt settles, then
 releases ownership on either outcome.
 
+For protocols whose response establishes a lifecycle boundary,
+`requestAfterInbound()` snapshots the earlier inbound-message count and resolves
+only after the sole async consumer advances through that snapshot. Later wire
+messages are excluded. A terminal transport failure rejects an outstanding
+barrier rather than allowing a response to overtake unhandled observations. The
+request remains capacity-accounted, and its deadline and abort listener remain
+active, until that barrier settles.
+
 The transport keeps its Error object safe for ordinary JSON and Node inspection
 and exposes remote error fields only through an explicit extraction method.
 Those fields and inbound parameters remain untrusted and potentially sensitive;
@@ -89,6 +97,8 @@ and disposal observable.
   compatibility evidence rather than disabling bounds.
 - Only one inbound consumer is allowed. Returning from it closes the transport
   because no component would remain to answer server requests.
+- Callers that use the inbound barrier couple response settlement to progress by
+  that sole consumer and must keep it actively draining.
 - Timeout and abort are deliberately weaker than native cancellation. Provider
   Adapters must invoke and prove an upstream cancellation method separately
   before declaring native cancellation capability.
