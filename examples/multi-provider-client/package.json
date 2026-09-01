@@ -1,0 +1,31 @@
+{
+  "name": "@harapter/example-multi-provider-client",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Portable multi-provider reference client for Harapter.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./codex-opencode": {
+      "types": "./dist/codex-opencode.d.ts",
+      "default": "./dist/codex-opencode.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json"
+  },
+  "dependencies": {
+    "@harapter/adapter-codex": "workspace:*",
+    "@harapter/adapter-opencode": "workspace:*",
+    "@harapter/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@harapter/conformance": "workspace:*"
+  }
+}

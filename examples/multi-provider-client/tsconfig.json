@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "noEmit": true,
+    "paths": {
+      "@harapter/adapter-codex": ["../../providers/codex/src/index.ts"],
+      "@harapter/adapter-opencode": ["../../providers/opencode/src/index.ts"],
+      "@harapter/core": ["../../packages/core/src/index.ts"],
+      "@harapter/transport-http-sse": [
+        "../../packages/transport-http-sse/src/index.ts"
+      ],
+      "@harapter/transport-jsonrpc-stdio": [
+        "../../packages/transport-jsonrpc-stdio/src/index.ts"
+      ]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}
