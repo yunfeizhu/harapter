@@ -6,9 +6,9 @@ Status: implemented
 
 The first reference Provider group covers process RPC, an external HTTP/SSE
 service, and a host-supplied SDK. Harapter also needs complete modules for
-DeepSeek Harness, Hermes Agent, and OpenClaw without coupling Core to a Provider
-runtime, duplicating an agent loop, or combining several unfinished Adapters in
-one pull request.
+DeepSeek Harness, Hermes Agent, OpenClaw, and Pi Agent without coupling Core to
+a Provider runtime, duplicating an agent loop, or combining several unfinished
+Adapters in one pull request.
 
 The official interfaces have different dependency and lifecycle properties.
 Their ordering must preserve the existing transport boundaries, make unsupported
@@ -17,14 +17,16 @@ ACP-based Provider depends on it.
 
 ## Decision
 
-The second Provider group is implemented as four independently reviewed modules,
+The second Provider group is implemented as six independently reviewed modules,
 in this dependency order:
 
 1. DeepSeek Harness integration over its official SDK stdio JSON-RPC interface;
 2. Hermes Agent Adapter over its authenticated API Server HTTP/SSE interface;
 3. a Provider-neutral stable ACP client composed over the bounded JSON-RPC stdio
    transport;
-4. OpenClaw Adapter over the official `openclaw acp` bridge.
+4. OpenClaw Adapter over the official `openclaw acp` bridge;
+5. a Provider-neutral strict JSONL process transport;
+6. Pi Agent Adapter over the official `pi --mode rpc` interface.
 
 Each module owns its public README, redacted fixtures, shared conformance
 evidence, compatibility declaration, and risk-matched live-runtime test. The
@@ -37,7 +39,10 @@ The Provider boundaries are defined by the
 [DeepSeek Harness SDK protocol note](../compatibility/2026-08-31-deepseek-harness-sdk-protocol.md),
 [Hermes API Server lifecycle note](../compatibility/2026-08-31-hermes-api-server-lifecycle.md),
 [stable ACP client note](./2026-08-31-stable-acp-v1-protocol-client.md), and
-[OpenClaw ACP lifecycle note](../compatibility/2026-09-01-openclaw-acp-session-and-run-lifecycle.md).
+[OpenClaw ACP lifecycle note](../compatibility/2026-09-01-openclaw-acp-session-and-run-lifecycle.md),
+[strict JSONL process transport note](./2026-09-01-bounded-strict-jsonl-process-transport.md),
+and
+[Pi Agent RPC lifecycle note](../compatibility/2026-09-01-pi-agent-rpc-session-and-run-lifecycle.md).
 No module weakens Provider process ownership, terminal authority, capability
 evidence, or Session compatibility requirements.
 
@@ -66,13 +71,14 @@ Provider-neutral module.
 
 ## Consequences
 
-- DeepSeek Harness, Hermes Agent, ACP, and OpenClaw remain independently
-  registrable, testable, and replaceable without Provider branches in Core.
-- The shared JSON-RPC and ACP packages own communication mechanics while each
-  Adapter retains Provider identity, process policy, lifecycle, capability,
-  compatibility, and redaction semantics.
-- Default Workspace installation contains no DeepSeek Harness, Hermes Agent, or
-  OpenClaw Runtime package.
+- DeepSeek Harness, Hermes Agent, ACP, OpenClaw, strict JSONL Process Transport,
+  and Pi Agent remain independently registrable, testable, and replaceable
+  without Provider branches in Core.
+- The shared JSON-RPC, ACP, and JSONL Process packages own communication
+  mechanics while each Adapter retains Provider identity, process policy,
+  lifecycle, capability, compatibility, and redaction semantics.
+- Default Workspace installation contains no DeepSeek Harness, Hermes Agent,
+  OpenClaw, or Pi Agent Runtime package.
 - Each Provider has deterministic synthetic fixtures and shared conformance;
   missing opt-in live evidence keeps its source status experimental rather than
   expanding the support claim.

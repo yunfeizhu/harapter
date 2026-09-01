@@ -1,0 +1,14 @@
+{
+  "inbound": {
+    "type": "extension_ui_request",
+    "id": "synthetic-native-interaction",
+    "method": "confirm",
+    "title": "Synthetic confirmation",
+    "message": "Continue the synthetic Run?"
+  },
+  "outbound": {
+    "type": "extension_ui_response",
+    "id": "synthetic-native-interaction",
+    "confirmed": true
+  }
+}

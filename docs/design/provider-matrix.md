@@ -9,8 +9,8 @@ Test 和真实 Runtime 测试后，才能在发布物中标记为可用。
 
 “可接入”表示可以覆盖统一的创建 Session、提交输入、消费事件和获得终态主链路；“原生高级能力”仍取决于目标 Harness 的公开机器接口。
 
-DeepSeek Harness、Hermes
-Agent 和 OpenClaw 的接口观察日期为 2026-08-31。实际兼容范围由连接时探测、脱敏 Fixture、Conformance
+DeepSeek Harness、Hermes Agent 和 OpenClaw 的接口观察日期为 2026-08-31，Pi
+Agent 的接口观察日期为 2026-09-01。实际兼容范围由连接时探测、脱敏 Fixture、Conformance
 Test、真实 Runtime Test 和对应 Provider README 共同声明。
 
 ## 2. 目标 Provider
@@ -28,6 +28,7 @@ Test、真实 Runtime Test 和对应 Provider README 共同声明。
 | DeepSeek Harness   | `deepseek.harness`      | SDK stdio JSON-RPC                   | 中高         | 官方接口未提供已验证的运行中取消；进程关闭只能作为连接中止             |
 | Hermes Agent       | `nous.hermes-agent`     | API Server HTTP/SSE                  | 很高         | Workspace 选择和后台 Subagent 终态不能从父 Run 终态推断                |
 | OpenClaw           | `openclaw`              | `openclaw acp`                       | 高           | Bridge 历史、Tool、Approval 和共享 Session 路由存在部分支持            |
+| Pi Agent           | `pi.agent`              | `pi --mode rpc` strict JSONL         | 高           | 独立进程；不支持 per-Session Workspace 和 Runtime Extension Loading    |
 
 这里的 Cursor 仅指公开的 `cursor-agent`
 CLI。Cursor 桌面 IDE 不能因为存在 CLI 就被宣称已经完整适配。
@@ -46,6 +47,7 @@ adapter-cursor
 adapter-dsh
 adapter-hermes
 adapter-openclaw
+adapter-pi
 ```
 
 这些包只实现适配逻辑，不包含第三方 Runtime 二进制。用户或宿主负责安装、认证和许可；Profile 负责引用具体命令、SDK 实例、Socket 或 Endpoint。
@@ -222,6 +224,37 @@ Run 证明工具执行目录前，Workspace 能力保持
 官方入口：[OpenClaw ACP](https://docs.openclaw.ai/cli/acp)、
 [Agent Client Protocol](https://agentclientprotocol.com/protocol/overview)。
 
+### 4.12 Pi Agent
+
+首选宿主提供的 `pi --mode rpc`，通过通用 JSONL Process
+Transport 连接官方双向 RPC 模式。Pi Agent
+Adapter 负责 Command 关联、Session 所有权、Event、Retry、Interaction、Capability、Error 和终态；Transport 只负责严格 LF 分帧、有界队列、串行写入、背压和连接清理。
+
+每个 Harapter Session 启动并独占一个 Pi RPC 进程。Session
+ID、持久化模式、Provider、Profile 和兼容族绑定在 Session 引用中。持久 Session 使用原生 ID 恢复并验证
+`get_state`；临时 Session 不宣称可恢复。一个 Session 同时只允许一个活动 Run，不在多个 Session 之间共享 Pi 的可变当前状态。进程固定使用 Profile
+Working
+Directory；Adapter 在连接探测前将缺省或相对目录解析为固定绝对路径，per-Session
+Workspace 不支持。
+
+`prompt` 响应只表示 Command 已被接受，`agent_end`
+之后仍可能发生 Retry。Adapter 等待稳定的
+`agent_settled`，并以最近一条结构有效的 Assistant `message_end`
+作为终态来源。只有明确的 `stop` 可以生成成功；`aborted` 只有在关联的 Abort
+Response 成功后才生成取消；未经 Harapter 发起的 `aborted`、其他、缺失或未知 stop
+reason 失败关闭。EOF、进程退出和未确认的 Abort 都是连接中止，不得伪装成原生取消。Adapter 禁用 Extension、Skill 和 Prompt
+Template Discovery；Portable
+Text 不能以前导 Slash 开始，避免 Pi 把输入解释为 Command 或 Session Mutation。
+
+官方 Extension UI 的 Select、Confirm、Input 和 Editor 进入 Provider
+Interaction，不推断为通用 Approval 或 User Input 能力。未知 RPC
+Event 通过有界、脱敏的 Raw
+Channel 保持可观测，不能建立成功终态。宿主负责安装、认证和配置 Pi；默认 Workspace 不包含 Pi
+Runtime 或 SDK 依赖。
+
+官方入口：[Pi Agent RPC mode](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/rpc.md)、
+[Pi Agent](https://github.com/earendil-works/pi)。
+
 ## 5. 公共能力预期
 
 | 能力               | Claude | Codex  | OpenCode | Goose  | Qwen   | Crush  | Copilot | Cursor |
@@ -241,14 +274,14 @@ Manifest。
 
 下一组 Provider 的设计预期为：
 
-| 能力               | DeepSeek Harness | Hermes Agent | OpenClaw |
-| ------------------ | ---------------- | ------------ | -------- |
-| 创建任务会话       | 可评估           | 可评估       | 可评估   |
-| 流式事件           | 可评估           | 可评估       | 可评估   |
-| Session Resume     | 需实测           | 需实测       | 可评估   |
-| 原生 Run Cancel    | 不支持           | 可评估       | 需实测   |
-| 外部审批响应       | 不支持           | 可评估       | 需实测   |
-| Provider Extension | 可定义           | 可定义       | 可定义   |
+| 能力               | DeepSeek Harness | Hermes Agent | OpenClaw | Pi Agent |
+| ------------------ | ---------------- | ------------ | -------- | -------- |
+| 创建任务会话       | 可评估           | 可评估       | 可评估   | 可评估   |
+| 流式事件           | 可评估           | 可评估       | 可评估   | 可评估   |
+| Session Resume     | 需实测           | 需实测       | 可评估   | 可评估   |
+| 原生 Run Cancel    | 不支持           | 可评估       | 需实测   | 可评估   |
+| 外部审批响应       | 不支持           | 可评估       | 需实测   | 不支持   |
+| Provider Extension | 可定义           | 可定义       | 可定义   | 可定义   |
 
 “不支持”表示当前官方机器接口明确没有可验证的对应行为。关闭进程、断开连接或丢弃本地 Run
 Handle 不会把该能力提升为原生取消。
@@ -279,15 +312,18 @@ Schema、方法、协议协商和 Capability 语义。JSON-RPC
 framing、请求关联、背压、队列边界、等待超时和连接清理继续由现有 Transport 拥有；进程策略由调用它的 Provider
 Connection 拥有。
 
+`@harapter/transport-jsonl-process`
+拥有非 JSON-RPC 进程协议的严格 JSONL 收发和连接边界。Pi Agent
+Adapter 在其上实现 Provider
+RPC 关联、Session、Retry、Interaction、Cancel 和终态，不把 Pi 名称或事件语义写入 Transport。
+
 ## 7. 其他 Provider
 
-LangGraph、OpenHands、Pi
-Agent 及基于 Pi 的其他 Harness 也可以按照相同契约新增 Adapter。它们不需要进入 Core 枚举：
+LangGraph、OpenHands 及基于 Pi 的其他 Harness 也可以按照相同契约新增 Adapter。它们不需要进入 Core 枚举：
 
 ```text
 adapter-langgraph
 adapter-openhands
-adapter-pi
 adapter-pi-derived-harness
 ```
 

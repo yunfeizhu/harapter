@@ -31,3 +31,7 @@ provider traffic.
   inspected current OpenClaw ACP bridge revision plus synthetic completed,
   permission, and unknown-update payloads. The recorded Runtime and ACP SDK
   versions identify fixture provenance; they are not Runtime version pins.
+- [`pi/rpc-current`](./pi/rpc-current/manifest.json) records the inspected
+  current Pi Agent RPC source revision plus synthetic completed, cancelled,
+  failed, interaction, and unknown-event payloads. The recorded Runtime version
+  identifies fixture provenance; it is not a Runtime version pin.

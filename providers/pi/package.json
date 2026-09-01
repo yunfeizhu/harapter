@@ -1,0 +1,26 @@
+{
+  "name": "@harapter/adapter-pi",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pi Agent RPC provider adapter for Harapter.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json"
+  },
+  "dependencies": {
+    "@harapter/core": "workspace:*",
+    "@harapter/transport-jsonl-process": "workspace:*"
+  },
+  "devDependencies": {
+    "@harapter/conformance": "workspace:*"
+  }
+}

@@ -25,7 +25,8 @@ harapter/
 │   ├── cursor/
 │   ├── dsh/
 │   ├── hermes/
-│   └── openclaw/
+│   ├── openclaw/
+│   └── pi/
 ├── examples/
 │   ├── single-provider/
 │   └── multi-provider-client/
@@ -86,7 +87,11 @@ Fake Provider 用于固定：
    Transport，实现 Provider-neutral 的 ACP
    Schema、方法、协商和 Capability 校验；
 4. **OpenClaw**：通过宿主提供的 `openclaw acp` 复用 ACP Transport，并保持 ACP
-   Session 与 Gateway Session 的所有权映射。
+   Session 与 Gateway Session 的所有权映射；
+5. **JSONL Process
+   Transport**：为非 JSON-RPC 的双向进程协议提供严格 LF 分帧、有界队列、串行写入、背压和连接清理；
+6. **Pi Agent**：通过宿主提供的 `pi --mode rpc` 复用 JSONL Process
+   Transport，并以 `agent_settled` 和权威 Assistant 结果固定 Run 终态。
 
 每项是一个独立模块和 Pull Request。Provider
 Adapter 与对应文档、脱敏 Fixture、Conformance
@@ -117,7 +122,8 @@ Connection；ACP 层不把进程退出解释为 Provider 原生取消。
 
 - `@harapter/transport-jsonl-process` 为非 JSON-RPC 的双向 Headless
   JSONL 协议提供严格 LF 分帧、有界队列、串行写入、背压和连接清理。请求关联、Event 分类和终态继续由 Provider
-  Adapter 拥有；
+  Adapter 拥有。Pi Agent Adapter 使用该 Transport，并独立拥有 RPC
+  Command、Session、Retry、Interaction、Cancel 和终态语义；
 - Qwen Code 验证 SDK、Daemon 与 Stream JSON Strategy 的一致性；
 - Cursor Agent CLI 验证有限 Headless 接口、非零退出和不完整终态；
 - Crush 验证 Unix Socket、Windows Named Pipe、共享 Workspace 和服务版本探测。
@@ -126,7 +132,7 @@ Connection；ACP 层不把进程退出解释为 Provider 原生取消。
 
 ### 2.6 其他 Harness
 
-LangGraph、OpenHands、Pi 和基于 Pi 的衍生 Harness 按同一 SPI 新增。它们可以复用 Transport 和测试工具，但不要求修改 Core。
+LangGraph、OpenHands 和基于 Pi 的衍生 Harness 按同一 SPI 新增。它们可以复用 Transport 和测试工具，但不要求修改 Core。
 
 ## 3. 测试结构
 
