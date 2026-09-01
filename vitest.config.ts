@@ -17,6 +17,9 @@ export default defineConfig({
       '@harapter/adapter-codex': fileURLToPath(
         new URL('./providers/codex/src/index.ts', import.meta.url),
       ),
+      '@harapter/adapter-opencode': fileURLToPath(
+        new URL('./providers/opencode/src/index.ts', import.meta.url),
+      ),
       '@harapter/transport-acp': fileURLToPath(
         new URL('./packages/transport-acp/src/index.ts', import.meta.url),
       ),

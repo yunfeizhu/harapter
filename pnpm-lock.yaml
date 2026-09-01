@@ -51,6 +51,22 @@ importers:
         specifier: 4.1.11
         version: 4.1.11(@types/node@24.13.3)(@vitest/coverage-v8@4.1.11)
 
+  examples/multi-provider-client:
+    dependencies:
+      '@harapter/adapter-codex':
+        specifier: workspace:*
+        version: link:../../providers/codex
+      '@harapter/adapter-opencode':
+        specifier: workspace:*
+        version: link:../../providers/opencode
+      '@harapter/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+    devDependencies:
+      '@harapter/conformance':
+        specifier: workspace:*
+        version: link:../../packages/conformance
+
   examples/single-provider:
     dependencies:
       '@harapter/adapter-codex':

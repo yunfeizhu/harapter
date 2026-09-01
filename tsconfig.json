@@ -8,6 +8,7 @@
     "noEmit": true,
     "paths": {
       "@harapter/adapter-codex": ["providers/codex/src/index.ts"],
+      "@harapter/adapter-opencode": ["providers/opencode/src/index.ts"],
       "@harapter/transport-acp": ["packages/transport-acp/src/index.ts"],
       "@harapter/conformance": ["packages/conformance/src/index.ts"],
       "@harapter/core": ["packages/core/src/index.ts"],

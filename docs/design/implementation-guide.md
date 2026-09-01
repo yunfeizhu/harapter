@@ -205,7 +205,7 @@ Conformance。Canary 失败只影响对应 Provider 的新版本支持，不阻�
 
 ```text
 Reference Client
-    ├── qwen-local ─────▶ adapter-qwen ─────▶ Qwen Code
+    ├── codex-local ────▶ adapter-codex ────▶ Codex
     └── opencode-local ─▶ adapter-opencode ─▶ OpenCode
 ```
 
@@ -218,7 +218,7 @@ Reference Client
 - 根据 Capability 隐藏不支持的操作；
 - 保持 SessionRef 与原 Provider 绑定；
 - 为新任务切换 Harness；
-- 拒绝用 OpenCode 恢复 Qwen Session；
+- 拒绝用 OpenCode 恢复 Codex Session；
 - 使用一个 Provider Extension，而不污染 Portable Core 示例。
 
 这是验证 Adapter 价值的核心验收场景。
@@ -229,12 +229,13 @@ Reference Client
 {
   "harnessProfiles": [
     {
-      "profileId": "qwen-local",
-      "displayName": "Qwen Code",
-      "providerId": "qwen.code",
+      "profileId": "codex-local",
+      "displayName": "Codex",
+      "providerId": "openai.codex",
       "connection": {
         "kind": "process",
-        "command": "/usr/local/bin/qwen",
+        "command": "/usr/local/bin/codex",
+        "args": ["app-server", "--stdio"],
         "ownership": "adapter"
       }
     },
@@ -304,7 +305,7 @@ Harapter 返回的 SessionRef 和 Event 由宿主单向投影到产品数据，�
 
 项目满足以下条件时，核心设计成立：
 
-- 同一个参考应用同时连接 Qwen Code 和 OpenCode；
+- 同一个参考应用同时连接 Codex 和 OpenCode；
 - 新任务只改变 Profile 即可选择 Harness；
 - Core 不包含 Provider 名称判断；
 - Provider Adapter 只调用公开 SDK/API；
