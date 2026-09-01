@@ -1,4 +1,7 @@
 # Examples
 
-Reference applications will demonstrate single-provider and multi-provider usage
-without relying on provider-specific types in the portable path.
+- [`single-provider`](single-provider/README.md) demonstrates one complete
+  portable Client, Session, Run, event, result, and cleanup lifecycle. Provider
+  selection stays in the composition root.
+- A multi-provider reference application remains planned. It will run the same
+  portable consumer against semantically different Provider Adapters.

@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "dist",
+    "paths": {
+      "@harapter/adapter-codex": ["../../providers/codex/dist/index.d.ts"],
+      "@harapter/core": ["../../packages/core/dist/index.d.ts"]
+    },
+    "rootDir": "src",
+    "tsBuildInfoFile": "dist/tsconfig.build.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"]
+}
