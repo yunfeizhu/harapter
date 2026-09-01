@@ -115,6 +115,9 @@ Connection；ACP 层不把进程退出解释为 Provider 原生取消。
 
 ### 2.5 Headless JSONL 与本地服务
 
+- `@harapter/transport-jsonl-process` 为非 JSON-RPC 的双向 Headless
+  JSONL 协议提供严格 LF 分帧、有界队列、串行写入、背压和连接清理。请求关联、Event 分类和终态继续由 Provider
+  Adapter 拥有；
 - Qwen Code 验证 SDK、Daemon 与 Stream JSON Strategy 的一致性；
 - Cursor Agent CLI 验证有限 Headless 接口、非零退出和不完整终态；
 - Crush 验证 Unix Socket、Windows Named Pipe、共享 Workspace 和服务版本探测。
