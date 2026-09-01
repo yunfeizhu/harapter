@@ -211,9 +211,13 @@ Session 的映射、事件、Capability、Interaction、Error 和兼容性；ACP
 Transport 不包含 OpenClaw 名称判断或 Gateway 语义。
 
 默认使用 bridge 创建的隔离 Session。显式绑定已有 Gateway
-Session 属于 Provider 配置；多个 ACP Client 共享同一 Gateway
-Session 时，事件和取消路由不能宣称严格隔离。历史加载、Tool 流、Usage 和 Approval 只按当前连接握手与已验证事件声明实际能力。首个 Adapter 不直接实现 Gateway
-WebSocket 客户端。
+Session 属于尚未实现的独立连接策略；当前 Profile 拒绝共享 Session 路由参数。Adapter 在每个连接上只允许一个活跃 Run，避免把缺少 Session 路由的未知 ACP
+Event 猜给并发 Run。历史加载、Tool 流、Usage 和 Approval 只按当前连接握手与已验证事件声明实际能力。ACP
+prompt 响应是终态权威；原生取消只有在响应明确为 `cancelled`
+后成立，连接退出和通知写入均不构成取消证据。首个 Adapter 不直接实现 Gateway
+WebSocket 客户端。ACP 接受 Session 的工作目录，但在真实 Gateway
+Run 证明工具执行目录前，Workspace 能力保持
+`unknown`。Session 变更或 Prompt 在权威响应前发生本地等待超时，必须中止所属连接，不能重新开放不确定的 Session 或 Run。
 
 官方入口：[OpenClaw ACP](https://docs.openclaw.ai/cli/acp)、
 [Agent Client Protocol](https://agentclientprotocol.com/protocol/overview)。

@@ -73,6 +73,13 @@ becomes authoritative only after a validated `session/prompt` response with one
 of the closed stable stop reasons. EOF, malformed input, an unknown stop reason,
 or a future update never becomes success.
 
+When `events()` has a consumer, prompt settlement also waits until that consumer
+finishes every ACP event received before the prompt response. The composed
+JSON-RPC inbound barrier fixes the wire boundary, and the ACP event checkpoint
+fixes the consumer boundary. Events received after the response do not delay or
+mutate the settled prompt. The original prompt deadline and `AbortSignal` remain
+active through both barriers, and event-checkpoint waiters are bounded.
+
 `cancelSession()` sends the ACP `session/cancel` notification. Before doing so,
 it answers every pending permission request for that Session with the required
 `cancelled` outcome, including requests that race while the prompt is settling.
@@ -86,12 +93,13 @@ cancelled before requesting authoritative Session closure. A locally aborted or
 timed-out close wait leaves the Session blocked because the remote close result
 is unknown; only connection closure can clear that uncertainty.
 
-A request timeout or `AbortSignal` only stops the local JSON-RPC response wait;
-it sends no cancellation notification and proves no remote cancellation. That
-Session remains blocked from another prompt because the remote turn may still be
-active. The caller may still send explicit cancellation, but reuse requires an
-advertised `session/close` operation or closing the connection because the
-aborted local wait can no longer validate the late prompt response.
+A request timeout or `AbortSignal` only stops the local prompt wait; it sends no
+cancellation notification and proves no remote cancellation. When it ends before
+a terminal response is validated, that Session remains blocked from another
+prompt because the remote turn may still be active. The caller may still send
+explicit cancellation, but reuse requires an advertised `session/close`
+operation or closing the connection because the aborted local wait can no longer
+validate the late prompt response.
 
 ## Events, extensions, and sensitive data
 

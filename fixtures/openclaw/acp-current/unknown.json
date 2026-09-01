@@ -1,0 +1,12 @@
+{
+  "kind": "unknown_session_update",
+  "method": "session/update",
+  "params": {
+    "sessionId": "synthetic-openclaw-session",
+    "update": {
+      "sessionUpdate": "future_openclaw_update",
+      "enabled": true,
+      "secret": "synthetic private value"
+    }
+  }
+}

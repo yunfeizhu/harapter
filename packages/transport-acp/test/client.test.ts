@@ -124,6 +124,127 @@ function eventValue(result: IteratorResult<AcpEvent>): AcpEvent {
 }
 
 describe('AcpClient', () => {
+  it('settles a prompt after pre-terminal updates finish event handling', async () => {
+    const value = harness();
+    await initialize(value);
+    const events = value.client.events()[Symbol.asyncIterator]();
+    const prompt = value.client.prompt({
+      prompt: [{ text: 'synthetic request', type: 'text' }],
+      sessionId: 'synthetic-session',
+    });
+    const request = await value.frames.next();
+    value.inbound.write(
+      `${JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'session/update',
+        params: {
+          sessionId: 'synthetic-session',
+          update: {
+            content: { text: 'synthetic answer', type: 'text' },
+            sessionUpdate: 'agent_message_chunk',
+          },
+        },
+      })}\n${JSON.stringify({
+        jsonrpc: '2.0',
+        id: request['id'],
+        result: { stopReason: 'end_turn' },
+      })}\n`,
+    );
+    let settled = false;
+    void prompt.then(() => {
+      settled = true;
+    });
+    expect(eventValue(await events.next())).toMatchObject({
+      kind: 'session_update',
+    });
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    const next = events.next();
+    await expect(prompt).resolves.toEqual({ stopReason: 'end_turn' });
+    await closeHarness(value);
+    await expect(next).resolves.toMatchObject({ done: true });
+  });
+
+  it('times out while a claimed event remains unacknowledged', async () => {
+    const value = harness();
+    await initialize(value);
+    const events = value.client.events()[Symbol.asyncIterator]();
+    const prompt = value.client.prompt(
+      {
+        prompt: [{ text: 'synthetic request', type: 'text' }],
+        sessionId: 'synthetic-session',
+      },
+      { timeoutMs: 30 },
+    );
+    const request = await value.frames.next();
+    value.inbound.write(
+      `${JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'session/update',
+        params: {
+          sessionId: 'synthetic-session',
+          update: {
+            content: { text: 'synthetic answer', type: 'text' },
+            sessionUpdate: 'agent_message_chunk',
+          },
+        },
+      })}\n${JSON.stringify({
+        jsonrpc: '2.0',
+        id: request['id'],
+        result: { stopReason: 'end_turn' },
+      })}\n`,
+    );
+    expect(eventValue(await events.next())).toMatchObject({
+      kind: 'session_update',
+    });
+    await expect(prompt).rejects.toMatchObject({ code: 'request_timeout' });
+
+    const next = events.next();
+    await closeHarness(value);
+    await expect(next).resolves.toMatchObject({ done: true });
+  });
+
+  it('honors AbortSignal while a claimed event remains unacknowledged', async () => {
+    const value = harness();
+    await initialize(value);
+    const events = value.client.events()[Symbol.asyncIterator]();
+    const controller = new AbortController();
+    const prompt = value.client.prompt(
+      {
+        prompt: [{ text: 'synthetic request', type: 'text' }],
+        sessionId: 'synthetic-session',
+      },
+      { signal: controller.signal },
+    );
+    const request = await value.frames.next();
+    value.inbound.write(
+      `${JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'session/update',
+        params: {
+          sessionId: 'synthetic-session',
+          update: {
+            content: { text: 'synthetic answer', type: 'text' },
+            sessionUpdate: 'agent_message_chunk',
+          },
+        },
+      })}\n${JSON.stringify({
+        jsonrpc: '2.0',
+        id: request['id'],
+        result: { stopReason: 'end_turn' },
+      })}\n`,
+    );
+    expect(eventValue(await events.next())).toMatchObject({
+      kind: 'session_update',
+    });
+    controller.abort();
+    await expect(prompt).rejects.toMatchObject({ code: 'request_aborted' });
+
+    const next = events.next();
+    await closeHarness(value);
+    await expect(next).resolves.toMatchObject({ done: true });
+  });
+
   it('negotiates stable v1 and normalizes explicit agent capabilities', async () => {
     const value = harness();
     await expect(

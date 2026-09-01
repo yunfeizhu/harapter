@@ -58,6 +58,82 @@ function expectMessage(
 }
 
 describe('JsonRpcStdioTransport', () => {
+  it('can wait for earlier inbound messages to finish consumer handling', async () => {
+    const pair = createPair();
+    const firstIncoming = iterator(pair.first);
+    const secondIncoming = iterator(pair.second);
+    const response = pair.first.requestAfterInbound('ordered/request');
+    const request = expectMessage(await secondIncoming.next());
+    if (request.kind !== 'request') throw new Error('Expected a request.');
+
+    await pair.second.notify('ordered/event', { sequence: 1 });
+    await pair.second.respond(request.id, { accepted: true });
+    let settled = false;
+    void response.then(() => {
+      settled = true;
+    });
+    const event = expectMessage(await firstIncoming.next());
+    expect(event).toMatchObject({
+      kind: 'notification',
+      method: 'ordered/event',
+    });
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    const next = firstIncoming.next();
+    await expect(response).resolves.toEqual({ accepted: true });
+    await disposePair(pair);
+    await expect(next).resolves.toMatchObject({ done: true });
+  });
+
+  it('keeps timeout and outbound capacity active while inbound handling stalls', async () => {
+    const pair = createPair({ maxPendingRequests: 1 });
+    const firstIncoming = iterator(pair.first);
+    const secondIncoming = iterator(pair.second);
+    const response = pair.first.requestAfterInbound(
+      'ordered/timeout',
+      undefined,
+      { timeoutMs: 30 },
+    );
+    const request = expectMessage(await secondIncoming.next());
+    if (request.kind !== 'request') throw new Error('Expected a request.');
+
+    await pair.second.notify('ordered/event');
+    await pair.second.respond(request.id, { accepted: true });
+    await firstIncoming.next();
+    await expect(
+      pair.first.request('blocked/by-capacity'),
+    ).rejects.toMatchObject({ code: 'capacity_exceeded' });
+    await expect(response).rejects.toMatchObject({ code: 'request_timeout' });
+
+    const next = firstIncoming.next();
+    await disposePair(pair);
+    await expect(next).resolves.toMatchObject({ done: true });
+  });
+
+  it('keeps AbortSignal active while inbound handling stalls', async () => {
+    const pair = createPair();
+    const firstIncoming = iterator(pair.first);
+    const secondIncoming = iterator(pair.second);
+    const controller = new AbortController();
+    const response = pair.first.requestAfterInbound(
+      'ordered/abort',
+      undefined,
+      { signal: controller.signal },
+    );
+    const request = expectMessage(await secondIncoming.next());
+    if (request.kind !== 'request') throw new Error('Expected a request.');
+
+    await pair.second.notify('ordered/event');
+    await pair.second.respond(request.id, { accepted: true });
+    await firstIncoming.next();
+    controller.abort();
+    await expect(response).rejects.toMatchObject({ code: 'request_aborted' });
+
+    const next = firstIncoming.next();
+    await disposePair(pair);
+    await expect(next).resolves.toMatchObject({ done: true });
+  });
+
   it('correlates concurrent requests even when responses arrive out of order', async () => {
     const pair = createPair();
     const incoming = iterator(pair.second);

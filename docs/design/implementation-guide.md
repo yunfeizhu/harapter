@@ -91,7 +91,7 @@ Fake Provider 用于固定：
 每项是一个独立模块和 Pull Request。Provider
 Adapter 与对应文档、脱敏 Fixture、Conformance
 Test 和兼容性证据一起交付。第三方 SDK、CLI、Gateway 和 Runtime 均由宿主安装、认证和管理，不进入 Harapter 默认 Workspace 依赖。选择该顺序和接入面的理由由
-[对应 Agent Note](../../.agents/notes/proposed/architecture/2026-08-31-next-provider-integration-sequence.md)
+[对应 Agent Note](../../.agents/notes/implemented/architecture/2026-08-31-next-provider-integration-sequence.md)
 记录。
 
 ### 2.4 共享 ACP Transport

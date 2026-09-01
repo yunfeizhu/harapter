@@ -1,0 +1,33 @@
+{
+  "sessionId": "synthetic-openclaw-session",
+  "updates": [
+    {
+      "sessionUpdate": "agent_thought_chunk",
+      "content": { "type": "text", "text": "synthetic reasoning" }
+    },
+    {
+      "sessionUpdate": "agent_message_chunk",
+      "content": { "type": "text", "text": "synthetic answer" }
+    },
+    {
+      "sessionUpdate": "tool_call",
+      "toolCallId": "synthetic-tool-call",
+      "title": "Synthetic tool",
+      "kind": "execute",
+      "status": "pending",
+      "rawInput": { "secret": "synthetic private input" }
+    },
+    {
+      "sessionUpdate": "tool_call_update",
+      "toolCallId": "synthetic-tool-call",
+      "status": "completed",
+      "rawOutput": { "secret": "synthetic private output" }
+    },
+    {
+      "sessionUpdate": "usage_update",
+      "used": 16,
+      "size": 128
+    }
+  ],
+  "terminal": { "stopReason": "end_turn" }
+}

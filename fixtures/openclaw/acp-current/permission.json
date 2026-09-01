@@ -1,0 +1,13 @@
+{
+  "sessionId": "synthetic-openclaw-session",
+  "toolCall": {
+    "toolCallId": "synthetic-tool-call",
+    "title": "Synthetic approval",
+    "kind": "execute",
+    "status": "pending"
+  },
+  "options": [
+    { "optionId": "allow", "name": "Allow once", "kind": "allow_once" },
+    { "optionId": "deny", "name": "Reject once", "kind": "reject_once" }
+  ]
+}

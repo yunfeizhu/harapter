@@ -130,17 +130,31 @@ interface PendingRequest {
   readonly timer: NodeJS.Timeout;
   readonly signal: AbortSignal | undefined;
   readonly abortListener: (() => void) | undefined;
+  readonly waitForInbound: boolean;
+  inboundWaiter?: InboundBarrierWaiter;
+  responseReceived: boolean;
   writeStarted: boolean;
+}
+
+interface QueuedInboundMessage {
+  readonly message: JsonRpcInboundMessage;
+  readonly sequence: number;
+}
+
+interface InboundBarrierWaiter {
+  readonly target: number;
+  readonly resolve: () => void;
+  readonly reject: (error: JsonRpcTransportError) => void;
 }
 
 type JsonRecord = Record<string, unknown>;
 
 class InboundQueue {
   private readonly capacity: number;
-  private readonly values: JsonRpcInboundMessage[] = [];
+  private readonly values: QueuedInboundMessage[] = [];
   private waiter:
     | {
-        resolve: (result: IteratorResult<JsonRpcInboundMessage>) => void;
+        resolve: (result: IteratorResult<QueuedInboundMessage>) => void;
         reject: (error: JsonRpcTransportError) => void;
       }
     | undefined;
@@ -151,7 +165,7 @@ class InboundQueue {
     this.capacity = capacity;
   }
 
-  push(value: JsonRpcInboundMessage): boolean {
+  push(value: QueuedInboundMessage): boolean {
     if (this.closed) return false;
     if (this.waiter) {
       const waiter = this.waiter;
@@ -164,7 +178,7 @@ class InboundQueue {
     return true;
   }
 
-  next(): Promise<IteratorResult<JsonRpcInboundMessage>> {
+  next(): Promise<IteratorResult<QueuedInboundMessage>> {
     const value = this.values.shift();
     if (value) return Promise.resolve({ done: false, value });
     if (this.failure) return Promise.reject(this.failure);
@@ -228,6 +242,9 @@ export class JsonRpcStdioTransport {
   private nextRequestId = 1;
   private pendingWrites = 0;
   private incomingClaimed = false;
+  private inboundAcknowledgedSequence = 0;
+  private inboundSequence = 0;
+  private readonly inboundBarrierWaiters = new Set<InboundBarrierWaiter>();
   private open = true;
   private terminalError: JsonRpcTransportError | undefined;
   private cleanupFailure: JsonRpcTransportError | undefined;
@@ -340,6 +357,24 @@ export class JsonRpcStdioTransport {
     params?: unknown,
     options: JsonRpcRequestOptions = {},
   ): Promise<TResult> {
+    return this.requestInternal(method, params, options, false);
+  }
+
+  /** Resolve a request only after earlier inbound messages were consumed. */
+  requestAfterInbound<TResult = unknown>(
+    method: string,
+    params?: unknown,
+    options: JsonRpcRequestOptions = {},
+  ): Promise<TResult> {
+    return this.requestInternal(method, params, options, true);
+  }
+
+  private requestInternal<TResult>(
+    method: string,
+    params: unknown,
+    options: JsonRpcRequestOptions,
+    waitForInbound: boolean,
+  ): Promise<TResult> {
     try {
       this.assertOpen();
       assertMethod(method);
@@ -393,6 +428,8 @@ export class JsonRpcStdioTransport {
           timer,
           signal: options.signal,
           abortListener,
+          waitForInbound,
+          responseReceived: false,
           writeStarted: false,
         });
         if (abortListener) {
@@ -511,7 +548,8 @@ export class JsonRpcStdioTransport {
       for (;;) {
         const next = await this.inboundQueue.next();
         if (next.done) return;
-        yield next.value;
+        yield next.value.message;
+        this.acknowledgeInbound(next.value.sequence);
       }
     } finally {
       if (this.open) await this.close();
@@ -827,30 +865,67 @@ export class JsonRpcStdioTransport {
     }
 
     const pending = this.pendingRequests.get(id);
-    if (!pending?.writeStarted) {
+    if (!pending?.writeStarted || pending.responseReceived) {
       this.emitDiagnostic({ code: 'unmatched_response' });
       return;
     }
-    const settled = this.settlePending(id, (pending) => {
-      if (hasError) {
-        pending.reject(
-          new JsonRpcRemoteError(envelope['error'] as JsonRpcErrorObject),
-        );
-      } else {
-        pending.resolve(envelope['result']);
-      }
-    });
-    if (!settled) this.emitDiagnostic({ code: 'unmatched_response' });
+    pending.responseReceived = true;
+    const inboundTarget = this.inboundSequence;
+    const settleResponse = (): void => {
+      this.settlePending(id, (pending) => {
+        if (hasError) {
+          pending.reject(
+            new JsonRpcRemoteError(envelope['error'] as JsonRpcErrorObject),
+          );
+        } else {
+          pending.resolve(envelope['result']);
+        }
+      });
+    };
+    if (!pending.waitForInbound) {
+      settleResponse();
+      return;
+    }
+    void this.waitForInbound(inboundTarget, pending).then(
+      settleResponse,
+      (error: unknown) => {
+        this.settlePending(id, (pending) => {
+          pending.reject(asTransportError(error));
+        });
+      },
+    );
   }
 
   private enqueueInbound(message: JsonRpcInboundMessage): void {
-    if (this.inboundQueue.push(message)) return;
+    const sequence = ++this.inboundSequence;
+    if (this.inboundQueue.push({ message, sequence })) return;
     this.fail(
       transportError(
         'capacity_exceeded',
         'The buffered inbound message limit was reached.',
       ),
     );
+  }
+
+  private acknowledgeInbound(sequence: number): void {
+    this.inboundAcknowledgedSequence = sequence;
+    for (const waiter of [...this.inboundBarrierWaiters]) {
+      if (waiter.target > sequence) continue;
+      this.inboundBarrierWaiters.delete(waiter);
+      waiter.resolve();
+    }
+  }
+
+  private waitForInbound(
+    target: number,
+    pending: PendingRequest,
+  ): Promise<void> {
+    if (target <= this.inboundAcknowledgedSequence) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const waiter = { target, resolve, reject };
+      pending.inboundWaiter = waiter;
+      this.inboundBarrierWaiters.add(waiter);
+    });
   }
 
   private settlePending(
@@ -860,6 +935,11 @@ export class JsonRpcStdioTransport {
     const pending = this.pendingRequests.get(id);
     if (!pending) return false;
     this.pendingRequests.delete(id);
+    if (pending.inboundWaiter) {
+      this.inboundBarrierWaiters.delete(pending.inboundWaiter);
+      pending.inboundWaiter.resolve();
+      delete pending.inboundWaiter;
+    }
     clearTimeout(pending.timer);
     if (pending.abortListener) {
       pending.signal?.removeEventListener('abort', pending.abortListener);
@@ -925,6 +1005,10 @@ export class JsonRpcStdioTransport {
     this.pendingInboundRequestIds.clear();
     this.respondingInboundRequestIds.clear();
     this.abandoningInboundRequestIds.clear();
+    for (const waiter of this.inboundBarrierWaiters) {
+      waiter.reject(operationFailure);
+    }
+    this.inboundBarrierWaiters.clear();
     for (const id of [...this.pendingRequests.keys()]) {
       this.settlePending(id, (pending) => {
         pending.reject(operationFailure);

@@ -48,6 +48,7 @@ import type {
 } from './types.js';
 
 const defaultMaxBufferedEvents = 128;
+const defaultRequestTimeoutMs = 30_000;
 const permissionSettled = Symbol('permission-settled');
 
 interface PendingPermission {
@@ -58,21 +59,35 @@ interface PendingPermission {
   readonly settled: Promise<void>;
 }
 
+interface QueuedAcpEvent {
+  readonly event: AcpEvent;
+  readonly sequence: number;
+}
+
+interface EventBarrierWaiter {
+  readonly target: number;
+  readonly resolve: () => void;
+  readonly reject: (error: Error) => void;
+}
+
 type PermissionHandlerResult =
   | { readonly kind: 'failure' }
   | { readonly kind: 'outcome'; readonly outcome: AcpPermissionOutcome };
 
 class EventQueue {
   private readonly capacity: number;
-  private readonly values: AcpEvent[] = [];
+  private readonly values: QueuedAcpEvent[] = [];
   private waiter:
     | {
-        resolve: (value: IteratorResult<AcpEvent>) => void;
+        resolve: (value: IteratorResult<QueuedAcpEvent>) => void;
         reject: (error: unknown) => void;
       }
     | undefined;
   private closed = false;
   private failure: unknown;
+  private sequence = 0;
+  private acknowledgedSequence = 0;
+  private readonly barrierWaiters = new Set<EventBarrierWaiter>();
 
   constructor(capacity: number) {
     this.capacity = capacity;
@@ -80,18 +95,19 @@ class EventQueue {
 
   push(value: AcpEvent): boolean {
     if (this.closed) return false;
+    const queued = { event: value, sequence: ++this.sequence };
     if (this.waiter) {
       const waiter = this.waiter;
       this.waiter = undefined;
-      waiter.resolve({ done: false, value });
+      waiter.resolve({ done: false, value: queued });
       return true;
     }
     if (this.values.length >= this.capacity) return false;
-    this.values.push(value);
+    this.values.push(queued);
     return true;
   }
 
-  next(): Promise<IteratorResult<AcpEvent>> {
+  next(): Promise<IteratorResult<QueuedAcpEvent>> {
     const value = this.values.shift();
     if (value) return Promise.resolve({ done: false, value });
     if (this.failure !== undefined) {
@@ -116,11 +132,102 @@ class EventQueue {
     this.closed = true;
     this.failure = failure;
     this.values.length = 0;
+    const barrierFailure = asError(
+      failure ?? acpError('client_closed', 'The ACP event queue is closed.'),
+    );
+    for (const waiter of this.barrierWaiters) waiter.reject(barrierFailure);
+    this.barrierWaiters.clear();
     if (!this.waiter) return;
     const waiter = this.waiter;
     this.waiter = undefined;
     if (failure !== undefined) waiter.reject(failure);
     else waiter.resolve({ done: true, value: undefined });
+  }
+
+  checkpoint(): number {
+    return this.sequence;
+  }
+
+  acknowledge(sequence: number): void {
+    this.acknowledgedSequence = sequence;
+    for (const waiter of [...this.barrierWaiters]) {
+      if (waiter.target > sequence) continue;
+      this.barrierWaiters.delete(waiter);
+      waiter.resolve();
+    }
+  }
+
+  waitForAcknowledgement(
+    target: number,
+    timeoutMs: number,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    if (target <= this.acknowledgedSequence) return Promise.resolve();
+    if (this.closed) {
+      return Promise.reject(
+        asError(
+          this.failure ??
+            acpError('client_closed', 'The ACP event queue is closed.'),
+        ),
+      );
+    }
+    if (signal?.aborted) {
+      return Promise.reject(
+        new JsonRpcTransportError(
+          'request_aborted',
+          'The local request wait was aborted.',
+        ),
+      );
+    }
+    if (this.barrierWaiters.size >= this.capacity) {
+      return Promise.reject(
+        acpError(
+          'event_capacity_exceeded',
+          'The bounded ACP event acknowledgement limit was reached.',
+        ),
+      );
+    }
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (failure?: Error): void => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        signal?.removeEventListener('abort', abortListener);
+        this.barrierWaiters.delete(waiter);
+        if (failure) reject(failure);
+        else resolve();
+      };
+      const abortListener = (): void => {
+        finish(
+          new JsonRpcTransportError(
+            'request_aborted',
+            'The local request wait was aborted.',
+          ),
+        );
+      };
+      const timer = setTimeout(() => {
+        finish(
+          new JsonRpcTransportError(
+            'request_timeout',
+            'The JSON-RPC request timed out.',
+          ),
+        );
+      }, timeoutMs);
+      timer.unref();
+      const waiter: EventBarrierWaiter = {
+        target,
+        resolve: () => {
+          finish();
+        },
+        reject: (error) => {
+          finish(error);
+        },
+      };
+      this.barrierWaiters.add(waiter);
+      signal?.addEventListener('abort', abortListener, { once: true });
+      if (signal?.aborted) abortListener();
+    });
   }
 }
 
@@ -144,6 +251,7 @@ export class AcpClient {
   private readonly closingSessions = new Set<string>();
   private readonly handlerTasks = new Set<Promise<void>>();
   private readonly dispatchPromise: Promise<void>;
+  private readonly requestTimeoutMs: number;
   private initializeAttempted = false;
   private initializePromise: Promise<AcpInitializeResult> | undefined;
   private initializeResult: AcpInitializeResult | undefined;
@@ -165,6 +273,8 @@ export class AcpClient {
       );
     }
     this.eventQueue = new EventQueue(maxBufferedEvents);
+    this.requestTimeoutMs =
+      transportOptions.requestTimeoutMs ?? defaultRequestTimeoutMs;
     this.requestPermissionHandler = requestPermission;
     this.extensionRequestHandler = extensionRequest;
     this.extensionNotificationHandler = extensionNotification;
@@ -373,15 +483,34 @@ export class AcpClient {
     const promptToken = Symbol(sessionId);
     this.activePromptSessions.set(sessionId, promptToken);
     let detachedLocalWait = false;
+    let responseReceived = false;
+    const deadline = Date.now() + (options.timeoutMs ?? this.requestTimeoutMs);
     try {
-      return await this.requestParsed(
+      const result = await this.requestParsed(
         'session/prompt',
         params,
         options,
         parsePromptResult,
+        true,
       );
+      responseReceived = true;
+      if (this.eventsClaimed) {
+        const remainingTimeoutMs = deadline - Date.now();
+        if (remainingTimeoutMs <= 0) {
+          throw new JsonRpcTransportError(
+            'request_timeout',
+            'The JSON-RPC request timed out.',
+          );
+        }
+        await this.eventQueue.waitForAcknowledgement(
+          this.eventQueue.checkpoint(),
+          remainingTimeoutMs,
+          options.signal,
+        );
+      }
+      return result;
     } catch (error) {
-      detachedLocalWait = isLocalWaitEnd(error);
+      detachedLocalWait = !responseReceived && isLocalWaitEnd(error);
       throw error;
     } finally {
       if (!detachedLocalWait) {
@@ -666,7 +795,8 @@ export class AcpClient {
     for (;;) {
       const next = await this.eventQueue.next();
       if (next.done) return;
-      yield next.value;
+      yield next.value.event;
+      this.eventQueue.acknowledge(next.value.sequence);
     }
   }
 
@@ -699,8 +829,12 @@ export class AcpClient {
     params: Readonly<Record<string, unknown>>,
     options: AcpRequestOptions,
     parse: (value: unknown) => TResult,
+    afterInbound = false,
   ): Promise<TResult> {
-    return this.transport.request(method, params, options).then((value) => {
+    const response = afterInbound
+      ? this.transport.requestAfterInbound(method, params, options)
+      : this.transport.request(method, params, options);
+    return response.then((value) => {
       try {
         return parse(value);
       } catch (error) {

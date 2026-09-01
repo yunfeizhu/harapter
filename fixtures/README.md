@@ -27,3 +27,7 @@ provider traffic.
   ACP v1 schema revision plus synthetic unknown-notification and future-update
   payloads used to prove bounded structural redaction. The schema revision is
   evidence provenance, not a Provider runtime version pin.
+- [`openclaw/acp-current`](./openclaw/acp-current/manifest.json) records the
+  inspected current OpenClaw ACP bridge revision plus synthetic completed,
+  permission, and unknown-update payloads. The recorded Runtime and ACP SDK
+  versions identify fixture provenance; they are not Runtime version pins.
