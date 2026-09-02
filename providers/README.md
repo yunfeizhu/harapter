@@ -22,6 +22,6 @@ evidence exist. Packages remain private during pre-alpha and are not published
 to a registry.
 
 “Experimental in source” has implementation, redacted fixtures, Provider
-negatives, shared conformance, and an explicit compatibility boundary, while a
-required live-runtime evidence run is still outstanding. It is not a supported
-Provider claim.
+negatives, shared conformance, and an explicit compatibility boundary, but
+either live-runtime evidence is outstanding or the connected Runtime cannot be
+matched safely to the verified evidence. It is not a supported Provider claim.
