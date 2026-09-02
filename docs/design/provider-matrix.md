@@ -9,6 +9,10 @@ This document records the programmatic interfaces published by target Harnesses
 and how those interfaces affect Harapter's design. It is not a promise that a
 Provider is available.
 
+A target whose Harness implementation is not publicly reviewable requires a
+separate provider-acceptance decision before implementation. Its presence in
+this research matrix is not acceptance evidence.
+
 A Provider can be marked available in a release only after its Adapter has an
 implementation, compatibility probes, Conformance Tests, and real-Runtime tests.
 
@@ -24,20 +28,19 @@ README.
 
 ## 2. Target Providers
 
-| Provider           | Provider ID             | Preferred interface                   | Expected portable coverage | Main limitation                                                                                    |
-| ------------------ | ----------------------- | ------------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------- |
-| Claude Code        | `anthropic.claude-code` | Claude Agent SDK                      | High                       | SDK and CLI process lifecycle and permission modes require explicit configuration                  |
-| Codex Harness      | `openai.codex`          | Codex App Server                      | Very high                  | The stable protocol keeps expanding; required structures and Runtime Schema must be validated      |
-| OpenCode           | `opencode`              | Headless HTTP/OpenAPI; optional ACP   | Very high                  | The host manages HTTP service lifecycle and authentication                                         |
-| Goose              | `goose`                 | ACP Server or official API            | High                       | Extensions, Recipes, Subagents, and similar features remain Provider Extensions                    |
-| Qwen Code          | `qwen.code`             | SDK, ACP, HTTP daemon, or Stream JSON | Medium-high                | Interfaces evolve quickly; some SDK and bidirectional-stream capabilities may remain experimental  |
-| Crush              | `charm.crush`           | `crush serve` local API               | High                       | The service API is new; released-version and main-branch capabilities need separate probes         |
-| GitHub Copilot CLI | `github.copilot-cli`    | ACP Server                            | High                       | Some Tool and Reasoning settings are fixed at Server startup and cannot change per Session         |
-| Cursor Agent CLI   | `cursor.agent-cli`      | Headless Stream JSON                  | Medium                     | Currently Beta; failure, approval, and native-cancel control surfaces are less complete            |
-| DeepSeek Harness   | `deepseek.harness`      | SDK stdio JSON-RPC                    | Medium-high                | The official interface has no verified in-progress cancellation; process close is connection abort |
-| Hermes Agent       | `nous.hermes-agent`     | API Server HTTP/SSE                   | Very high                  | Workspace selection and background Subagent terminality cannot be inferred from a parent Run       |
-| OpenClaw           | `openclaw`              | `openclaw acp`                        | High                       | Bridge history, Tools, Approval, and shared-Session routing have partial support                   |
-| Pi Agent           | `pi.agent`              | `pi --mode rpc` strict JSONL          | High                       | Separate process; no per-Session Workspace or Runtime Extension loading                            |
+| Provider           | Provider ID          | Preferred interface                   | Expected portable coverage | Main limitation                                                                                    |
+| ------------------ | -------------------- | ------------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------- |
+| Codex Harness      | `openai.codex`       | Codex App Server                      | Very high                  | The stable protocol keeps expanding; required structures and Runtime Schema must be validated      |
+| OpenCode           | `opencode`           | Headless HTTP/OpenAPI; optional ACP   | Very high                  | The host manages HTTP service lifecycle and authentication                                         |
+| Goose              | `goose`              | ACP Server or official API            | High                       | Extensions, Recipes, Subagents, and similar features remain Provider Extensions                    |
+| Qwen Code          | `qwen.code`          | SDK, ACP, HTTP daemon, or Stream JSON | Medium-high                | Interfaces evolve quickly; some SDK and bidirectional-stream capabilities may remain experimental  |
+| Crush              | `charm.crush`        | `crush serve` local API               | High                       | The service API is new; released-version and main-branch capabilities need separate probes         |
+| GitHub Copilot CLI | `github.copilot-cli` | ACP Server                            | High                       | Some Tool and Reasoning settings are fixed at Server startup and cannot change per Session         |
+| Cursor Agent CLI   | `cursor.agent-cli`   | Headless Stream JSON                  | Medium                     | Currently Beta; failure, approval, and native-cancel control surfaces are less complete            |
+| DeepSeek Harness   | `deepseek.harness`   | SDK stdio JSON-RPC                    | Medium-high                | The official interface has no verified in-progress cancellation; process close is connection abort |
+| Hermes Agent       | `nous.hermes-agent`  | API Server HTTP/SSE                   | Very high                  | Workspace selection and background Subagent terminality cannot be inferred from a parent Run       |
+| OpenClaw           | `openclaw`           | `openclaw acp`                        | High                       | Bridge history, Tools, Approval, and shared-Session routing have partial support                   |
+| Pi Agent           | `pi.agent`           | `pi --mode rpc` strict JSONL          | High                       | Separate process; no per-Session Workspace or Runtime Extension loading                            |
 
 Cursor here means only the public `cursor-agent` CLI. The Cursor desktop IDE
 cannot be declared fully integrated merely because a CLI exists.
@@ -45,7 +48,6 @@ cannot be declared fully integrated merely because a CLI exists.
 ## 3. Recommended Provider packages
 
 ```text
-adapter-claude
 adapter-codex
 adapter-opencode
 adapter-goose
@@ -65,26 +67,7 @@ references a concrete command, SDK instance, Socket, or Endpoint.
 
 ## 4. Integration strategies
 
-### 4.1 Claude Code
-
-Prefer the official Claude Agent SDK and never parse the interactive Claude Code
-terminal. The Adapter maps SDK Sessions, message streams, Tool Events, and
-results to the portable contract, and exposes allowed Tools and permission modes
-through SDK configuration.
-
-Important evidence includes:
-
-- ownership and exit semantics of SDK-managed processes;
-- Session creation and resume references;
-- ordering of Partial Messages, Tool Calls, and Results;
-- whether an external Client can respond reliably to permission requests; and
-- whether local settings read by default must be disabled or pinned explicitly.
-
-Official references:
-[Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview),
-[streaming output](https://code.claude.com/docs/en/agent-sdk/streaming-output).
-
-### 4.2 Codex Harness
+### 4.1 Codex Harness
 
 Prefer `codex app-server`. It exposes the open-source Codex Harness through a
 bidirectional JSON-RPC-style protocol with Thread, Turn, Item, streaming Delta,
@@ -101,7 +84,7 @@ Official references:
 [Codex App Server](https://developers.openai.com/codex/app-server),
 [Codex Harness](https://openai.com/index/unlocking-the-codex-harness/).
 
-### 4.3 OpenCode
+### 4.2 OpenCode
 
 Prefer the HTTP/OpenAPI interface from `opencode serve`, with the official
 service Event stream. An ACP Connection Strategy can be added to the same
@@ -113,7 +96,7 @@ strategies may expose different Capabilities.
 Official references: [OpenCode Server](https://opencode.ai/docs/server/),
 [OpenCode CLI](https://opencode.ai/docs/cli/).
 
-### 4.4 Goose
+### 4.3 Goose
 
 Goose can run as an ACP Server and also publishes a CLI and API. The portable
 Session/Run path should prefer ACP or a formal API. Goose Extensions, Recipes,
@@ -122,7 +105,7 @@ through `goose.*` Extensions or the Native Client.
 
 Official reference: [Goose](https://block.github.io/goose/).
 
-### 4.5 Qwen Code
+### 4.4 Qwen Code
 
 Qwen Code offers Headless, Stream JSON, SDK, ACP, and long-running-service
 interfaces. A Provider package may implement multiple Connection Strategies for
@@ -143,7 +126,7 @@ Official references:
 [Qwen Code architecture](https://qwenlm.github.io/qwen-code-docs/en/developers/architecture/),
 [Headless Mode](https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/).
 
-### 4.6 Crush
+### 4.5 Crush
 
 Crush currently provides a shared backend through `crush serve`. Its local API
 exposes Workspace, Session, Agent, LSP, MCP, and related resources through a
@@ -157,7 +140,7 @@ source alone cannot broaden the support range.
 Official references: [Crush](https://github.com/charmbracelet/crush),
 [Crush API entry point](https://github.com/charmbracelet/crush/blob/main/main.go).
 
-### 4.7 GitHub Copilot CLI
+### 4.6 GitHub Copilot CLI
 
 Prefer `copilot --acp`. The ACP Server supports stdio and TCP transports. The
 Adapter may reuse a general ACP Transport, while an independent Provider
@@ -170,7 +153,7 @@ Adapter must not present them as per-Session dynamic settings.
 Official reference:
 [Copilot CLI ACP Server](https://docs.github.com/en/copilot/reference/copilot-cli-reference/acp-server).
 
-### 4.8 Cursor Agent CLI
+### 4.7 Cursor Agent CLI
 
 Prefer `cursor-agent --print --output-format stream-json`. The Adapter can map
 initialization, Assistant messages, Tool Calls, and successful Results, and use
@@ -186,7 +169,7 @@ Official references: [Cursor Headless](https://docs.cursor.com/en/cli/headless),
 [output format](https://docs.cursor.com/en/cli/reference/output-format),
 [parameters](https://docs.cursor.com/en/cli/reference/parameters).
 
-### 4.9 DeepSeek Harness
+### 4.8 DeepSeek Harness
 
 Prefer the official SDK's stdio JSON-RPC interface. The Adapter connects to a
 Runtime command and configuration supplied by the host. It does not add the DSH
@@ -221,7 +204,7 @@ Official references:
 [DeepSeek Harness SDK](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/sdk/client/README.md),
 [SDK Protocol](https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/sdk/protocol).
 
-### 4.10 Hermes Agent
+### 4.9 Hermes Agent
 
 Prefer a Hermes API Server supplied by the host. The Adapter probes the current
 Endpoint through `GET /v1/capabilities`, then maps Session, Run, Event, Stop,
@@ -244,7 +227,7 @@ Official references:
 [Hermes Agent API Server](https://hermes-agent.nousresearch.com/docs/user-guide/features/api-server),
 [Hermes Agent](https://github.com/NousResearch/hermes-agent).
 
-### 4.11 OpenClaw
+### 4.10 OpenClaw
 
 Prefer `openclaw acp` supplied by the host and connect through the general ACP
 stdio Transport. The OpenClaw Adapter owns Session-to-Gateway-Session mapping,
@@ -269,7 +252,7 @@ it cannot reopen an uncertain Session or Run.
 Official references: [OpenClaw ACP](https://docs.openclaw.ai/cli/acp),
 [Agent Client Protocol](https://agentclientprotocol.com/protocol/overview).
 
-### 4.12 Pi Agent
+### 4.11 Pi Agent
 
 Prefer `pi --mode rpc` supplied by the host and connect to its official
 bidirectional RPC mode through the general JSONL Process Transport. The Pi Agent
@@ -311,14 +294,14 @@ Official references:
 
 ## 5. Expected portable capabilities
 
-| Capability          | Claude      | Codex       | OpenCode    | Goose       | Qwen        | Crush       | Copilot     | Cursor      |
-| ------------------- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
-| Create task Session | Evaluatable | Evaluatable | Evaluatable | Evaluatable | Evaluatable | Evaluatable | Evaluatable | Evaluatable |
-| Streaming Events    | Evaluatable | Evaluatable | Evaluatable | Evaluatable | Evaluatable | Evaluatable | Evaluatable | Evaluatable |
-| Session Resume      | Live test   | Evaluatable | Live test   | Live test   | Evaluatable | Live test   | Live test   | Evaluatable |
-| Native Run Cancel   | Live test   | Evaluatable | Live test   | Live test   | Live test   | Live test   | Live test   | Unconfirmed |
-| External Approval   | Live test   | Evaluatable | Live test   | Live test   | Live test   | Live test   | Live test   | Unconfirmed |
-| Provider Extension  | Definable   | Definable   | Definable   | Definable   | Definable   | Definable   | Definable   | Definable   |
+| Capability          | Codex       | OpenCode    | Goose       | Qwen        | Crush       | Copilot     | Cursor      |
+| ------------------- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
+| Create task Session | Evaluatable | Evaluatable | Evaluatable | Evaluatable | Evaluatable | Evaluatable | Evaluatable |
+| Streaming Events    | Evaluatable | Evaluatable | Evaluatable | Evaluatable | Evaluatable | Evaluatable | Evaluatable |
+| Session Resume      | Evaluatable | Live test   | Live test   | Evaluatable | Live test   | Live test   | Evaluatable |
+| Native Run Cancel   | Evaluatable | Live test   | Live test   | Live test   | Live test   | Live test   | Unconfirmed |
+| External Approval   | Evaluatable | Live test   | Live test   | Live test   | Live test   | Live test   | Unconfirmed |
+| Provider Extension  | Definable   | Definable   | Definable   | Definable   | Definable   | Definable   | Definable   |
 
 “Evaluatable” means the official interface has enough information to enter
 Adapter implementation and Conformance. “Live test” means documentation alone

@@ -1,2 +1,0 @@
-{"type":"system","subtype":"init","session_id":"00000000-0000-4000-8000-000000000001","claude_code_version":"2.1.250-synthetic","cwd":"/synthetic/workspace","model":"claude-synthetic","permissionMode":"default","capabilities":["interrupt_receipt_v1"]}
-{"type":"result","subtype":"success","is_error":true,"session_id":"00000000-0000-4000-8000-000000000001","result":"Synthetic interrupted turn.","terminal_reason":"aborted_streaming","usage":{"input_tokens":3,"output_tokens":1},"uuid":"00000000-0000-4000-8000-000000000002"}

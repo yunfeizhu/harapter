@@ -103,16 +103,6 @@ importers:
 
   packages/transport-jsonrpc-stdio: {}
 
-  providers/claude:
-    dependencies:
-      '@harapter/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-    devDependencies:
-      '@harapter/conformance':
-        specifier: workspace:*
-        version: link:../../packages/conformance
-
   providers/codex:
     dependencies:
       '@harapter/core':

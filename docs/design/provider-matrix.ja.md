@@ -7,6 +7,10 @@
 
 この文書は、対象 Harness が公開するプログラム用インターフェースと、それらが Harapter の設計に与える影響を記録します。Provider が利用可能であることの保証ではありません。
 
+Harness 実装の Source を公開状態で Review できない対象は、実装前に独立した Provider
+Acceptance の決定が必要です。この Research Matrix の記載は Acceptance
+Evidence ではありません。
+
 Provider をリリース上で利用可能と表示できるのは、対応する Adapter に実装、互換性 Probe、Conformance
 Test、実 Runtime Test がそろった後だけです。
 
@@ -21,20 +25,19 @@ Test、実 Runtime Test、対応する Provider README によって共同で表�
 
 ## 2. 対象 Provider
 
-| Provider           | Provider ID             | 推奨インターフェース               | 想定 Portable Coverage | 主な制限                                                                                             |
-| ------------------ | ----------------------- | ---------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------- |
-| Claude Code        | `anthropic.claude-code` | Claude Agent SDK                   | 高                     | SDK と CLI Process の Lifecycle、Permission Mode を明示的に設定する必要がある                        |
-| Codex Harness      | `openai.codex`          | Codex App Server                   | 非常に高い             | Stable Protocol は拡張が続くため、必須構造と Runtime Schema を検証する必要がある                     |
-| OpenCode           | `opencode`              | Headless HTTP/OpenAPI、任意の ACP  | 非常に高い             | HTTP Service の Lifecycle と Authentication は Host が管理する                                       |
-| Goose              | `goose`                 | ACP Server または公式 API          | 高                     | Extension、Recipe、Subagent などは Provider Extension として保持する                                 |
-| Qwen Code          | `qwen.code`             | SDK、ACP、HTTP daemon、Stream JSON | 中高                   | Interface の変更が速く、一部の SDK や双方向 Stream Capability は Experimental の場合がある           |
-| Crush              | `charm.crush`           | `crush serve` Local API            | 高                     | Service API が新しいため、Release Version と Main Branch の Capability を別々に Probe する必要がある |
-| GitHub Copilot CLI | `github.copilot-cli`    | ACP Server                         | 高                     | 一部の Tool と Reasoning 設定は Server 起動時に固定され、Session ごとに変更できない                  |
-| Cursor Agent CLI   | `cursor.agent-cli`      | Headless Stream JSON               | 中                     | 現在 Beta。Failure、Approval、Native Cancel の制御面は双方向 Protocol より不完全                     |
-| DeepSeek Harness   | `deepseek.harness`      | SDK stdio JSON-RPC                 | 中高                   | 公式 Interface に検証済みの実行中 Cancel がなく、Process Close は Connection Abort にしかならない    |
-| Hermes Agent       | `nous.hermes-agent`     | API Server HTTP/SSE                | 非常に高い             | Workspace 選択と Background Subagent の Terminal State は Parent Run から推論できない                |
-| OpenClaw           | `openclaw`              | `openclaw acp`                     | 高                     | Bridge History、Tool、Approval、Shared Session Routing は一部のみサポート                            |
-| Pi Agent           | `pi.agent`              | `pi --mode rpc` strict JSONL       | 高                     | 独立 Process。Per-session Workspace と Runtime Extension Loading はサポートしない                    |
+| Provider           | Provider ID          | 推奨インターフェース               | 想定 Portable Coverage | 主な制限                                                                                             |
+| ------------------ | -------------------- | ---------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------- |
+| Codex Harness      | `openai.codex`       | Codex App Server                   | 非常に高い             | Stable Protocol は拡張が続くため、必須構造と Runtime Schema を検証する必要がある                     |
+| OpenCode           | `opencode`           | Headless HTTP/OpenAPI、任意の ACP  | 非常に高い             | HTTP Service の Lifecycle と Authentication は Host が管理する                                       |
+| Goose              | `goose`              | ACP Server または公式 API          | 高                     | Extension、Recipe、Subagent などは Provider Extension として保持する                                 |
+| Qwen Code          | `qwen.code`          | SDK、ACP、HTTP daemon、Stream JSON | 中高                   | Interface の変更が速く、一部の SDK や双方向 Stream Capability は Experimental の場合がある           |
+| Crush              | `charm.crush`        | `crush serve` Local API            | 高                     | Service API が新しいため、Release Version と Main Branch の Capability を別々に Probe する必要がある |
+| GitHub Copilot CLI | `github.copilot-cli` | ACP Server                         | 高                     | 一部の Tool と Reasoning 設定は Server 起動時に固定され、Session ごとに変更できない                  |
+| Cursor Agent CLI   | `cursor.agent-cli`   | Headless Stream JSON               | 中                     | 現在 Beta。Failure、Approval、Native Cancel の制御面は双方向 Protocol より不完全                     |
+| DeepSeek Harness   | `deepseek.harness`   | SDK stdio JSON-RPC                 | 中高                   | 公式 Interface に検証済みの実行中 Cancel がなく、Process Close は Connection Abort にしかならない    |
+| Hermes Agent       | `nous.hermes-agent`  | API Server HTTP/SSE                | 非常に高い             | Workspace 選択と Background Subagent の Terminal State は Parent Run から推論できない                |
+| OpenClaw           | `openclaw`           | `openclaw acp`                     | 高                     | Bridge History、Tool、Approval、Shared Session Routing は一部のみサポート                            |
+| Pi Agent           | `pi.agent`           | `pi --mode rpc` strict JSONL       | 高                     | 独立 Process。Per-session Workspace と Runtime Extension Loading はサポートしない                    |
 
 ここでの Cursor は公開された `cursor-agent`
 CLI のみを指します。CLI があるだけで Cursor Desktop
@@ -43,7 +46,6 @@ IDE が完全に統合済みだと表明することはできません。
 ## 3. 推奨 Provider Package
 
 ```text
-adapter-claude
 adapter-codex
 adapter-opencode
 adapter-goose
@@ -63,26 +65,7 @@ Instance、Socket、Endpoint を参照します。
 
 ## 4. 統合方針
 
-### 4.1 Claude Code
-
-公式 Claude Agent SDK を優先し、Claude Code の Interactive
-Terminal は解析しません。Adapter は SDK Session、Message Stream、Tool
-Event、Result を Portable
-Contract に Mapping し、SDK 設定を通じて許可する Tool と Permission
-Mode を公開します。
-
-重点的に検証する項目は次のとおりです。
-
-- SDK が管理する Process の Ownership と Exit Semantics
-- Session 作成および Resume Reference
-- Partial Message、Tool Call、Result の順序
-- External Client が Permission Request に確実に応答できるか
-- SDK が既定で読み込む Local Setting を明示的に無効化または固定する必要があるか
-
-公式参照：[Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview)、
-[Streaming Output](https://code.claude.com/docs/en/agent-sdk/streaming-output)。
-
-### 4.2 Codex Harness
+### 4.1 Codex Harness
 
 `codex app-server` を優先します。Open-source Codex
 Harness を双方向 JSON-RPC 形式の Protocol として公開し、Thread、Turn、Item、Streaming
@@ -97,7 +80,7 @@ Request は Interaction に Mapping します。
 公式参照：[Codex App Server](https://developers.openai.com/codex/app-server)、
 [Codex Harness](https://openai.com/index/unlocking-the-codex-harness/)。
 
-### 4.3 OpenCode
+### 4.2 OpenCode
 
 `opencode serve` の HTTP/OpenAPI Interface を優先し、Event
 Stream には公式 Service Event を使用します。ACP
@@ -110,7 +93,7 @@ ID ではありません。両者が異なる Capability を公開すること�
 公式参照：[OpenCode Server](https://opencode.ai/docs/server/)、
 [OpenCode CLI](https://opencode.ai/docs/cli/)。
 
-### 4.4 Goose
+### 4.3 Goose
 
 Goose は ACP Server として実行でき、CLI と API も公開しています。Portable
 Session/Run の主経路は ACP または正式 API を優先します。Goose の Extension、Recipe、MCP
@@ -119,7 +102,7 @@ Client で公開します。
 
 公式参照：[Goose](https://block.github.io/goose/)。
 
-### 4.5 Qwen Code
+### 4.4 Qwen Code
 
 Qwen Code は Headless、Stream JSON、SDK、ACP、Long-running
 Service などのインターフェースを提供します。Provider
@@ -140,7 +123,7 @@ Descriptor は `experimental` と示す必要があります。
 公式参照：[Qwen Code Architecture](https://qwenlm.github.io/qwen-code-docs/en/developers/architecture/)、
 [Headless Mode](https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/)。
 
-### 4.6 Crush
+### 4.5 Crush
 
 Crush は現在、`crush serve` で Shared Backend を提供します。Local API は Unix
 Socket または Windows Named
@@ -153,7 +136,7 @@ Branch の Source だけで Support Range を拡大してはいけません。
 公式参照：[Crush](https://github.com/charmbracelet/crush)、
 [Crush API Entry Point](https://github.com/charmbracelet/crush/blob/main/main.go)。
 
-### 4.7 GitHub Copilot CLI
+### 4.6 GitHub Copilot CLI
 
 `copilot --acp` を優先します。ACP Server は stdio と TCP
 Transport をサポートします。Adapter は共通 ACP
@@ -166,7 +149,7 @@ Effort は Server 起動時に固定されます。Adapter はこれらを Sessi
 
 公式参照：[Copilot CLI ACP Server](https://docs.github.com/en/copilot/reference/copilot-cli-reference/acp-server)。
 
-### 4.8 Cursor Agent CLI
+### 4.7 Cursor Agent CLI
 
 `cursor-agent --print --output-format stream-json`
 を優先します。Adapter は Initialization、Assistant Message、Tool
@@ -183,7 +166,7 @@ JSON Event がない場合、Adapter は Exit Code と Standard Error から `ru
 [Output Format](https://docs.cursor.com/en/cli/reference/output-format)、
 [Parameters](https://docs.cursor.com/en/cli/reference/parameters)。
 
-### 4.9 DeepSeek Harness
+### 4.8 DeepSeek Harness
 
 公式 SDK の stdio JSON-RPC
 Interface を優先します。Adapter は Host が用意した Runtime
@@ -218,7 +201,7 @@ Process が終了した場合、その接続上で実行中のすべての Run �
 公式参照：[DeepSeek Harness SDK](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/sdk/client/README.md)、
 [SDK Protocol](https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/sdk/protocol)。
 
-### 4.10 Hermes Agent
+### 4.9 Hermes Agent
 
 Host が提供する Hermes API Server を優先します。Adapter は
 `GET /v1/capabilities` で現在の Endpoint を Probe し、Session REST、Run
@@ -242,7 +225,7 @@ Support を表明できません。
 公式参照：[Hermes Agent API Server](https://hermes-agent.nousresearch.com/docs/user-guide/features/api-server)、
 [Hermes Agent](https://github.com/NousResearch/hermes-agent)。
 
-### 4.11 OpenClaw
+### 4.10 OpenClaw
 
 Host が用意する `openclaw acp` を優先し、共通 ACP stdio
 Transport で接続します。OpenClaw Adapter は Session と Gateway
@@ -268,7 +251,7 @@ Timeout となった場合、その Connection を Abort し、不確実な Sess
 公式参照：[OpenClaw ACP](https://docs.openclaw.ai/cli/acp)、
 [Agent Client Protocol](https://agentclientprotocol.com/protocol/overview)。
 
-### 4.12 Pi Agent
+### 4.11 Pi Agent
 
 Host が用意する `pi --mode rpc` を優先し、共通 JSONL Process
 Transport で公式双方向 RPC Mode に接続します。Pi Agent Adapter は Command
@@ -312,14 +295,14 @@ Runtime や SDK 依存を含みません。
 
 ## 5. 想定 Portable Capability
 
-| Capability         | Claude   | Codex    | OpenCode | Goose    | Qwen     | Crush    | Copilot  | Cursor   |
-| ------------------ | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
-| Task Session 作成  | 評価可能 | 評価可能 | 評価可能 | 評価可能 | 評価可能 | 評価可能 | 評価可能 | 評価可能 |
-| Streaming Event    | 評価可能 | 評価可能 | 評価可能 | 評価可能 | 評価可能 | 評価可能 | 評価可能 | 評価可能 |
-| Session Resume     | 実測必要 | 評価可能 | 実測必要 | 実測必要 | 評価可能 | 実測必要 | 実測必要 | 評価可能 |
-| Native Run Cancel  | 実測必要 | 評価可能 | 実測必要 | 実測必要 | 実測必要 | 実測必要 | 実測必要 | 未確認   |
-| External Approval  | 実測必要 | 評価可能 | 実測必要 | 実測必要 | 実測必要 | 実測必要 | 実測必要 | 未確認   |
-| Provider Extension | 定義可能 | 定義可能 | 定義可能 | 定義可能 | 定義可能 | 定義可能 | 定義可能 | 定義可能 |
+| Capability         | Codex    | OpenCode | Goose    | Qwen     | Crush    | Copilot  | Cursor   |
+| ------------------ | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Task Session 作成  | 評価可能 | 評価可能 | 評価可能 | 評価可能 | 評価可能 | 評価可能 | 評価可能 |
+| Streaming Event    | 評価可能 | 評価可能 | 評価可能 | 評価可能 | 評価可能 | 評価可能 | 評価可能 |
+| Session Resume     | 評価可能 | 実測必要 | 実測必要 | 評価可能 | 実測必要 | 実測必要 | 評価可能 |
+| Native Run Cancel  | 評価可能 | 実測必要 | 実測必要 | 実測必要 | 実測必要 | 実測必要 | 未確認   |
+| External Approval  | 評価可能 | 実測必要 | 実測必要 | 実測必要 | 実測必要 | 実測必要 | 未確認   |
+| Provider Extension | 定義可能 | 定義可能 | 定義可能 | 定義可能 | 定義可能 | 定義可能 | 定義可能 |
 
 「評価可能」は、公式インターフェースに Adapter 実装と Conformance に進むための十分な情報があることを意味します。「実測必要」は、文書だけでは完全な Semantics を確認できないことを意味します。「未確認」は Capability で
 `native` と表示できません。

@@ -25,7 +25,7 @@
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 以降">
   <img src="https://img.shields.io/badge/pnpm-11.23.0-F69220?style=flat-square&amp;logo=pnpm&amp;logoColor=white" alt="pnpm 11.23.0">
   <img src="https://img.shields.io/badge/typescript-5.9.3-3178C6?style=flat-square&amp;logo=typescript&amp;logoColor=white" alt="TypeScript 5.9.3">
-  <img src="https://img.shields.io/badge/adapters-7-6E56CF?style=flat-square" alt="7 個の Provider Adapter">
+  <img src="https://img.shields.io/badge/adapters-6-6E56CF?style=flat-square" alt="6 個の Provider Adapter">
   <img src="https://img.shields.io/badge/transports-4-0891B2?style=flat-square" alt="4 個の Transport">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 ライセンス"></a>
   <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha ステータス">
@@ -217,13 +217,13 @@ ID による Capability 推測を行いません。プロトコル変換、互�
 
 ## 実装済みモジュール
 
-| 領域                 | Package とモジュール                                                                                                                                                                                                                                                                                    |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Portable API**     | [`@harapter/core`](./packages/core/README.md) — 契約、Registry、Capability Requirement、所有権検証、Error、Extension、Native Access                                                                                                                                                                     |
-| **Conformance**      | [`@harapter/conformance`](./packages/conformance/README.md) — 再利用可能なポータブル動作スイートと決定論的 Fake Provider                                                                                                                                                                                |
-| **Transport**        | [JSON-RPC stdio](./packages/transport-jsonrpc-stdio/README.md)、[strict JSONL process RPC](./packages/transport-jsonl-process/README.md)、[HTTP/SSE](./packages/transport-http-sse/README.md)、[ACP v1](./packages/transport-acp/README.md)                                                             |
-| **Provider Adapter** | [Codex](./providers/codex/README.md)、[OpenCode](./providers/opencode/README.md)、[Claude](./providers/claude/README.md)、[DeepSeek Harness](./providers/dsh/README.md)、[Hermes Agent](./providers/hermes/README.md)、[OpenClaw](./providers/openclaw/README.md)、[Pi Agent](./providers/pi/README.md) |
-| **リファレンス**     | [Single-Provider ライフサイクル](./examples/single-provider/README.md)と[並行 Multi-Provider Client](./examples/multi-provider-client/README.md)                                                                                                                                                        |
+| 領域                 | Package とモジュール                                                                                                                                                                                                                                            |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Portable API**     | [`@harapter/core`](./packages/core/README.md) — 契約、Registry、Capability Requirement、所有権検証、Error、Extension、Native Access                                                                                                                             |
+| **Conformance**      | [`@harapter/conformance`](./packages/conformance/README.md) — 再利用可能なポータブル動作スイートと決定論的 Fake Provider                                                                                                                                        |
+| **Transport**        | [JSON-RPC stdio](./packages/transport-jsonrpc-stdio/README.md)、[strict JSONL process RPC](./packages/transport-jsonl-process/README.md)、[HTTP/SSE](./packages/transport-http-sse/README.md)、[ACP v1](./packages/transport-acp/README.md)                     |
+| **Provider Adapter** | [Codex](./providers/codex/README.md)、[OpenCode](./providers/opencode/README.md)、[DeepSeek Harness](./providers/dsh/README.md)、[Hermes Agent](./providers/hermes/README.md)、[OpenClaw](./providers/openclaw/README.md)、[Pi Agent](./providers/pi/README.md) |
+| **リファレンス**     | [Single-Provider ライフサイクル](./examples/single-provider/README.md)と[並行 Multi-Provider Client](./examples/multi-provider-client/README.md)                                                                                                                |
 
 ## サポートを宣言する前に証拠を揃える
 
@@ -234,7 +234,6 @@ Mapping とライフサイクルテスト、Provider-negative テスト、共通
 | --------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------- |
 | [Codex](./providers/codex/README.md)          | stable App Server         | **ソース上でサポート** — Fixture、Conformance、互換性、live 証拠あり         |
 | [OpenCode](./providers/opencode/README.md)    | stable HTTP/OpenAPI + SSE | **ソース上でサポート** — Fixture、Conformance、互換性、live 証拠あり         |
-| [Claude](./providers/claude/README.md)        | Claude Agent SDK          | **ソース上で Experimental** — 決定論的証拠あり、live 証拠は未記録            |
 | [DeepSeek Harness](./providers/dsh/README.md) | SDK Runtime JSON-RPC      | **ソース上で Experimental** — live 証拠あり、Runtime の互換 Version 交渉なし |
 | [Hermes Agent](./providers/hermes/README.md)  | API Server HTTP/SSE       | **ソース上で Experimental** — 決定論的証拠あり、live 証拠は未記録            |
 | [OpenClaw](./providers/openclaw/README.md)    | ACP v1 bridge             | **ソース上で Experimental** — 決定論的証拠あり、live 証拠は未記録            |

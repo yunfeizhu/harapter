@@ -25,7 +25,7 @@
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
   <img src="https://img.shields.io/badge/pnpm-11.23.0-F69220?style=flat-square&amp;logo=pnpm&amp;logoColor=white" alt="pnpm 11.23.0">
   <img src="https://img.shields.io/badge/typescript-5.9.3-3178C6?style=flat-square&amp;logo=typescript&amp;logoColor=white" alt="TypeScript 5.9.3">
-  <img src="https://img.shields.io/badge/adapters-7-6E56CF?style=flat-square" alt="7 provider adapters">
+  <img src="https://img.shields.io/badge/adapters-6-6E56CF?style=flat-square" alt="6 provider adapters">
   <img src="https://img.shields.io/badge/transports-4-0891B2?style=flat-square" alt="4 transports">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
   <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
@@ -224,13 +224,13 @@ compatibility checks, bounded transport behavior, and redacted fixtures.
 
 ## Implemented modules
 
-| Area                  | Packages and modules                                                                                                                                                                                                                                                                                        |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Portable API**      | [`@harapter/core`](./packages/core/README.md) — contracts, Registry, capability requirements, ownership checks, Errors, extensions, and native access                                                                                                                                                       |
-| **Conformance**       | [`@harapter/conformance`](./packages/conformance/README.md) — reusable portable behavior suite and deterministic Fake Provider                                                                                                                                                                              |
-| **Transports**        | [JSON-RPC stdio](./packages/transport-jsonrpc-stdio/README.md), [strict JSONL process RPC](./packages/transport-jsonl-process/README.md), [HTTP/SSE](./packages/transport-http-sse/README.md), and [ACP v1](./packages/transport-acp/README.md)                                                             |
-| **Provider Adapters** | [Codex](./providers/codex/README.md), [OpenCode](./providers/opencode/README.md), [Claude](./providers/claude/README.md), [DeepSeek Harness](./providers/dsh/README.md), [Hermes Agent](./providers/hermes/README.md), [OpenClaw](./providers/openclaw/README.md), and [Pi Agent](./providers/pi/README.md) |
-| **References**        | [Single-Provider lifecycle](./examples/single-provider/README.md) and [concurrent multi-Provider client](./examples/multi-provider-client/README.md)                                                                                                                                                        |
+| Area                  | Packages and modules                                                                                                                                                                                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Portable API**      | [`@harapter/core`](./packages/core/README.md) — contracts, Registry, capability requirements, ownership checks, Errors, extensions, and native access                                                                                                               |
+| **Conformance**       | [`@harapter/conformance`](./packages/conformance/README.md) — reusable portable behavior suite and deterministic Fake Provider                                                                                                                                      |
+| **Transports**        | [JSON-RPC stdio](./packages/transport-jsonrpc-stdio/README.md), [strict JSONL process RPC](./packages/transport-jsonl-process/README.md), [HTTP/SSE](./packages/transport-http-sse/README.md), and [ACP v1](./packages/transport-acp/README.md)                     |
+| **Provider Adapters** | [Codex](./providers/codex/README.md), [OpenCode](./providers/opencode/README.md), [DeepSeek Harness](./providers/dsh/README.md), [Hermes Agent](./providers/hermes/README.md), [OpenClaw](./providers/openclaw/README.md), and [Pi Agent](./providers/pi/README.md) |
+| **References**        | [Single-Provider lifecycle](./examples/single-provider/README.md) and [concurrent multi-Provider client](./examples/multi-provider-client/README.md)                                                                                                                |
 
 ## Evidence before support
 
@@ -243,7 +243,6 @@ evidence before Harapter describes the interface as supported in source.
 | --------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------ |
 | [Codex](./providers/codex/README.md)          | stable App Server         | **Supported in source** — fixture, conformance, compatibility, and live evidence           |
 | [OpenCode](./providers/opencode/README.md)    | stable HTTP/OpenAPI + SSE | **Supported in source** — fixture, conformance, compatibility, and live evidence           |
-| [Claude](./providers/claude/README.md)        | Claude Agent SDK          | **Experimental in source** — deterministic evidence exists; live evidence is pending       |
 | [DeepSeek Harness](./providers/dsh/README.md) | SDK Runtime JSON-RPC      | **Experimental in source** — live evidence exists; Runtime compatibility is not negotiated |
 | [Hermes Agent](./providers/hermes/README.md)  | API Server HTTP/SSE       | **Experimental in source** — deterministic evidence exists; live evidence is pending       |
 | [OpenClaw](./providers/openclaw/README.md)    | ACP v1 bridge             | **Experimental in source** — deterministic evidence exists; live evidence is pending       |

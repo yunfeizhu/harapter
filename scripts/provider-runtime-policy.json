@@ -1,10 +1,6 @@
 {
   "hostOwnedRuntimePackages": [
     {
-      "packageName": "@anthropic-ai/claude-agent-sdk",
-      "lockfileFamilyPrefix": "@anthropic-ai/claude-agent-sdk"
-    },
-    {
       "packageName": "@deepseek-ai/dsh-sdk-client",
       "lockfileFamilyPrefix": "@deepseek-ai/dsh"
     }

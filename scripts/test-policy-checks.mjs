@@ -250,8 +250,8 @@ assert.deepEqual(
 const providerRuntimePolicy = {
   hostOwnedRuntimePackages: [
     {
-      packageName: '@anthropic-ai/claude-agent-sdk',
-      lockfileFamilyPrefix: '@anthropic-ai/claude-agent-sdk',
+      packageName: '@deepseek-ai/dsh-sdk-client',
+      lockfileFamilyPrefix: '@deepseek-ai/dsh',
     },
   ],
 };
@@ -276,13 +276,13 @@ assert.deepEqual(
 );
 assert.deepEqual(
   validateProviderRuntimeBoundary({
-    manifestPath: 'providers/claude/package.json',
+    manifestPath: 'providers/dsh/package.json',
     packageJson: {
       peerDependencies: {
-        '@anthropic-ai/claude-agent-sdk': '>=0.3.250 <0.4.0',
+        '@deepseek-ai/dsh-sdk-client': '>=0.1.0',
       },
       peerDependenciesMeta: {
-        '@anthropic-ai/claude-agent-sdk': { optional: true },
+        '@deepseek-ai/dsh-sdk-client': { optional: true },
       },
     },
     policy: providerRuntimePolicy,
@@ -291,48 +291,48 @@ assert.deepEqual(
 );
 assert.deepEqual(
   validateProviderRuntimeBoundary({
-    manifestPath: 'providers/claude/package.json',
+    manifestPath: 'providers/dsh/package.json',
     packageJson: {
-      devDependencies: { '@anthropic-ai/claude-agent-sdk': '0.3.250' },
+      devDependencies: { '@deepseek-ai/dsh-sdk-client': '0.1.0' },
       peerDependencies: {
-        '@anthropic-ai/claude-agent-sdk': '>=0.3.250 <0.4.0',
+        '@deepseek-ai/dsh-sdk-client': '>=0.1.0',
       },
     },
     policy: providerRuntimePolicy,
   }),
   [
-    'providers/claude/package.json must not install host-owned runtime package @anthropic-ai/claude-agent-sdk through devDependencies.',
-    'providers/claude/package.json must mark host-owned runtime peer @anthropic-ai/claude-agent-sdk as optional.',
+    'providers/dsh/package.json must not install host-owned runtime package @deepseek-ai/dsh-sdk-client through devDependencies.',
+    'providers/dsh/package.json must mark host-owned runtime peer @deepseek-ai/dsh-sdk-client as optional.',
   ],
 );
 assert.deepEqual(
   findProviderRuntimeLockfileViolations({
-    lockfile: `packages:\n\n  '@anthropic-ai/claude-agent-sdk@0.3.250':\n    resolution: {}\n`,
+    lockfile: `packages:\n\n  '@deepseek-ai/dsh-sdk-client@0.1.0':\n    resolution: {}\n`,
     lockfilePath: 'pnpm-lock.yaml',
     policy: providerRuntimePolicy,
   }),
   [
-    'pnpm-lock.yaml must not resolve host-owned runtime family @anthropic-ai/claude-agent-sdk.',
+    'pnpm-lock.yaml must not resolve host-owned runtime family @deepseek-ai/dsh.',
   ],
 );
 assert.deepEqual(
   findProviderRuntimeLockfileViolations({
-    lockfile: `packages:\n\n  "@anthropic-ai/claude-agent-sdk@0.3.250":\n    resolution: {}\n`,
+    lockfile: `packages:\n\n  "@deepseek-ai/dsh-sdk-client@0.1.0":\n    resolution: {}\n`,
     lockfilePath: 'pnpm-lock.yaml',
     policy: providerRuntimePolicy,
   }),
   [
-    'pnpm-lock.yaml must not resolve host-owned runtime family @anthropic-ai/claude-agent-sdk.',
+    'pnpm-lock.yaml must not resolve host-owned runtime family @deepseek-ai/dsh.',
   ],
 );
 assert.deepEqual(
   findProviderRuntimeLockfileViolations({
-    lockfile: `importers:\n\n  providers/claude:\n    devDependencies:\n      claude-runtime:\n        specifier: npm:@anthropic-ai/claude-agent-sdk@0.3.250\n        version: npm:@anthropic-ai/claude-agent-sdk@0.3.250\n`,
+    lockfile: `importers:\n\n  providers/dsh:\n    devDependencies:\n      dsh-runtime:\n        specifier: npm:@deepseek-ai/dsh-sdk-client@0.1.0\n        version: npm:@deepseek-ai/dsh-sdk-client@0.1.0\n`,
     lockfilePath: 'pnpm-lock.yaml',
     policy: providerRuntimePolicy,
   }),
   [
-    'pnpm-lock.yaml must not resolve host-owned runtime family @anthropic-ai/claude-agent-sdk.',
+    'pnpm-lock.yaml must not resolve host-owned runtime family @deepseek-ai/dsh.',
   ],
 );
 assert.deepEqual(
