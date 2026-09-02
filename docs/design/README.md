@@ -161,11 +161,10 @@ plugin marketplaces, or in-run mode changes.
   ownership, and multi-Provider relationships.
 - [Portable API](./api-design.md): Profile, Client, Session, Run, Event,
   Capability, and Error contracts.
-- [Provider matrix (Simplified Chinese)](./provider-matrix.md): official machine
-  interfaces, evidence levels, and limitations for target Harnesses.
-- [Provider-specific capabilities (Simplified Chinese)](./provider-extensions.md):
-  the three-layer capability model, Extension interfaces, and Native Escape
-  Hatch.
+- [Provider matrix](./provider-matrix.md): official machine interfaces, evidence
+  levels, and limitations for target Harnesses.
+- [Provider-specific capabilities](./provider-extensions.md): the three-layer
+  capability model, Extension interfaces, and Native Escape Hatch.
 - [Provider Adapter guide (Simplified Chinese)](./provider-adapter-guide.md):
   requirements for implementing a new Provider package.
 - [Compatibility (Simplified Chinese)](./compatibility.md): upstream changes,

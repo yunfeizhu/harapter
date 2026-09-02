@@ -155,9 +155,9 @@ Marketplace、Run 中の Mode 変更をサポートするという意味では�
 - [Architecture](./architecture.ja.md)：Component、Runtime Topology、State
   Ownership、Multi-provider の関係
 - [Portable API](./api-design.ja.md)：Profile、Client、Session、Run、Event、Capability、Errorの契約
-- [Provider Matrix（簡体字中国語）](./provider-matrix.md)：対象 Harness の公式 Machine
+- [Provider Matrix](./provider-matrix.ja.md)：対象 Harness の公式 Machine
   Interface、Evidence Level、制限
-- [Provider 固有 Capability（簡体字中国語）](./provider-extensions.md)：3 層の Capability
+- [Provider 固有 Capability](./provider-extensions.ja.md)：3 層の Capability
   Model、Extension Interface、Native Escape Hatch
 - [Provider Adapter Guide（簡体字中国語）](./provider-adapter-guide.md)：新しい Provider
   Package を実装するための要件
