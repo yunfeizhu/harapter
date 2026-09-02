@@ -163,7 +163,7 @@ Marketplace、Run 中の Mode 変更をサポートするという意味では�
   Package を実装するための要件
 - [Compatibility](./compatibility.ja.md)：Upstream 変更、Runtime Probe、Support
   Range、置換 Strategy
-- [Implementation Guide（簡体字中国語）](./implementation-guide.md)：独立 Repository
+- [Implementation Guide](./implementation-guide.ja.md)：独立 Repository
   Structure、Build 順序、Acceptance 要件
 
 ## 独立 Project の制約

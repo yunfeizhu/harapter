@@ -169,8 +169,8 @@ plugin marketplaces, or in-run mode changes.
   implementing a new Provider package.
 - [Compatibility](./compatibility.md): upstream changes, runtime probes, support
   ranges, and replacement strategy.
-- [Implementation guide (Simplified Chinese)](./implementation-guide.md):
-  independent repository structure, build order, and acceptance requirements.
+- [Implementation guide](./implementation-guide.md): independent repository
+  structure, build order, and acceptance requirements.
 
 ## Independent project constraints
 
