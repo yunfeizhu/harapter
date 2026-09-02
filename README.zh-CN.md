@@ -263,16 +263,16 @@ CLI 和 Cursor Agent CLI 不在当前实现范围内。
 
 ## 文档导航
 
-| 从这里开始                                                   | 适合了解                                   |
-| ------------------------------------------------------------ | ------------------------------------------ |
-| [架构与目标设计](./docs/design/README.zh-CN.md)              | 系统边界、不变量、契约和设计顺序           |
-| [Portable Core 契约](./packages/core/README.md)              | 公共 TypeScript API 与所有权语义           |
-| [Provider 接入矩阵](./docs/design/provider-matrix.zh-CN.md)  | 各 Provider 的接口、证据与 Capability 状态 |
-| [Provider 实现指南](./docs/design/provider-adapter-guide.md) | 在不削弱可移植事实的前提下构建 Adapter     |
-| [开发流程](./docs/development.md)                            | 工具链、分支、验证、Review 与 Pull Request |
-| [贡献指南](./CONTRIBUTING.md)                                | 贡献要求与仓库流程                         |
-| [安全策略](./SECURITY.md)                                    | 漏洞报告与受支持的安全边界                 |
-| [发布策略](./RELEASING.md)                                   | Release Please、版本与发布准备             |
+| 从这里开始                                                         | 适合了解                                   |
+| ------------------------------------------------------------------ | ------------------------------------------ |
+| [架构与目标设计](./docs/design/README.zh-CN.md)                    | 系统边界、不变量、契约和设计顺序           |
+| [Portable Core 契约](./packages/core/README.md)                    | 公共 TypeScript API 与所有权语义           |
+| [Provider 接入矩阵](./docs/design/provider-matrix.zh-CN.md)        | 各 Provider 的接口、证据与 Capability 状态 |
+| [Provider 实现指南](./docs/design/provider-adapter-guide.zh-CN.md) | 在不削弱可移植事实的前提下构建 Adapter     |
+| [开发流程](./docs/development.md)                                  | 工具链、分支、验证、Review 与 Pull Request |
+| [贡献指南](./CONTRIBUTING.md)                                      | 贡献要求与仓库流程                         |
+| [安全策略](./SECURITY.md)                                          | 漏洞报告与受支持的安全边界                 |
+| [发布策略](./RELEASING.md)                                         | Release Please、版本与发布准备             |
 
 ## 常见问题
 

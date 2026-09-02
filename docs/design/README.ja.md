@@ -159,10 +159,10 @@ Marketplace、Run 中の Mode 変更をサポートするという意味では�
   Interface、Evidence Level、制限
 - [Provider 固有 Capability](./provider-extensions.ja.md)：3 層の Capability
   Model、Extension Interface、Native Escape Hatch
-- [Provider Adapter Guide（簡体字中国語）](./provider-adapter-guide.md)：新しい Provider
+- [Provider Adapter Guide](./provider-adapter-guide.ja.md)：新しい Provider
   Package を実装するための要件
-- [Compatibility（簡体字中国語）](./compatibility.md)：Upstream 変更、Runtime
-  Probe、Support Range、置換 Strategy
+- [Compatibility](./compatibility.ja.md)：Upstream 変更、Runtime Probe、Support
+  Range、置換 Strategy
 - [Implementation Guide（簡体字中国語）](./implementation-guide.md)：独立 Repository
   Structure、Build 順序、Acceptance 要件
 
