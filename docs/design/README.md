@@ -159,8 +159,8 @@ plugin marketplaces, or in-run mode changes.
 
 - [Architecture](./architecture.md): components, runtime topologies, state
   ownership, and multi-Provider relationships.
-- [Portable API (Simplified Chinese)](./api-design.md): Profile, Client,
-  Session, Run, Event, Capability, and Error contracts.
+- [Portable API](./api-design.md): Profile, Client, Session, Run, Event,
+  Capability, and Error contracts.
 - [Provider matrix (Simplified Chinese)](./provider-matrix.md): official machine
   interfaces, evidence levels, and limitations for target Harnesses.
 - [Provider-specific capabilities (Simplified Chinese)](./provider-extensions.md):
