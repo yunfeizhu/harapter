@@ -124,7 +124,7 @@ Capability 字段缺失表示当前 Manifest 不认识该能力名称，与显�
 ## 文档索引
 
 - [架构设计](./architecture.zh-CN.md)：组件、运行拓扑、状态所有权和多 Provider 关系。
-- [统一 API](./api-design.md)：Profile、Client、Session、Run、事件、能力和错误契约。
+- [统一 API](./api-design.zh-CN.md)：Profile、Client、Session、Run、事件、能力和错误契约。
 - [Provider 接入矩阵](./provider-matrix.md)：目标 Harness 的官方接入面、覆盖等级和限制。
 - [Provider 特有能力](./provider-extensions.md)：三层能力模型、扩展接口和 Native
   Escape Hatch。
