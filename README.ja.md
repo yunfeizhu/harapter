@@ -230,17 +230,17 @@ ID による Capability 推測を行いません。プロトコル変換、互�
 マトリクスに行があるだけではサポートを意味しません。Harapter がインターフェースをソース上でサポート済みと表現するには、Adapter 実装、機密情報を除去した Fixture、Protocol
 Mapping とライフサイクルテスト、Provider-negative テスト、共通 Conformance、明示的な互換性境界、live-runtime 証拠が必要です。
 
-| Provider                                      | 公式インターフェース      | 現在の証拠ステータス                                                 |
-| --------------------------------------------- | ------------------------- | -------------------------------------------------------------------- |
-| [Codex](./providers/codex/README.md)          | stable App Server         | **ソース上でサポート** — Fixture、Conformance、互換性、live 証拠あり |
-| [OpenCode](./providers/opencode/README.md)    | stable HTTP/OpenAPI + SSE | **ソース上でサポート** — Fixture、Conformance、互換性、live 証拠あり |
-| [Claude](./providers/claude/README.md)        | Claude Agent SDK          | **ソース上で Experimental** — 決定論的証拠あり、live 証拠は未記録    |
-| [DeepSeek Harness](./providers/dsh/README.md) | SDK Runtime JSON-RPC      | **ソース上で Experimental** — 決定論的証拠あり、live 証拠は未記録    |
-| [Hermes Agent](./providers/hermes/README.md)  | API Server HTTP/SSE       | **ソース上で Experimental** — 決定論的証拠あり、live 証拠は未記録    |
-| [OpenClaw](./providers/openclaw/README.md)    | ACP v1 bridge             | **ソース上で Experimental** — 決定論的証拠あり、live 証拠は未記録    |
-| [Pi Agent](./providers/pi/README.md)          | strict JSONL RPC mode     | **ソース上で Experimental** — 決定論的証拠あり、live 証拠は未記録    |
+| Provider                                      | 公式インターフェース      | 現在の証拠ステータス                                                         |
+| --------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------- |
+| [Codex](./providers/codex/README.md)          | stable App Server         | **ソース上でサポート** — Fixture、Conformance、互換性、live 証拠あり         |
+| [OpenCode](./providers/opencode/README.md)    | stable HTTP/OpenAPI + SSE | **ソース上でサポート** — Fixture、Conformance、互換性、live 証拠あり         |
+| [Claude](./providers/claude/README.md)        | Claude Agent SDK          | **ソース上で Experimental** — 決定論的証拠あり、live 証拠は未記録            |
+| [DeepSeek Harness](./providers/dsh/README.md) | SDK Runtime JSON-RPC      | **ソース上で Experimental** — live 証拠あり、Runtime の互換 Version 交渉なし |
+| [Hermes Agent](./providers/hermes/README.md)  | API Server HTTP/SSE       | **ソース上で Experimental** — 決定論的証拠あり、live 証拠は未記録            |
+| [OpenClaw](./providers/openclaw/README.md)    | ACP v1 bridge             | **ソース上で Experimental** — 決定論的証拠あり、live 証拠は未記録            |
+| [Pi Agent](./providers/pi/README.md)          | strict JSONL RPC mode     | **ソース上で Experimental** — 決定論的証拠あり、live 証拠は未記録            |
 
-「ソース上でサポート」はソース Adapter が保持する証拠を示すもので、公開 Package の保証ではありません。「ソース上で Experimental」は Adapter の実装と、宣言したインターフェースに対する決定論的テストは完了しているものの、必要な live-runtime 証拠がまだ記録されていない状態です。Harapter が証拠取得のために Runtime を自動インストールすることはありません。
+「ソース上でサポート」はソース Adapter が保持する証拠を示すもので、公開 Package の保証ではありません。「ソース上で Experimental」は Adapter の実装と、宣言したインターフェースに対する決定論的テストは完了しているものの、必要な live-runtime 証拠が未記録か、接続した Runtime を検証済み証拠へ安全に対応付けられない状態です。Harapter が証拠取得のために Runtime を自動インストールすることはありません。
 
 Capability と互換性境界の詳細は、[Provider マトリクス](./docs/design/provider-matrix.ja.md)と各 Provider
 README を参照してください。
@@ -303,7 +303,7 @@ Abort と Provider が確認した Cancellation は異なるライフサイク�
 ### Experimental Adapter はプレースホルダーですか？
 
 いいえ。実装、リソース上限と機密情報除去を備えた Fixture、Mapping とライフサイクルテスト、Provider-negative
-Coverage、共通 Conformance、明示的な互換性境界が含まれます。Experimental ラベルは、決定論的な実装証拠ではなく live-runtime 証拠が不足していることを示します。
+Coverage、共通 Conformance、明示的な互換性境界が含まれます。Experimental ラベルは、決定論的な実装証拠の不足ではなく、live-runtime 証拠または Runtime 互換性 Probe の未解決境界を示します。
 
 ### Package が Private のままなのはなぜですか？
 

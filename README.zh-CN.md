@@ -230,12 +230,12 @@ SDK，不根据 Provider 名称分支，也不根据 Provider 身份推断 Capab
 | [Codex](./providers/codex/README.md)          | 稳定 App Server         | **源码级支持**——具备 Fixture、Conformance、兼容与真实运行证据 |
 | [OpenCode](./providers/opencode/README.md)    | 稳定 HTTP/OpenAPI + SSE | **源码级支持**——具备 Fixture、Conformance、兼容与真实运行证据 |
 | [Claude](./providers/claude/README.md)        | Claude Agent SDK        | **源码级实验**——具备确定性证据，尚缺真实运行证据              |
-| [DeepSeek Harness](./providers/dsh/README.md) | SDK Runtime JSON-RPC    | **源码级实验**——具备确定性证据，尚缺真实运行证据              |
+| [DeepSeek Harness](./providers/dsh/README.md) | SDK Runtime JSON-RPC    | **源码级实验**——已有真实运行证据，但 Runtime 不协商兼容版本   |
 | [Hermes Agent](./providers/hermes/README.md)  | API Server HTTP/SSE     | **源码级实验**——具备确定性证据，尚缺真实运行证据              |
 | [OpenClaw](./providers/openclaw/README.md)    | ACP v1 Bridge           | **源码级实验**——具备确定性证据，尚缺真实运行证据              |
 | [Pi Agent](./providers/pi/README.md)          | 严格 JSONL RPC 模式     | **源码级实验**——具备确定性证据，尚缺真实运行证据              |
 
-“源码级支持”描述源码 Adapter 所持有的证据，不是已发布 Package 的保证。“源码级实验”表示 Adapter 已经实现，并按声明的接口完成确定性测试，但尚未记录所需的真实 Runtime 证据。Harapter 不会为了获取这些证据自动安装 Runtime。
+“源码级支持”描述源码 Adapter 所持有的证据，不是已发布 Package 的保证。“源码级实验”表示 Adapter 已经实现，并按声明的接口完成确定性测试，但仍缺所需的真实 Runtime 证据，或当前连接的 Runtime 无法与已验证证据安全匹配。Harapter 不会为了获取证据自动安装 Runtime。
 
 准确的 Capability 和兼容边界请查看
 [Provider 接入矩阵](./docs/design/provider-matrix.zh-CN.md)与各 Provider
@@ -291,7 +291,7 @@ Abort 与 Provider 确认的 Cancellation 是不同的生命周期结果。
 
 ### 实验 Adapter 只是占位实现吗？
 
-不是。它们具备实现、有界且脱敏的 Fixture、Mapping 与生命周期测试、Provider-negative 覆盖、公共 Conformance 和明确兼容边界。实验标签记录的是缺少真实 Runtime 证据，而不是缺少确定性实现证据。
+不是。它们具备实现、有界且脱敏的 Fixture、Mapping 与生命周期测试、Provider-negative 覆盖、公共 Conformance 和明确兼容边界。实验标签记录的是仍有真实运行证据或 Runtime 兼容探测边界未解决，而不是缺少确定性实现证据。
 
 ### 为什么 Package 仍是 Private？
 

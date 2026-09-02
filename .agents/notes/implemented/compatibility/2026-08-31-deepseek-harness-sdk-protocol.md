@@ -27,6 +27,13 @@ required, and only `completed` produces portable success. Unknown required
 events quarantine the connection; bounded ignorable or Provider-local activity
 remains observable after redaction.
 
+Session events observed before the exact inbox insertion are outside Run
+ownership. They remain available to the bounded notification observer but do not
+enter portable mapping or sequence authority. After correlation, the Adapter
+validates the complete contiguous event interval. The current `session/title`
+structure is a recognized, redacted Provider event; an unknown required event
+still fails closed.
+
 Prompt timeouts, transport interruptions, and malformed prompt receipts have an
 uncertain upstream acceptance state and quarantine the connection. Explicit
 JSON-RPC rejection is authoritative and leaves it reusable. Subagent ownership
@@ -39,10 +46,10 @@ The current interface declares Run cancellation and Session resume unsupported.
 Client close, local timeout, process exit, and transport loss are connection
 aborts. Runtime identity is checked structurally and retained as a diagnostic;
 there is no executable version allowlist because the upstream handshake has no
-protocol negotiation. The source baseline remains experimental until the opt-in
-live test records current Runtime evidence. Runtime versions and unsafe
-diagnostic strings use bounded stable hashes, and Run event capacity has a fixed
-maximum of 4096.
+protocol negotiation. The Client reports experimental compatibility: current
+official SDK Profile evidence cannot classify an arbitrary same-name older or
+future Runtime as supported. Runtime versions and unsafe diagnostic strings use
+bounded stable hashes, and Run event capacity has a fixed maximum of 4096.
 
 ## Alternatives considered
 
@@ -72,8 +79,11 @@ terminal authority, so weaker observations cannot safely produce success.
 - Harapter can create a lazy SDK Session, stream portable events, and settle a
   Run without a Provider package dependency or Provider identity logic in Core.
 - Compatibility evidence consists of structural runtime validation, recorded
-  official protocol provenance, synthetic redacted fixtures, Provider-negative
-  tests, and shared conformance. Live evidence remains separately opt-in.
+  official protocol provenance at `4e84901e6471b79ec0338099867ebb4606d12bb5`
+  (`@deepseek-ai/dsh-sdk-protocol` `0.1.2-alpha.4`), synthetic redacted
+  fixtures, Provider-negative tests, shared conformance, and a successful
+  isolated live run of the matching official SDK Profile. Live revalidation
+  remains opt-in.
 - Hosts must supply an isolated SDK Profile. Native calls that inject competing
   work into the owned Session interval fall outside the compatibility boundary.
 - Harapter gives up native mid-Run cancellation, Session resume, Session

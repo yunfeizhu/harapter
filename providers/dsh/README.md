@@ -19,8 +19,11 @@ validates the wire-stable `deepseek-harness-sdk-runtime` handshake identity and
 every required response, notification, event, and terminal structure it uses.
 The runtime supplies a diagnostic version string, but the protocol has no
 version negotiation or compatibility promise, so the Adapter has no executable
-version allowlist. Harapter exposes only its stable diagnostic hash and remains
-experimental pending live-runtime evidence.
+version allowlist. Harapter exposes only its stable diagnostic hash. Protocol
+provenance, redacted fixtures, conformance, and an isolated live-runtime run
+cover the current official SDK Profile, but cannot match an arbitrary connected
+Runtime to that evidence. The Client descriptor therefore remains `experimental`
+and retains a `pre_release_upstream_protocol` warning.
 
 The fixture provenance records the official protocol package revision inspected
 for this implementation. That revision and its package version do not pin the
@@ -123,6 +126,12 @@ correlates that exact identifier to one `agent/inbox/spliced` insertion, rejects
 another insertion in the owned activity interval, and waits for the following
 whole-Agent `idle` transition.
 
+SDK Profile setup events emitted before that exact inbox insertion do not belong
+to the Harapter Run and cannot provide portable or terminal authority. They
+remain visible through the bounded, redacted notification observer. Events in
+the owned interval, including the current `session/title` structure, are
+validated and exposed through the redacted Provider event channel.
+
 A request timeout, transport interruption, or malformed prompt response leaves
 acceptance uncertain and quarantines the connection. An explicit JSON-RPC error
 response is an authoritative rejection and leaves the connection reusable.
@@ -194,7 +203,7 @@ is `timeout`; an unexpected process or stream loss after connect is
 `connection_aborted`; and an operation-local upstream rejection is
 `provider_error`.
 
-Evidence for this experimental Adapter includes:
+Evidence for this experimental source Adapter includes:
 
 - official protocol provenance and deterministic synthetic traces in
   [`fixtures/dsh/sdk-jsonrpc-current`](../../fixtures/dsh/sdk-jsonrpc-current/manifest.json);
@@ -202,9 +211,10 @@ Evidence for this experimental Adapter includes:
   terminal reason, timeout, process-loss, buffer overflow, and forced-cleanup
   tests;
 - the shared portable Provider conformance suite;
-- an opt-in live-runtime test that uses an empty temporary working directory,
-  logs no Provider traffic, and requires the host to select a safe isolated SDK
-  Profile.
+- an opt-in live-runtime test verified against the current official SDK Profile
+  with an empty temporary working directory and isolated Runtime home. It logs
+  and stores no Provider traffic, credentials, environment values, or host
+  paths.
 
 Run live verification only in a host environment with an installed and
 authenticated Runtime plus a Provider route and model:

@@ -839,10 +839,12 @@ class DshRun implements HarnessRun {
       this.abortOwnerConnection('protocol_incompatible');
       return;
     }
-    const mapping = mapDshSessionEvent(notification.event);
     if (!this.correlationStarted) {
+      if (notification.event.type !== 'agent/inbox/spliced') return;
+      const mapping = mapDshSessionEvent(notification.event);
       if (mapping.insertedMessageIds.includes(this.messageId ?? '')) {
         if (
+          mapping.insertedMessageCount !== 1 ||
           mapping.insertedMessageIds.length !== 1 ||
           mapping.insertedMessageIds[0] !== this.messageId
         ) {
@@ -855,13 +857,17 @@ class DshRun implements HarnessRun {
       } else {
         return;
       }
-    } else if (mapping.insertedMessageIds.length > 0) {
+      for (const event of mapping.events) this.emit(event);
+      return;
+    }
+
+    const mapping = mapDshSessionEvent(notification.event);
+    if (mapping.insertedMessageCount > 0) {
       this.failProtocol('competing_prompt');
       this.abortOwnerConnection('protocol_incompatible');
       return;
-    } else {
-      this.lastEventSequence = notification.event.seq;
     }
+    this.lastEventSequence = notification.event.seq;
 
     if (mapping.terminal !== undefined) {
       this.terminalCount += 1;

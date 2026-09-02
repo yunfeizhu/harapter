@@ -69,6 +69,7 @@ export interface DshTerminalObservation {
 /** One mapped session event plus terminal and inbox-correlation facts. */
 export interface DshSessionEventMapping {
   readonly events: readonly MappedDshEvent[];
+  readonly insertedMessageCount: number;
   readonly insertedMessageIds: readonly string[];
   readonly terminal?: DshTerminalObservation;
 }
@@ -80,6 +81,7 @@ const knownPassthroughEvents = new Set([
   'request/context',
   'request/header',
   'session/end-seed',
+  'session/title',
   'step/end',
   'step/start',
   'turn/start',
@@ -440,7 +442,11 @@ export function mapDshSessionEvent(
             )
             .map(({ id }) => id)
         : [];
-    return { events: [provider()], insertedMessageIds };
+    return {
+      events: [provider()],
+      insertedMessageCount: messages.length,
+      insertedMessageIds,
+    };
   }
 
   if (event.type === 'assistant/chunk') {
@@ -459,6 +465,7 @@ export function mapDshSessionEvent(
             data: { delta: text },
           },
         ],
+        insertedMessageCount: 0,
         insertedMessageIds: [],
       };
     }
@@ -466,11 +473,16 @@ export function mapDshSessionEvent(
       const usage = parseUsage(chunk?.['usage']);
       return {
         events: [{ type: 'usage.updated', data: usage, usage }],
+        insertedMessageCount: 0,
         insertedMessageIds: [],
       };
     }
     if (typeof type !== 'string') throw incompatible(event.type);
-    return { events: [provider()], insertedMessageIds: [] };
+    return {
+      events: [provider()],
+      insertedMessageCount: 0,
+      insertedMessageIds: [],
+    };
   }
 
   if (event.type === 'assistant/message') {
@@ -501,6 +513,7 @@ export function mapDshSessionEvent(
           ? []
           : [{ type: 'usage.updated' as const, data: usage, usage }]),
       ],
+      insertedMessageCount: 0,
       insertedMessageIds: [],
     };
   }
@@ -519,6 +532,7 @@ export function mapDshSessionEvent(
     }
     return {
       events: [{ type: 'tool.started', data: { callId, name } }],
+      insertedMessageCount: 0,
       insertedMessageIds: [],
     };
   }
@@ -545,6 +559,7 @@ export function mapDshSessionEvent(
           },
         },
       ],
+      insertedMessageCount: 0,
       insertedMessageIds: [],
     };
   }
@@ -553,15 +568,51 @@ export function mapDshSessionEvent(
     if (!positiveInteger(event.data['turn'])) throw incompatible(event.type);
     return {
       events: [],
+      insertedMessageCount: 0,
       insertedMessageIds: [],
       terminal: terminalObservation(event.data['reason']),
     };
   }
 
+  if (event.type === 'session/title') {
+    validateSessionTitle(event.data);
+  }
+
   if (knownPassthroughEvents.has(event.type) || event.ignorable === true) {
-    return { events: [provider()], insertedMessageIds: [] };
+    return {
+      events: [provider()],
+      insertedMessageCount: 0,
+      insertedMessageIds: [],
+    };
   }
   throw incompatible('required session event');
+}
+
+function validateSessionTitle(data: Readonly<JsonRecord>): void {
+  const source = record(data['source']);
+  const sourceKind = source?.['kind'];
+  const messageSeqs = data['messageSeqs'];
+  if (
+    !nonEmptyString(data['title']) ||
+    !Array.isArray(messageSeqs) ||
+    !messageSeqs.every(nonNegativeInteger) ||
+    (sourceKind !== 'fallback' &&
+      sourceKind !== 'provider' &&
+      sourceKind !== 'user')
+  ) {
+    throw incompatible('session/title event');
+  }
+  if (sourceKind !== 'provider' || source === undefined) return;
+  const model = source['model'];
+  const parsedModel = model === undefined ? undefined : record(model);
+  if (
+    !nonEmptyString(source['provider']) ||
+    (model !== undefined &&
+      (!nonEmptyString(parsedModel?.['provider']) ||
+        !nonEmptyString(parsedModel['model'])))
+  ) {
+    throw incompatible('session/title event');
+  }
 }
 
 /** Produce a bounded structural event without prompt, content, path, or secret values. */

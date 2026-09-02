@@ -239,21 +239,22 @@ redacted fixtures, protocol mapping and lifecycle tests, Provider-negative
 tests, shared conformance, a declared compatibility boundary, and live-runtime
 evidence before Harapter describes the interface as supported in source.
 
-| Provider                                      | Official interface        | Current evidence status                                                              |
-| --------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------ |
-| [Codex](./providers/codex/README.md)          | stable App Server         | **Supported in source** — fixture, conformance, compatibility, and live evidence     |
-| [OpenCode](./providers/opencode/README.md)    | stable HTTP/OpenAPI + SSE | **Supported in source** — fixture, conformance, compatibility, and live evidence     |
-| [Claude](./providers/claude/README.md)        | Claude Agent SDK          | **Experimental in source** — deterministic evidence exists; live evidence is pending |
-| [DeepSeek Harness](./providers/dsh/README.md) | SDK Runtime JSON-RPC      | **Experimental in source** — deterministic evidence exists; live evidence is pending |
-| [Hermes Agent](./providers/hermes/README.md)  | API Server HTTP/SSE       | **Experimental in source** — deterministic evidence exists; live evidence is pending |
-| [OpenClaw](./providers/openclaw/README.md)    | ACP v1 bridge             | **Experimental in source** — deterministic evidence exists; live evidence is pending |
-| [Pi Agent](./providers/pi/README.md)          | strict JSONL RPC mode     | **Experimental in source** — deterministic evidence exists; live evidence is pending |
+| Provider                                      | Official interface        | Current evidence status                                                                    |
+| --------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------ |
+| [Codex](./providers/codex/README.md)          | stable App Server         | **Supported in source** — fixture, conformance, compatibility, and live evidence           |
+| [OpenCode](./providers/opencode/README.md)    | stable HTTP/OpenAPI + SSE | **Supported in source** — fixture, conformance, compatibility, and live evidence           |
+| [Claude](./providers/claude/README.md)        | Claude Agent SDK          | **Experimental in source** — deterministic evidence exists; live evidence is pending       |
+| [DeepSeek Harness](./providers/dsh/README.md) | SDK Runtime JSON-RPC      | **Experimental in source** — live evidence exists; Runtime compatibility is not negotiated |
+| [Hermes Agent](./providers/hermes/README.md)  | API Server HTTP/SSE       | **Experimental in source** — deterministic evidence exists; live evidence is pending       |
+| [OpenClaw](./providers/openclaw/README.md)    | ACP v1 bridge             | **Experimental in source** — deterministic evidence exists; live evidence is pending       |
+| [Pi Agent](./providers/pi/README.md)          | strict JSONL RPC mode     | **Experimental in source** — deterministic evidence exists; live evidence is pending       |
 
 “Supported in source” describes evidence held by the source Adapter, not a
 published package guarantee. “Experimental in source” means the Adapter is
-implemented and deterministically tested against its declared interface, but no
-required live-runtime evidence has been recorded. Harapter does not install a
-runtime to obtain that evidence.
+implemented and deterministically tested against its declared interface, but
+either required live-runtime evidence is outstanding or the connected Runtime
+cannot be matched safely to verified evidence. Harapter does not install a
+runtime to obtain evidence.
 
 See the [Provider matrix](./docs/design/provider-matrix.md) and each Provider
 README for exact capabilities and compatibility boundaries.
@@ -318,8 +319,9 @@ Provider-acknowledged cancellation are different lifecycle outcomes.
 
 No. They include implementations, bounded and redacted fixtures, mapping and
 lifecycle tests, Provider-negative coverage, shared conformance, and declared
-compatibility boundaries. The experimental label records missing live-runtime
-evidence rather than missing deterministic implementation evidence.
+compatibility boundaries. The experimental label records an unresolved
+live-evidence or Runtime-compatibility probe boundary rather than missing
+deterministic implementation evidence.
 
 ### Why are packages still private?
 

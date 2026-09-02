@@ -306,6 +306,7 @@ describe('DeepSeek Harness protocol mapping', () => {
         }),
       ),
     ).toMatchObject({
+      insertedMessageCount: 2,
       insertedMessageIds: ['message-one', 'message-two'],
       events: [{ type: 'provider' }],
     });
@@ -316,8 +317,8 @@ describe('DeepSeek Harness protocol mapping', () => {
           start: 0,
           inserted: [userMessage('message-next-step')],
         }),
-      ).insertedMessageIds,
-    ).toEqual([]);
+      ),
+    ).toMatchObject({ insertedMessageCount: 1, insertedMessageIds: [] });
     expect(
       mapDshSessionEvent(
         sessionEvent('agent/inbox/spliced', {
@@ -330,8 +331,8 @@ describe('DeepSeek Harness protocol mapping', () => {
             },
           ],
         }),
-      ).insertedMessageIds,
-    ).toEqual([]);
+      ),
+    ).toMatchObject({ insertedMessageCount: 1, insertedMessageIds: [] });
     for (const data of [
       { target: 'next-turn', start: 0 },
       { target: 'future', start: 0, inserted: [] },
@@ -632,6 +633,73 @@ describe('DeepSeek Harness protocol mapping', () => {
     expect(JSON.stringify(mapped)).not.toContain('private/provider');
   });
 
+  it('validates and redacts the current SDK Profile session title event', () => {
+    for (const source of [
+      { kind: 'fallback' },
+      { kind: 'user' },
+      { kind: 'provider', provider: 'synthetic-title-provider' },
+      {
+        kind: 'provider',
+        provider: 'synthetic-title-provider',
+        model: {
+          provider: 'synthetic-model-provider',
+          model: 'synthetic-model',
+        },
+      },
+    ]) {
+      const mapped = mapDshSessionEvent(
+        sessionEvent('session/title', {
+          title: 'Synthetic private title',
+          messageSeqs: [1, 2],
+          source,
+        }),
+      );
+      expect(mapped.events[0]).toMatchObject({
+        type: 'provider',
+        providerEventType: 'session/title',
+      });
+      expect(JSON.stringify(mapped)).not.toContain('Synthetic private title');
+      expect(JSON.stringify(mapped)).not.toContain('synthetic-title-provider');
+    }
+
+    for (const data of [
+      { title: '', messageSeqs: [1], source: { kind: 'fallback' } },
+      { title: 'Title', source: { kind: 'fallback' } },
+      { title: 'Title', messageSeqs: [-1], source: { kind: 'fallback' } },
+      { title: 'Title', messageSeqs: [1], source: { kind: 'unknown' } },
+      {
+        title: 'Title',
+        messageSeqs: [1],
+        source: { kind: 'provider' },
+      },
+      {
+        title: 'Title',
+        messageSeqs: [1],
+        source: {
+          kind: 'provider',
+          provider: 'synthetic-title-provider',
+          model: {},
+        },
+      },
+      {
+        title: 'Title',
+        messageSeqs: [1],
+        source: {
+          kind: 'provider',
+          provider: 'synthetic-title-provider',
+          model: {
+            provider: 'synthetic-model-provider',
+            model: '',
+          },
+        },
+      },
+    ]) {
+      expect(() =>
+        mapDshSessionEvent(sessionEvent('session/title', data)),
+      ).toThrow(expect.objectContaining({ code: 'provider_api_incompatible' }));
+    }
+  });
+
   it('bounds and redacts raw events without leaking identifiers or content', () => {
     const event = redactDshEvent('unsafe method value', {
       method: 'session.event',
@@ -663,6 +731,7 @@ describe('DeepSeek Harness protocol mapping', () => {
   it('loads and structurally maps every recorded synthetic fixture', async () => {
     const names = [
       'completed.jsonl',
+      'current-profile.jsonl',
       'failed.jsonl',
       'missing-terminal.jsonl',
       'unknown-terminal.jsonl',
@@ -671,9 +740,16 @@ describe('DeepSeek Harness protocol mapping', () => {
       const records = await readJsonLines(name);
       expect(records.length).toBeGreaterThan(0);
       const statusSessionIds: string[] = [];
+      let correlated = false;
       for (const record of records) {
         if (record.method === 'session.event') {
           const parsed = parseDshSessionEventNotification(record.params);
+          if (!correlated) {
+            if (parsed.event.type !== 'agent/inbox/spliced') continue;
+            const mapping = mapDshSessionEvent(parsed.event);
+            correlated = mapping.insertedMessageIds.includes('message-fixture');
+            continue;
+          }
           mapDshSessionEvent(parsed.event);
         } else {
           statusSessionIds.push(
@@ -684,6 +760,7 @@ describe('DeepSeek Harness protocol mapping', () => {
       expect(
         statusSessionIds.every((sessionId) => sessionId === 'session-fixture'),
       ).toBe(true);
+      expect(correlated).toBe(true);
     }
     const manifest = JSON.parse(
       await readFile(`${fixtureDirectory}/manifest.json`, 'utf8'),

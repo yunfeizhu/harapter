@@ -169,6 +169,29 @@ describe('DeepSeek Harness Provider Adapter', () => {
     await expect(run.result()).resolves.toMatchObject({ status: 'completed' });
   });
 
+  it('accepts the current SDK Profile event order without owning setup events', async () => {
+    const client = await connect('current-profile');
+    const session = await client.createSession();
+    const run = await session.start(textInput('current profile'));
+    const [events, result] = await Promise.all([
+      collectEvents(run),
+      run.result(),
+    ]);
+    expect(result).toMatchObject({
+      status: 'completed',
+      finalMessage: 'current profile',
+    });
+    expect(events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'provider',
+          providerEventType: 'session/title',
+        }),
+      ]),
+    );
+    expect(JSON.stringify(events)).not.toContain('Synthetic title');
+  });
+
   it.each([
     ['aborted-terminal', 'cancelled', 'run.cancelled', 'aborted'],
     ['blocked-terminal', 'failed', 'run.failed', 'blocked'],
@@ -216,7 +239,10 @@ describe('DeepSeek Harness Provider Adapter', () => {
 
   it.each([
     ['competing-prompt', 'competing_prompt'],
+    ['competing-next-step', 'competing_prompt'],
+    ['competing-plugin', 'competing_prompt'],
     ['ambiguous-receipt', 'ambiguous_prompt_receipt'],
+    ['ambiguous-plugin-receipt', 'ambiguous_prompt_receipt'],
   ] as const)('quarantines the connection after %s', async (mode, reason) => {
     const client = await connect(mode);
     const session = await client.createSession();

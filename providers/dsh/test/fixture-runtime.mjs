@@ -135,6 +135,62 @@ function completed(sessionId, messageId, text) {
   status(sessionId, 'idle');
 }
 
+function currentProfileCompleted(sessionId, messageId, text) {
+  event(sessionId, 'permission/preset', { preset: 'workspace-write' });
+  event(sessionId, 'sandbox/mode', { mode: 'workspace-write' });
+  event(sessionId, 'approval/policy', { policy: 'ask' });
+  receipt(sessionId, messageId);
+  status(sessionId, 'running');
+  event(sessionId, 'turn/start', { turn: 1 });
+  event(sessionId, 'agent/inbox/spliced', {
+    target: 'next-turn',
+    start: 0,
+    removedCount: 1,
+    inserted: [],
+  });
+  event(sessionId, 'step/start', { turn: 1, step: 1 });
+  event(sessionId, 'user/message', {
+    id: messageId,
+    role: 'user',
+    content: [{ type: 'text', text: 'synthetic input' }],
+    source: { kind: 'user' },
+  });
+  event(sessionId, 'session/title', {
+    title: 'Synthetic title',
+    messageSeqs: [7],
+    source: { kind: 'fallback' },
+  });
+  event(sessionId, 'request/header', {
+    header: {
+      config: {
+        provider: 'synthetic-provider',
+        model: 'synthetic-model',
+      },
+    },
+    reason: 'initial',
+  });
+  event(sessionId, 'request/context', {
+    provider: 'synthetic-provider',
+    model: 'synthetic-model',
+  });
+  event(sessionId, 'assistant/chunk', {
+    turn: 1,
+    step: 1,
+    chunk: { type: 'text-delta', index: 0, text },
+  });
+  event(sessionId, 'assistant/message', {
+    turn: 1,
+    step: 1,
+    message: assistantMessage(`assistant-${messageId}`, text),
+  });
+  event(sessionId, 'step/end', { turn: 1, step: 1 });
+  event(sessionId, 'turn/end', {
+    turn: 1,
+    reason: { kind: 'completed' },
+  });
+  status(sessionId, 'idle');
+}
+
 function terminalRun(sessionId, messageId, reason, text = 'synthetic answer') {
   receipt(sessionId, messageId);
   status(sessionId, 'running');
@@ -150,6 +206,10 @@ function terminalRun(sessionId, messageId, reason, text = 'synthetic answer') {
 }
 
 function runScenario(sessionId, messageId, text, currentPromptCount) {
+  if (mode === 'current-profile') {
+    currentProfileCompleted(sessionId, messageId, text);
+    return;
+  }
   if (mode === 'exit-during-run') {
     receipt(sessionId, messageId);
     status(sessionId, 'running');
@@ -212,8 +272,61 @@ function runScenario(sessionId, messageId, text, currentPromptCount) {
     receipt(sessionId, 'message-competing');
     return;
   }
+  if (mode === 'competing-next-step') {
+    receipt(sessionId, messageId);
+    event(sessionId, 'agent/inbox/spliced', {
+      target: 'next-step',
+      start: 0,
+      inserted: [
+        {
+          id: 'message-competing',
+          role: 'user',
+          content: [{ type: 'text', text: 'synthetic steering' }],
+          source: { kind: 'user' },
+        },
+      ],
+    });
+    return;
+  }
+  if (mode === 'competing-plugin') {
+    receipt(sessionId, messageId);
+    event(sessionId, 'agent/inbox/spliced', {
+      target: 'next-turn',
+      start: 0,
+      inserted: [
+        {
+          id: 'message-competing',
+          role: 'user',
+          content: [{ type: 'text', text: 'synthetic plugin work' }],
+          source: { kind: 'plugin', plugin: 'synthetic-plugin' },
+        },
+      ],
+    });
+    return;
+  }
   if (mode === 'ambiguous-receipt') {
     receipt(sessionId, messageId, [messageId, 'message-competing']);
+    return;
+  }
+  if (mode === 'ambiguous-plugin-receipt') {
+    event(sessionId, 'agent/inbox/spliced', {
+      target: 'next-turn',
+      start: 0,
+      inserted: [
+        {
+          id: messageId,
+          role: 'user',
+          content: [{ type: 'text', text: 'synthetic input' }],
+          source: { kind: 'user' },
+        },
+        {
+          id: 'message-competing',
+          role: 'user',
+          content: [{ type: 'text', text: 'synthetic plugin work' }],
+          source: { kind: 'plugin', plugin: 'synthetic-plugin' },
+        },
+      ],
+    });
     return;
   }
   if (mode === 'aborted-terminal') {
