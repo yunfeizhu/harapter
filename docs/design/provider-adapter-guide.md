@@ -284,5 +284,5 @@ Provider Adapter 发布前必须满足：
 ## 13. 官方资料
 
 首批 Provider 的机器接口和限制统一记录在
-[Provider 接入矩阵](./provider-matrix.md)。实现时还应在 Provider 包 README 中固定目标官方文档、协议 Schema、许可和 Live
+[Provider 接入矩阵](./provider-matrix.zh-CN.md)。实现时还应在 Provider 包 README 中固定目标官方文档、协议 Schema、许可和 Live
 Test 环境。

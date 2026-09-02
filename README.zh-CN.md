@@ -238,7 +238,8 @@ SDK，不根据 Provider 名称分支，也不根据 Provider 身份推断 Capab
 “源码级支持”描述源码 Adapter 所持有的证据，不是已发布 Package 的保证。“源码级实验”表示 Adapter 已经实现，并按声明的接口完成确定性测试，但尚未记录所需的真实 Runtime 证据。Harapter 不会为了获取这些证据自动安装 Runtime。
 
 准确的 Capability 和兼容边界请查看
-[Provider 接入矩阵](./docs/design/provider-matrix.md)与各 Provider README。
+[Provider 接入矩阵](./docs/design/provider-matrix.zh-CN.md)与各 Provider
+README。
 
 ## 更多示例
 
@@ -266,7 +267,7 @@ CLI 和 Cursor Agent CLI 不在当前实现范围内。
 | ------------------------------------------------------------ | ------------------------------------------ |
 | [架构与目标设计](./docs/design/README.zh-CN.md)              | 系统边界、不变量、契约和设计顺序           |
 | [Portable Core 契约](./packages/core/README.md)              | 公共 TypeScript API 与所有权语义           |
-| [Provider 接入矩阵](./docs/design/provider-matrix.md)        | 各 Provider 的接口、证据与 Capability 状态 |
+| [Provider 接入矩阵](./docs/design/provider-matrix.zh-CN.md)  | 各 Provider 的接口、证据与 Capability 状态 |
 | [Provider 实现指南](./docs/design/provider-adapter-guide.md) | 在不削弱可移植事实的前提下构建 Adapter     |
 | [开发流程](./docs/development.md)                            | 工具链、分支、验证、Review 与 Pull Request |
 | [贡献指南](./CONTRIBUTING.md)                                | 贡献要求与仓库流程                         |

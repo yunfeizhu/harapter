@@ -1,0 +1,334 @@
+[English](./provider-matrix.md) · [简体中文](./provider-matrix.zh-CN.md) ·
+[日本語](./provider-matrix.ja.md)
+
+# Provider 接入矩阵
+
+## 1. 声明范围
+
+本文件记录目标 Harness 已公开的程序化接入面，以及它们对 Harapter 设计的影响。它不是 Provider 可用性承诺。
+
+一个 Provider 只有在对应 Adapter 完成实现、兼容探测、Conformance
+Test 和真实 Runtime 测试后，才能在发布物中标记为可用。
+
+“可接入”表示可以覆盖统一的创建 Session、提交输入、消费事件和获得终态主链路；“原生高级能力”仍取决于目标 Harness 的公开机器接口。
+
+DeepSeek Harness、Hermes Agent 和 OpenClaw 的接口观察日期为 2026-08-31，Pi
+Agent 的接口观察日期为 2026-09-01。实际兼容范围由连接时探测、脱敏 Fixture、Conformance
+Test、真实 Runtime Test 和对应 Provider README 共同声明。
+
+## 2. 目标 Provider
+
+| Provider           | Provider ID             | 首选接入面                           | 预计公共覆盖 | 主要限制                                                               |
+| ------------------ | ----------------------- | ------------------------------------ | ------------ | ---------------------------------------------------------------------- |
+| Claude Code        | `anthropic.claude-code` | Claude Agent SDK                     | 高           | SDK 和 CLI 进程生命周期、权限模式需要显式配置                          |
+| Codex Harness      | `openai.codex`          | Codex App Server                     | 很高         | 稳定协议持续扩展，必须验证必需结构和运行时 Schema                      |
+| OpenCode           | `opencode`              | Headless HTTP/OpenAPI；ACP 可选      | 很高         | HTTP 服务生命周期和认证由宿主管理                                      |
+| Goose              | `goose`                 | ACP Server 或官方 API                | 高           | Extension、Recipe、Subagent 等保留为 Provider Extension                |
+| Qwen Code          | `qwen.code`             | SDK、ACP、HTTP daemon 或 Stream JSON | 中高         | 接口快速演进，部分 SDK/双向流能力仍可能处于实验状态                    |
+| Crush              | `charm.crush`           | `crush serve` 本地 API               | 高           | 服务 API 较新，发布版本和主分支能力必须分别探测                        |
+| GitHub Copilot CLI | `github.copilot-cli`    | ACP Server                           | 高           | 一部分 Tool、Reasoning 配置固定在 Server 启动参数，不能按 Session 改变 |
+| Cursor Agent CLI   | `cursor.agent-cli`      | Headless Stream JSON                 | 中           | 当前为 Beta；失败流、审批、原生取消等控制面不如双向协议完整            |
+| DeepSeek Harness   | `deepseek.harness`      | SDK stdio JSON-RPC                   | 中高         | 官方接口未提供已验证的运行中取消；进程关闭只能作为连接中止             |
+| Hermes Agent       | `nous.hermes-agent`     | API Server HTTP/SSE                  | 很高         | Workspace 选择和后台 Subagent 终态不能从父 Run 终态推断                |
+| OpenClaw           | `openclaw`              | `openclaw acp`                       | 高           | Bridge 历史、Tool、Approval 和共享 Session 路由存在部分支持            |
+| Pi Agent           | `pi.agent`              | `pi --mode rpc` strict JSONL         | 高           | 独立进程；不支持 per-Session Workspace 和 Runtime Extension Loading    |
+
+这里的 Cursor 仅指公开的 `cursor-agent`
+CLI。Cursor 桌面 IDE 不能因为存在 CLI 就被宣称已经完整适配。
+
+## 3. 推荐 Provider 包
+
+```text
+adapter-claude
+adapter-codex
+adapter-opencode
+adapter-goose
+adapter-qwen
+adapter-crush
+adapter-copilot
+adapter-cursor
+adapter-dsh
+adapter-hermes
+adapter-openclaw
+adapter-pi
+```
+
+这些包只实现适配逻辑，不包含第三方 Runtime 二进制。用户或宿主负责安装、认证和许可；Profile 负责引用具体命令、SDK 实例、Socket 或 Endpoint。
+
+## 4. 接入策略
+
+### 4.1 Claude Code
+
+首选官方 Claude Agent SDK，不解析 Claude Code 交互式终端。Adapter 将 SDK
+Session、消息流、Tool 事件和结果映射到公共契约，并通过 SDK 配置暴露允许的工具和权限模式。
+
+需要重点验证：
+
+- SDK 所管理进程的所有权和退出语义；
+- Session 创建和恢复引用；
+- Partial Message、Tool Call 和 Result 的顺序；
+- 权限请求是否能由外部 Client 可靠响应；
+- SDK 默认读取的本地设置是否需要显式关闭或固定。
+
+官方入口：[Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview)、
+[流式输出](https://code.claude.com/docs/en/agent-sdk/streaming-output)。
+
+### 4.2 Codex Harness
+
+首选 `codex app-server`。它把开源 Codex
+Harness 暴露为双向 JSON-RPC 风格协议，并公开 Thread、Turn、Item、流式 Delta、Interrupt、Approval、Skill、App 和认证等接口。
+
+Codex Adapter 面向当前稳定 App
+Server 接口，不固定 Codex 可执行程序版本。当前 Runtime 生成的 TypeScript 或 JSON
+Schema 用作 Fixture、Mapping 和 Conformance 证据；握手和每个已使用响应、事件的必需结构接受运行时校验。Thread 映射为 Session，Turn 映射为 Run，Server
+Request 映射为 Interaction。
+
+官方入口：[Codex App Server](https://developers.openai.com/codex/app-server)、
+[Codex Harness](https://openai.com/index/unlocking-the-codex-harness/)。
+
+### 4.3 OpenCode
+
+首选 `opencode serve`
+的 HTTP/OpenAPI 接口，事件流使用官方服务事件；需要兼容 ACP 客户端场景时，可以在同一个 Provider 包中增加 ACP
+Connection Strategy。
+
+使用 HTTP 还是 ACP 是连接策略，不应该创建两个不同 Provider
+ID。两种策略可以暴露不同 Capability。
+
+官方入口：[OpenCode Server](https://opencode.ai/docs/server/)、
+[OpenCode CLI](https://opencode.ai/docs/cli/)。
+
+### 4.4 Goose
+
+Goose 可以作为 ACP
+Server，也公开 CLI 和 API。公共 Session/Run 主链路优先通过 ACP 或正式 API 接入。Goose 的 Extensions、Recipes、MCP
+Apps 和 Subagents 不应该被压缩成 Core 字段，而应通过 `goose.*`
+Extension 或 Native Client 使用。
+
+官方入口：[Goose](https://block.github.io/goose/)。
+
+### 4.5 Qwen Code
+
+Qwen Code 同时提供 Headless、Stream
+JSON、SDK、ACP 和长期运行服务等接入形态。Provider 包可以按部署场景实现多个 Connection
+Strategy，但应共享相同的 Session、Event 和 Error 映射测试。
+
+首选顺序：
+
+1. 当前发布版本中明确支持的正式 SDK 或长期运行 API；
+2. ACP；
+3. 文档化 Headless Stream JSON；
+4. 不解析交互式 TUI。
+
+Qwen Goal、Custom Subagent、Skill 等独有能力进入 `qwen.code.*`
+Extension。接口处于实验状态时，Capability 和 Client Descriptor 必须标记
+`experimental`。
+
+官方入口：[Qwen Code 架构](https://qwenlm.github.io/qwen-code-docs/en/developers/architecture/)、
+[Headless Mode](https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/)。
+
+### 4.6 Crush
+
+Crush 当前提供 `crush serve` 共享后端，本地 API 通过 Unix Socket 或 Windows
+Named
+Pipe 暴露 Workspace、Session、Agent、LSP、MCP 等资源。Adapter 应连接正式服务 API，不操作 TUI。
+
+由于该客户端/服务端分离接口较新，发布前必须确认目标发行版实际包含所需命令和路由，不能仅根据主分支代码扩大支持范围。
+
+官方入口：[Crush](https://github.com/charmbracelet/crush)、
+[Crush API 入口](https://github.com/charmbracelet/crush/blob/main/main.go)。
+
+### 4.7 GitHub Copilot CLI
+
+首选 `copilot --acp`。ACP
+Server 支持 stdio 和 TCP 两种传输。Adapter 可以复用通用 ACP
+Transport，但 Copilot 的启动参数、Slash
+Command 和 Session 限制仍由独立 Provider 语义层处理。
+
+部分 Tool Filter 和 Reasoning
+Effort 在 Server 启动时固定，Adapter 不得把这些设置伪装成可在每个 Session 动态切换。
+
+官方入口：[Copilot CLI ACP Server](https://docs.github.com/en/copilot/reference/copilot-cli-reference/acp-server)。
+
+### 4.8 Cursor Agent CLI
+
+首选
+`cursor-agent --print --output-format stream-json`。Adapter 可以映射初始化、Assistant、Tool
+Call 和成功 Result，并使用公开的 Resume 参数恢复已有会话。
+
+Cursor 当前公开接口适合任务执行和进度展示，但不应默认宣称具备双向 Approval、Provider 原生 Cancel、Fork 或完整 Reasoning。进程非零退出时可能没有终止 JSON 事件，Adapter 必须依据退出码和标准错误生成
+`run.failed` 或 `connection.aborted`。
+
+官方入口：[Cursor Headless](https://docs.cursor.com/en/cli/headless)、
+[输出格式](https://docs.cursor.com/en/cli/reference/output-format)、
+[命令参数](https://docs.cursor.com/en/cli/reference/parameters)。
+
+### 4.9 DeepSeek Harness
+
+首选官方 SDK 的 stdio
+JSON-RPC 接口。Adapter 连接宿主提供的 Runtime 命令和配置，不把 DSH
+SDK 或 Runtime 包加入默认 Workspace 依赖、不创建 Cordis 应用，也不复制 DSH Agent
+Loop。Session、Prompt、通知、终态和关闭语义必须以官方协议结构和脱敏 Fixture 验证。
+
+当前官方 TypeScript SDK 没有已验证的运行中 Prompt
+Cancel 操作。关闭 SDK 进程只能中止连接，Capability 不得标记为原生 Run
+Cancel。DSH 的插件、Profile 和 Cordis 生命周期保留为 Provider
+Extension 或 Native Client，不进入 Core。
+
+`session/prompt`
+只确认消息已持久入队，不返回该 Prompt 的结果。首个 Adapter 在一个 DSH
+Connection 上最多允许一个活动 Harapter
+Run，并要求目标 Session 的活动区间不接受宿主或插件注入的竞争 Prompt、Steering 或排队工作。自定义 Cordis 组合只有在能够证明这一独占边界时才能进入兼容范围。
+
+Whole-agent `idle` 和最后一条 Assistant
+Message 都不是成功终态。Adapter 必须在属于该活动区间的 Session
+Event 中找到唯一、结构有效的
+`turn/end.data.reason.kind`，再按照已测试的 reason 映射终态；只有明确的成功 reason 可以生成
+`run.completed`。缺失、重复、未知或与错误事件冲突的终态失败关闭，不能猜测为成功。共享 DSH 进程退出时，该连接上仍活动的所有 Run 都以
+`connection.aborted` 结束。
+
+官方入口：[DeepSeek Harness SDK](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/sdk/client/README.md)、
+[SDK Protocol](https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/sdk/protocol)。
+
+### 4.10 Hermes Agent
+
+首选宿主提供的 Hermes API Server。Adapter 使用 `GET /v1/capabilities`
+探测当前端点，再通过 Session REST、Run
+API 和 SSE 映射 Session、Run、Event、Stop 和 Approval。Bearer
+Secret、端点生命周期、模型配置、工具执行和认证策略均由宿主与 Hermes 拥有。
+
+SSE EOF 不是成功终态；断线后需要通过 Run 状态查询进行一致性确认。`stopping`
+只是停止请求已受理，只有权威终态才能映射为 `run.cancelled`。父 Run 的 portable
+trace 在权威终态结束，终态必须是最后一个事件。终态前到达的 Subagent 事件可以属于父 Run 的 Provider
+Event；终态后到达的 Child Event 只能进入按 `child_session_id` 关联的
+`nous.hermes-agent.subagents` 类型化 Extension 或 Native Session
+Observer，不能追加到已终止的父 Run，也不能延迟或改写父 Run 的权威终态。HTTP
+API 没有验证的 Workspace 选择能力时，Adapter 不得宣称原生支持 Workspace。
+
+官方入口：[Hermes Agent API Server](https://hermes-agent.nousresearch.com/docs/user-guide/features/api-server)、
+[Hermes Agent](https://github.com/NousResearch/hermes-agent)。
+
+### 4.11 OpenClaw
+
+首选宿主提供的 `openclaw acp`，通过通用 ACP stdio Transport 连接。OpenClaw
+Adapter 负责 Session 与 Gateway
+Session 的映射、事件、Capability、Interaction、Error 和兼容性；ACP
+Transport 不包含 OpenClaw 名称判断或 Gateway 语义。
+
+默认使用 bridge 创建的隔离 Session。显式绑定已有 Gateway
+Session 属于尚未实现的独立连接策略；当前 Profile 拒绝共享 Session 路由参数。Adapter 在每个连接上只允许一个活跃 Run，避免把缺少 Session 路由的未知 ACP
+Event 猜给并发 Run。历史加载、Tool 流、Usage 和 Approval 只按当前连接握手与已验证事件声明实际能力。ACP
+prompt 响应是终态权威；原生取消只有在响应明确为 `cancelled`
+后成立，连接退出和通知写入均不构成取消证据。首个 Adapter 不直接实现 Gateway
+WebSocket 客户端。ACP 接受 Session 的工作目录，但在真实 Gateway
+Run 证明工具执行目录前，Workspace 能力保持
+`unknown`。Session 变更或 Prompt 在权威响应前发生本地等待超时，必须中止所属连接，不能重新开放不确定的 Session 或 Run。
+
+官方入口：[OpenClaw ACP](https://docs.openclaw.ai/cli/acp)、
+[Agent Client Protocol](https://agentclientprotocol.com/protocol/overview)。
+
+### 4.12 Pi Agent
+
+首选宿主提供的 `pi --mode rpc`，通过通用 JSONL Process
+Transport 连接官方双向 RPC 模式。Pi Agent
+Adapter 负责 Command 关联、Session 所有权、Event、Retry、Interaction、Capability、Error 和终态；Transport 只负责严格 LF 分帧、有界队列、串行写入、背压和连接清理。
+
+每个 Harapter Session 启动并独占一个 Pi RPC 进程。Session
+ID、持久化模式、Provider、Profile 和兼容族绑定在 Session 引用中。持久 Session 使用原生 ID 恢复并验证
+`get_state`；临时 Session 不宣称可恢复。一个 Session 同时只允许一个活动 Run，不在多个 Session 之间共享 Pi 的可变当前状态。进程固定使用 Profile
+Working
+Directory；Adapter 在连接探测前将缺省或相对目录解析为固定绝对路径，per-Session
+Workspace 不支持。
+
+`prompt` 响应只表示 Command 已被接受，`agent_end`
+之后仍可能发生 Retry。Adapter 等待稳定的
+`agent_settled`，并以最近一条结构有效的 Assistant `message_end`
+作为终态来源。只有明确的 `stop` 可以生成成功；`aborted` 只有在关联的 Abort
+Response 成功后才生成取消；未经 Harapter 发起的 `aborted`、其他、缺失或未知 stop
+reason 失败关闭。EOF、进程退出和未确认的 Abort 都是连接中止，不得伪装成原生取消。Adapter 禁用 Extension、Skill 和 Prompt
+Template Discovery；Portable
+Text 不能以前导 Slash 开始，避免 Pi 把输入解释为 Command 或 Session Mutation。
+
+官方 Extension UI 的 Select、Confirm、Input 和 Editor 进入 Provider
+Interaction，不推断为通用 Approval 或 User Input 能力。未知 RPC
+Event 通过有界、脱敏的 Raw
+Channel 保持可观测，不能建立成功终态。宿主负责安装、认证和配置 Pi；默认 Workspace 不包含 Pi
+Runtime 或 SDK 依赖。
+
+官方入口：[Pi Agent RPC mode](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/rpc.md)、
+[Pi Agent](https://github.com/earendil-works/pi)。
+
+## 5. 公共能力预期
+
+| 能力               | Claude | Codex  | OpenCode | Goose  | Qwen   | Crush  | Copilot | Cursor |
+| ------------------ | ------ | ------ | -------- | ------ | ------ | ------ | ------- | ------ |
+| 创建任务会话       | 可评估 | 可评估 | 可评估   | 可评估 | 可评估 | 可评估 | 可评估  | 可评估 |
+| 流式事件           | 可评估 | 可评估 | 可评估   | 可评估 | 可评估 | 可评估 | 可评估  | 可评估 |
+| Session Resume     | 需实测 | 可评估 | 需实测   | 需实测 | 可评估 | 需实测 | 需实测  | 可评估 |
+| 原生 Run Cancel    | 需实测 | 可评估 | 需实测   | 需实测 | 需实测 | 需实测 | 需实测  | 未确认 |
+| 外部审批响应       | 需实测 | 可评估 | 需实测   | 需实测 | 需实测 | 需实测 | 需实测  | 未确认 |
+| Provider Extension | 可定义 | 可定义 | 可定义   | 可定义 | 可定义 | 可定义 | 可定义  | 可定义 |
+
+“可评估”表示官方接入面存在足够信息，可以进入 Adapter 实现和 Conformance；“需实测”表示不能仅根据文档确认完整语义；“未确认”表示不能在 Capability 中标记为
+`native`。
+
+最终发布矩阵必须由目标版本的自动化测试生成，不能把本表直接当作运行时 Capability
+Manifest。
+
+下一组 Provider 的设计预期为：
+
+| 能力               | DeepSeek Harness | Hermes Agent | OpenClaw | Pi Agent |
+| ------------------ | ---------------- | ------------ | -------- | -------- |
+| 创建任务会话       | 可评估           | 可评估       | 可评估   | 可评估   |
+| 流式事件           | 可评估           | 可评估       | 可评估   | 可评估   |
+| Session Resume     | 不支持           | 需实测       | 可评估   | 可评估   |
+| 原生 Run Cancel    | 不支持           | 可评估       | 需实测   | 可评估   |
+| 外部审批响应       | 不支持           | 可评估       | 需实测   | 不支持   |
+| Provider Extension | 可定义           | 可定义       | 可定义   | 可定义   |
+
+“不支持”表示当前官方机器接口明确没有可验证的对应行为。关闭进程、断开连接或丢弃本地 Run
+Handle 不会把该能力提升为原生取消。
+
+## 6. 共享 Transport 与独立语义层
+
+可以复用的 Transport 包包括：
+
+```text
+transport-acp
+transport-jsonrpc-stdio
+transport-jsonl-process
+transport-http-sse
+transport-local-socket
+```
+
+ACP 可以减少 OpenClaw、Goose、Copilot、OpenCode 和 Qwen 的通信实现重复，但不能让它们共享同一个 Provider
+Adapter。每个 Provider 仍需要独立处理：
+
+- 启动和认证参数；
+- Session 和 Run 生命周期；
+- Capability；
+- Provider Command、Extension 和 Error；
+- 版本兼容与测试 Fixture。
+
+`transport-acp` 组合 `@harapter/transport-jsonrpc-stdio`，只拥有 ACP
+Schema、方法、协议协商和 Capability 语义。JSON-RPC
+framing、请求关联、背压、队列边界、等待超时和连接清理继续由现有 Transport 拥有；进程策略由调用它的 Provider
+Connection 拥有。
+
+`@harapter/transport-jsonl-process`
+拥有非 JSON-RPC 进程协议的严格 JSONL 收发和连接边界。Pi Agent
+Adapter 在其上实现 Provider
+RPC 关联、Session、Retry、Interaction、Cancel 和终态，不把 Pi 名称或事件语义写入 Transport。
+
+## 7. 其他 Provider
+
+LangGraph、OpenHands 及基于 Pi 的其他 Harness 也可以按照相同契约新增 Adapter。它们不需要进入 Core 枚举：
+
+```text
+adapter-langgraph
+adapter-openhands
+adapter-pi-derived-harness
+```
+
+基于同一底层框架的多个 Harness 可以共享 Transport 和映射工具，但只要它们的公开行为、版本治理或扩展体系不同，就应保留独立 Provider
+ID 和兼容性声明。

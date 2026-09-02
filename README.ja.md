@@ -242,7 +242,7 @@ Mapping とライフサイクルテスト、Provider-negative テスト、共通
 
 「ソース上でサポート」はソース Adapter が保持する証拠を示すもので、公開 Package の保証ではありません。「ソース上で Experimental」は Adapter の実装と、宣言したインターフェースに対する決定論的テストは完了しているものの、必要な live-runtime 証拠がまだ記録されていない状態です。Harapter が証拠取得のために Runtime を自動インストールすることはありません。
 
-Capability と互換性境界の詳細は、[Provider マトリクス（簡体字中国語）](./docs/design/provider-matrix.md)と各 Provider
+Capability と互換性境界の詳細は、[Provider マトリクス](./docs/design/provider-matrix.ja.md)と各 Provider
 README を参照してください。
 
 ## その他のサンプル
@@ -277,7 +277,7 @@ Code、Crush、GitHub Copilot CLI、Cursor Agent CLI は現在の実装範囲外
 | ------------------------------------------------------------------------------ | ---------------------------------------------------------- |
 | [アーキテクチャと設計](./docs/design/README.ja.md)                             | システム境界、不変条件、契約、設計順序                     |
 | [Portable Core 契約](./packages/core/README.md)                                | Public TypeScript API と所有権セマンティクス               |
-| [Provider マトリクス（簡体字中国語）](./docs/design/provider-matrix.md)        | Provider ごとの Interface、Evidence、Capability ステータス |
+| [Provider マトリクス](./docs/design/provider-matrix.ja.md)                     | Provider ごとの Interface、Evidence、Capability ステータス |
 | [Provider 実装ガイド（簡体字中国語）](./docs/design/provider-adapter-guide.md) | ポータブルな事実を弱めずに Adapter を構築する方法          |
 | [開発ワークフロー](./docs/development.md)                                      | Toolchain、Branch、Validation、Review、Pull Request        |
 | [コントリビューション](./CONTRIBUTING.md)                                      | Contribution の要件と Repository Workflow                  |

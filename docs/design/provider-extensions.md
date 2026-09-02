@@ -1,21 +1,28 @@
-# Provider 特有能力
+[English](./provider-extensions.md) · [简体中文](./provider-extensions.zh-CN.md)
+· [日本語](./provider-extensions.ja.md)
 
-## 1. 设计目标
+# Provider-specific capabilities
 
-不同 Harness 的设计重点、状态模型和扩展体系天然不同。Adapter 不应为了制造表面一致而删除它们的独有能力。
+## 1. Design goals
 
-正确的覆盖保证是：
+Different Harnesses naturally have different design priorities, state models,
+and Extension systems. An Adapter should not remove their distinctive
+capabilities merely to create superficial uniformity.
 
-> 公共能力可以移植，Provider 特有能力可以访问，官方可编程能力不会因统一层而丢失。
+The correct coverage guarantee is:
 
-它不保证所有功能都能通过 Portable
-Core 调用，也不保证所有图形界面功能都有机器接口。
+> Portable capabilities remain portable, Provider-specific capabilities remain
+> accessible, and the unifying layer does not discard official programmable
+> behavior.
 
-## 2. 三层调用模型
+It does not guarantee that Portable Core can call every feature or that every
+graphical-interface feature has a machine interface.
+
+## 2. Three-layer call model
 
 ### 2.1 Portable Core
 
-Portable Core 面向需要选择或切换 Harness 的业务代码：
+Portable Core serves application code that needs to select or switch a Harness:
 
 ```ts
 const session = await client.createSession();
@@ -26,26 +33,27 @@ for await (const event of run.events()) {
 }
 ```
 
-这类代码不依赖 Provider 名称和原生类型，可以在 Qwen、OpenCode、Codex 等 Provider 之间复用。
+This code depends on no Provider name or native type and can be reused across
+Providers such as Qwen, OpenCode, and Codex.
 
 ### 2.2 Optional Capability
 
-Optional
-Capability 适合多个 Provider 具有相近语义、但不是所有 Provider 都支持的能力：
+An Optional Capability represents behavior with similar semantics across several
+Providers that not every Provider supports:
 
 ```ts
-const support = capabilities.capabilities['session.resume'];
-
-if (support.mode === 'native') {
+if (capabilities.capabilities['session.resume']?.mode === 'native') {
   await client.resumeSession(ref);
 }
 ```
 
-只有经过至少两个独立 Provider 的真实映射验证，并且不会删除关键语义的行为，才适合进入公共 Capability 命名空间。
+Behavior enters the public Capability namespace only after real mappings from at
+least two independent Providers prove it and a common contract preserves the
+important semantics.
 
 ### 2.3 Provider Extension
 
-Provider 独有功能进入 Provider 命名空间：
+Provider-specific behavior enters a Provider namespace:
 
 ```ts
 const recipes = client.extensions().get<GooseRecipes>('goose.recipes');
@@ -53,7 +61,8 @@ const goals = client.extensions().get<QwenGoals>('qwen.code.goal');
 const apps = client.extensions().get<CodexApps>('openai.codex.apps');
 ```
 
-使用这些接口的代码明确与对应 Provider 绑定，不宣称可以无修改切换 Harness。
+Code using these interfaces is explicitly bound to that Provider and does not
+claim that it can switch Harnesses without modification.
 
 ## 3. Extension Registry
 
@@ -74,45 +83,59 @@ interface ProviderExtensionDescriptor {
 }
 ```
 
-Core 不维护 Extension 枚举，也不根据名称执行 Provider 逻辑。宿主 UI 可以为已知 Extension 提供专用界面，但未知 Extension 仍应能通过 Descriptor 和 Provider 自带 UI/API 使用。
+Core maintains no Extension enum and executes no Provider logic based on an
+Extension name. A host UI may offer a specialized interface for a known
+Extension, while an unknown Extension remains accessible through its Descriptor
+and Provider-owned UI or API.
 
 ## 4. Native Escape Hatch
 
-Provider Adapter 应暴露官方 SDK Client 或等价的公开协议客户端：
+A Provider Adapter should expose the official SDK Client or an equivalent public
+protocol Client:
 
 ```ts
 const native = client.native<OfficialProviderClient>();
 ```
 
-Native Escape Hatch 解决两类问题：
+The Native Escape Hatch addresses two cases:
 
-- 官方接口已经支持某项能力，但 Adapter 尚未提供类型化 Extension；
-- 高级调用方需要官方对象、方法、事件或协议字段。
+- the official interface supports behavior for which the Adapter does not yet
+  provide a typed Extension; and
+- an advanced caller needs official objects, methods, Events, or protocol
+  fields.
 
-Native
-Client 不经过 Core 语义转换。参数、错误、认证和稳定性遵循 Provider 官方接口，使用它的代码自行承担 Provider 绑定和版本兼容责任。
+The Native Client does not undergo Core semantic translation. Its parameters,
+Errors, authentication, and stability follow the official Provider interface.
+Code that uses it owns its Provider binding and version compatibility.
 
 ## 5. Raw Event
 
-Provider 出现 Adapter 尚未认识的事件时，至少保留：
+When a Provider sends an Event unknown to the Adapter, its HarnessEvent mapping
+contains at least this fragment:
 
 ```ts
 {
   type: 'provider',
   providerEventType: nativeEvent.type,
-  raw: redact(nativeEvent),
+  data: boundedSummary(nativeEvent),
+  ...(rawChannel.enabled
+    ? { raw: redactAndBound(nativeEvent, rawChannel.limits) }
+    : {}),
 }
 ```
 
-Raw
-Event 默认关闭，并受大小、速率和脱敏限制。它用于诊断和高级功能，不是让宿主绕过公共事件模型读取所有私有推理或敏感 Tool 结果。
+Raw Events are disabled by default and remain bounded in size and rate and
+subject to redaction when enabled. They support diagnostics and advanced
+features; they do not allow a host to bypass the portable Event model and read
+all private Reasoning or sensitive Tool results.
 
-## 6. 插件市场与扩展生态
+## 6. Plugin marketplaces and Extension ecosystems
 
-Harness 自己的插件市场、Recipe、Package、App 或 Skill 系统仍由 Harness 拥有。Provider
-Adapter 只在官方机器接口允许时提供控制面。
+A Harness continues to own its plugin marketplace, Recipe, Package, App, or
+Skill system. A Provider Adapter exposes a control plane only when the official
+machine interface permits it.
 
-以 DeepSeek Harness 插件市场为例：
+For example, a DeepSeek Harness plugin marketplace could expose:
 
 ```ts
 interface DshPluginMarketplace {
@@ -125,62 +148,72 @@ interface DshPluginMarketplace {
 }
 ```
 
-该接口必须直接调用 DSH 官方 API。Adapter
-Core 不自行执行 npm 安装、不直接修改 DSH Profile，也不复制 Cordis 生命周期。
+This interface must call the official DSH API directly. Adapter Core does not
+run npm installation itself, modify a DSH Profile directly, or copy the Cordis
+lifecycle.
 
-如果插件市场只存在于 Provider
-UI，没有公开机器接口，Adapter 不宣称支持管理功能。已经由用户在 Runtime 中配置好的插件仍可正常影响任务执行。
+If a plugin marketplace exists only in the Provider UI and has no published
+machine interface, the Adapter does not claim management support. Plugins that
+the user already configured in the Runtime can still affect task execution.
 
-## 7. 常见 Provider Extension
+## 7. Common Provider Extensions
 
-| Provider           | Extension 示例                             | 归属原因                                           |
-| ------------------ | ------------------------------------------ | -------------------------------------------------- |
-| DeepSeek Harness   | `deepseek.harness.plugins.marketplace`     | Cordis 插件和 Profile 是 DSH 原生体系              |
-| Goose              | `goose.recipes`、`goose.extensions`        | Recipe 和 Extension 生命周期由 Goose 定义          |
-| Qwen Code          | `qwen.code.goal`、`qwen.code.subagents`    | Goal 和自定义 Subagent 不是所有 Harness 的共同语义 |
-| Codex Harness      | `openai.codex.apps`、`openai.codex.skills` | App 和 Skill 由 Codex App Server 定义              |
-| GitHub Copilot CLI | `github.copilot.commands`                  | 可用 Slash Command 由 ACP Server 动态发布          |
-| Crush              | `charm.crush.lsp`、`charm.crush.mcp`       | LSP、MCP 和共享 Workspace 属于 Crush 服务模型      |
-| OpenCode           | `opencode.commands`、`opencode.plugins`    | Command 和 Plugin 保留 OpenCode 原生结构           |
-| Cursor Agent CLI   | `cursor.rules`、`cursor.mcp`               | Rules 和 MCP 配置遵循 Cursor 自己的目录和权限模型  |
+| Provider           | Example Extension                          | Why it belongs to the Provider                                                 |
+| ------------------ | ------------------------------------------ | ------------------------------------------------------------------------------ |
+| DeepSeek Harness   | `deepseek.harness.plugins.marketplace`     | Cordis plugins and Profiles are native DSH systems                             |
+| Goose              | `goose.recipes`, `goose.extensions`        | Goose defines the Recipe and Extension lifecycle                               |
+| Qwen Code          | `qwen.code.goal`, `qwen.code.subagents`    | Goals and Custom Subagents are not shared semantics across all Harnesses       |
+| Codex Harness      | `openai.codex.apps`, `openai.codex.skills` | Codex App Server defines Apps and Skills                                       |
+| GitHub Copilot CLI | `github.copilot.commands`                  | The ACP Server publishes the available Slash Commands dynamically              |
+| Crush              | `charm.crush.lsp`, `charm.crush.mcp`       | LSP, MCP, and the shared Workspace belong to the Crush service model           |
+| OpenCode           | `opencode.commands`, `opencode.plugins`    | Commands and Plugins retain their native OpenCode structure                    |
+| Cursor Agent CLI   | `cursor.rules`, `cursor.mcp`               | Rules and MCP configuration follow Cursor's own directory and permission model |
 
-这些名称是设计命名空间，实际 Extension 只有在 Provider
-Adapter 实现并通过测试后才能发布。
+These names are design namespaces. An Extension can be released only after its
+Provider Adapter implements and tests it.
 
-## 8. 能力提升规则
+## 8. Capability promotion rules
 
-Provider 特有能力只有同时满足以下条件时，才适合提升为公共 Optional Capability：
+A Provider-specific capability is suitable for promotion to a public Optional
+Capability only when all of the following hold:
 
-- 至少两个独立 Harness 提供公开机器接口；
-- 生命周期、输入、输出和错误具有可解释的共同语义；
-- 公共接口不会删除任一 Provider 的关键行为；
-- 不支持该能力的 Provider 可以明确拒绝，不需要伪造实现；
-- 原生接口仍可通过 Extension 或 Native Client 访问；
-- Conformance Test 能验证共同语义，而不仅是方法名称相似。
+- at least two independent Harnesses publish a machine interface for it;
+- lifecycle, inputs, outputs, and Errors have explainable common semantics;
+- the public interface does not remove important behavior from any Provider;
+- Providers that do not support it can reject it explicitly without a fabricated
+  implementation;
+- the native interface remains accessible through an Extension or Native Client;
+  and
+- a Conformance Test can verify the common semantics, not merely similar method
+  names.
 
-否则继续保留为 Provider Extension。
+Otherwise, it remains a Provider Extension.
 
-## 9. 可移植性
+## 9. Portability
 
-| 使用层级            | 功能覆盖                   | 跨 Provider 可移植性 |
-| ------------------- | -------------------------- | -------------------- |
-| Portable Core       | 公共最低语义               | 高                   |
-| Optional Capability | 部分 Provider 的共同能力   | 条件可移植           |
-| Provider Extension  | 已适配的 Provider 独有能力 | 不可移植             |
-| Native Client       | 官方 SDK/API 可访问能力    | 不可移植             |
+| Usage layer         | Feature coverage                        | Cross-Provider portability |
+| ------------------- | --------------------------------------- | -------------------------- |
+| Portable Core       | Shared minimum semantics                | High                       |
+| Optional Capability | Shared behavior across some Providers   | Conditional                |
+| Provider Extension  | Adapted Provider-specific capabilities  | None                       |
+| Native Client       | Behavior accessible in official SDK/API | None                       |
 
-宿主应在模块边界上明确选择哪一层，不能把 Provider
-Extension 隐藏在声称完全可移植的业务接口中。
+A host should choose the layer explicitly at a module boundary. It must not hide
+a Provider Extension behind an application interface that claims complete
+portability.
 
-## 10. 无法覆盖的功能
+## 10. Behavior that cannot be covered
 
-以下功能不能被正式 Adapter 可靠覆盖：
+A formal Adapter cannot reliably cover:
 
-- 只有图形界面或交互式终端才能操作的功能；
-- 没有公开 SDK、RPC、HTTP API 或稳定机器协议的功能；
-- 依赖解析 TUI 文本、点击 UI 或调用非公开内部函数的功能；
-- 官方接口明确禁止外部调用的功能；
-- 需要复制 Provider 内部 Agent Loop 才能实现的功能。
+- behavior available only through a graphical interface or interactive terminal;
+- behavior without a published SDK, RPC, HTTP API, or stable machine protocol;
+- behavior that requires parsing TUI text, clicking a UI, or calling unpublished
+  internal functions;
+- behavior that the official interface explicitly forbids external callers to
+  invoke; or
+- behavior that requires copying the Provider's internal Agent Loop.
 
-当官方接入面不足时，Provider
-Adapter 必须在 Capability 和文档中说明限制，不能用脆弱模拟替代正式支持。
+When the official interface is insufficient, the Provider Adapter states the
+limitation in Capabilities and documentation. It does not substitute a brittle
+simulation for formal support.
