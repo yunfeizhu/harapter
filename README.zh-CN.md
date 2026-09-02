@@ -15,7 +15,7 @@
   <a href="./README.md">English</a> ·
   <a href="./README.zh-CN.md">简体中文</a> ·
   <a href="./README.ja.md">日本語</a> ·
-  <a href="./docs/design/README.md">设计</a> ·
+  <a href="./docs/design/README.zh-CN.md">设计</a> ·
   <a href="./examples/README.md">示例</a> ·
   <a href="./CONTRIBUTING.md">贡献</a>
 </p>
@@ -264,7 +264,7 @@ CLI 和 Cursor Agent CLI 不在当前实现范围内。
 
 | 从这里开始                                                   | 适合了解                                   |
 | ------------------------------------------------------------ | ------------------------------------------ |
-| [架构与目标设计](./docs/design/README.md)                    | 系统边界、不变量、契约和设计顺序           |
+| [架构与目标设计](./docs/design/README.zh-CN.md)              | 系统边界、不变量、契约和设计顺序           |
 | [Portable Core 契约](./packages/core/README.md)              | 公共 TypeScript API 与所有权语义           |
 | [Provider 接入矩阵](./docs/design/provider-matrix.md)        | 各 Provider 的接口、证据与 Capability 状态 |
 | [Provider 实现指南](./docs/design/provider-adapter-guide.md) | 在不削弱可移植事实的前提下构建 Adapter     |

@@ -42,6 +42,16 @@ Do not present a design table as shipped support.
 
 ## Writing rules
 
+- Migrate each user-facing design topic to a synchronized language triad:
+  `topic.md` is English, `topic.zh-CN.md` is Simplified Chinese, and
+  `topic.ja.md` is Japanese. Every migrated variant links to its two siblings.
+  Keep public identifiers and code in their exact canonical form, and keep
+  internal links in the reader's language whenever that target has a localized
+  variant.
+- A semantic edit to a localized design topic updates all three variants in the
+  same pull request. During the initial migration, finish one complete topic in
+  all three languages per task; do not publish a partial translation of a topic
+  or semantically edit an unmigrated topic without completing its triad.
 - Write direct current-state prose. Put review history and rejected alternatives
   in an Agent Note rather than narrating them in reference documents.
 - Prefer exact nouns such as `event field`, `JSON-RPC message`, `session owner`,

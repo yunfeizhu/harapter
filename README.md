@@ -255,8 +255,8 @@ implemented and deterministically tested against its declared interface, but no
 required live-runtime evidence has been recorded. Harapter does not install a
 runtime to obtain that evidence.
 
-See the [Provider matrix](./docs/design/provider-matrix.md) and each Provider
-README for exact capabilities and compatibility boundaries.
+See the [Provider matrix (Simplified Chinese)](./docs/design/provider-matrix.md)
+and each Provider README for exact capabilities and compatibility boundaries.
 
 ## More examples
 
@@ -285,16 +285,16 @@ Cursor Agent CLI are outside the current implementation scope.
 
 ## Documentation
 
-| Start here                                                               | Use it for                                                    |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| [Architecture and target design](./docs/design/README.md)                | System boundaries, invariants, contracts, and design sequence |
-| [Portable Core contract](./packages/core/README.md)                      | Public TypeScript API and ownership semantics                 |
-| [Provider matrix](./docs/design/provider-matrix.md)                      | Per-Provider interface, evidence, and capability status       |
-| [Provider implementation guide](./docs/design/provider-adapter-guide.md) | Building an Adapter without weakening portable truth          |
-| [Development workflow](./docs/development.md)                            | Toolchain, branches, validation, review, and pull requests    |
-| [Contributing](./CONTRIBUTING.md)                                        | Contribution expectations and repository workflow             |
-| [Security policy](./SECURITY.md)                                         | Reporting vulnerabilities and supported security boundaries   |
-| [Release policy](./RELEASING.md)                                         | Release Please, versioning, and publication readiness         |
+| Start here                                                                                    | Use it for                                                    |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [Architecture and target design](./docs/design/README.md)                                     | System boundaries, invariants, contracts, and design sequence |
+| [Portable Core contract](./packages/core/README.md)                                           | Public TypeScript API and ownership semantics                 |
+| [Provider matrix (Simplified Chinese)](./docs/design/provider-matrix.md)                      | Per-Provider interface, evidence, and capability status       |
+| [Provider implementation guide (Simplified Chinese)](./docs/design/provider-adapter-guide.md) | Building an Adapter without weakening portable truth          |
+| [Development workflow](./docs/development.md)                                                 | Toolchain, branches, validation, review, and pull requests    |
+| [Contributing](./CONTRIBUTING.md)                                                             | Contribution expectations and repository workflow             |
+| [Security policy](./SECURITY.md)                                                              | Reporting vulnerabilities and supported security boundaries   |
+| [Release policy](./RELEASING.md)                                                              | Release Please, versioning, and publication readiness         |
 
 ## Frequently asked questions
 
