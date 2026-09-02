@@ -1,0 +1,90 @@
+<!-- 权威源：harapter-architecture.drawio（简体中文页面）。编辑源文件后，请同步此 SVG。 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title description">
+  <title id="title">Harapter 架构</title>
+  <desc id="description">宿主应用使用 Harapter Core 的可移植生命周期，并通过七个独立 Adapter 连接不同 Provider 的原生接口。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10Z" fill="#475569"/>
+    </marker>
+    <style>
+      .section { fill: #475569; font: 700 13px Arial, "PingFang SC", sans-serif; letter-spacing: 1.2px; }
+      .heading { fill: #0f172a; font: 700 22px Arial, "PingFang SC", sans-serif; }
+      .body { fill: #475569; font: 400 14px Arial, "PingFang SC", sans-serif; }
+      .node { fill: #0f172a; font: 600 16px Arial, "PingFang SC", sans-serif; }
+      .provider { fill: #0f172a; font: 600 16px Arial, "PingFang SC", sans-serif; }
+      .interface { fill: #64748b; font: 400 13px Arial, "PingFang SC", sans-serif; }
+      .connector { fill: none; stroke: #475569; stroke-width: 2; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="1280" height="720" fill="#ffffff"/>
+
+  <rect x="210" y="24" width="860" height="88" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="246" y="52" class="section">宿主应用</text>
+  <text x="246" y="82" class="heading">按所选 Harness Profile 路由每个任务</text>
+  <text x="1038" y="60" class="body" text-anchor="end">负责 Runtime 安装与认证</text>
+  <text x="1038" y="84" class="body" text-anchor="end">负责凭据与安全策略</text>
+
+  <path d="M640 112V148" class="connector"/>
+
+  <rect x="56" y="154" width="1168" height="184" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+  <rect x="56" y="154" width="1168" height="34" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5"/>
+  <text x="76" y="177" class="section">HARAPTER 可移植核心</text>
+
+  <rect x="82" y="212" width="144" height="58" rx="6" fill="#ffffff" stroke="#60a5fa" stroke-width="1.5"/>
+  <rect x="276" y="212" width="144" height="58" rx="6" fill="#ffffff" stroke="#60a5fa" stroke-width="1.5"/>
+  <rect x="470" y="212" width="144" height="58" rx="6" fill="#ffffff" stroke="#60a5fa" stroke-width="1.5"/>
+  <rect x="664" y="212" width="144" height="58" rx="6" fill="#ffffff" stroke="#60a5fa" stroke-width="1.5"/>
+  <rect x="858" y="212" width="144" height="58" rx="6" fill="#ffffff" stroke="#60a5fa" stroke-width="1.5"/>
+  <rect x="1052" y="212" width="144" height="58" rx="6" fill="#ffffff" stroke="#60a5fa" stroke-width="1.5"/>
+
+  <text x="154" y="247" class="node" text-anchor="middle">Registry</text>
+  <text x="348" y="247" class="node" text-anchor="middle">Client</text>
+  <text x="542" y="247" class="node" text-anchor="middle">Session</text>
+  <text x="736" y="247" class="node" text-anchor="middle">Run</text>
+  <text x="930" y="247" class="node" text-anchor="middle">Events</text>
+  <text x="1124" y="247" class="node" text-anchor="middle">Result</text>
+
+  <path d="M226 241H270M420 241H464M614 241H658M808 241H852M1002 241H1046" class="connector"/>
+
+  <text x="640" y="310" class="body" text-anchor="middle">Provider-agnostic 契约 · Session 所有权 · Capability 事实 · Event 顺序 · 类型化 Extension</text>
+
+  <path d="M640 338V374" class="connector"/>
+
+  <rect x="56" y="380" width="1168" height="286" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="56" y="380" width="1168" height="34" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="76" y="403" class="section">独立 PROVIDER ADAPTER</text>
+  <text x="1204" y="403" class="body" text-anchor="end">协议 Mapping · 兼容检查 · 有界 Stream · 脱敏 Raw Channel</text>
+
+  <g>
+    <rect x="80" y="438" width="250" height="78" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="106" y="469" class="provider">Codex</text>
+    <text x="106" y="494" class="interface">App Server · JSON-RPC stdio</text>
+
+    <rect x="370" y="438" width="250" height="78" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="396" y="469" class="provider">OpenCode</text>
+    <text x="396" y="494" class="interface">HTTP/OpenAPI · SSE</text>
+
+    <rect x="660" y="438" width="250" height="78" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="686" y="469" class="provider">Claude</text>
+    <text x="686" y="494" class="interface">Agent SDK</text>
+
+    <rect x="950" y="438" width="250" height="78" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="976" y="469" class="provider">DeepSeek Harness</text>
+    <text x="976" y="494" class="interface">SDK Runtime · JSON-RPC stdio</text>
+
+    <rect x="225" y="548" width="250" height="78" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="251" y="579" class="provider">Hermes Agent</text>
+    <text x="251" y="604" class="interface">API Server · HTTP/SSE</text>
+
+    <rect x="515" y="548" width="250" height="78" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="541" y="579" class="provider">OpenClaw</text>
+    <text x="541" y="604" class="interface">ACP v1 · JSON-RPC stdio</text>
+
+    <rect x="805" y="548" width="250" height="78" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="831" y="579" class="provider">Pi Agent</text>
+    <text x="831" y="604" class="interface">严格 JSONL process RPC</text>
+  </g>
+
+  <text x="640" y="700" class="body" text-anchor="middle">Core 不导入 Provider SDK，也不根据 Provider 身份推断 Capability</text>
+</svg>
