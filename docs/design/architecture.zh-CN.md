@@ -42,7 +42,7 @@ Store、Checkpoint 和内部安全机制仍由对应 Harness 自己拥有。
                 │                │                │
 ┌───────────────▼────────────────▼────────────────▼───────────┐
 │ User-provided Harness Runtimes                              │
-│ Qwen · OpenCode · Codex · Claude · Goose · Crush · ...      │
+│ Qwen · OpenCode · Codex · Goose · Crush · DSH · ...         │
 └─────────────────────────────────────────────────────────────┘
 ```
 

@@ -25,7 +25,7 @@
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 或更高版本">
   <img src="https://img.shields.io/badge/pnpm-11.23.0-F69220?style=flat-square&amp;logo=pnpm&amp;logoColor=white" alt="pnpm 11.23.0">
   <img src="https://img.shields.io/badge/typescript-5.9.3-3178C6?style=flat-square&amp;logo=typescript&amp;logoColor=white" alt="TypeScript 5.9.3">
-  <img src="https://img.shields.io/badge/adapters-7-6E56CF?style=flat-square" alt="7 个 Provider Adapter">
+  <img src="https://img.shields.io/badge/adapters-6-6E56CF?style=flat-square" alt="6 个 Provider Adapter">
   <img src="https://img.shields.io/badge/transports-4-0891B2?style=flat-square" alt="4 个 Transport">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 许可证"></a>
   <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha 状态">
@@ -213,13 +213,13 @@ SDK，不根据 Provider 名称分支，也不根据 Provider 身份推断 Capab
 
 ## 已实现模块
 
-| 范围                 | Package 与模块                                                                                                                                                                                                                                                                                            |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Portable API**     | [`@harapter/core`](./packages/core/README.md)——契约、Registry、Capability Requirement、所有权检查、Error、Extension 和 Native Access                                                                                                                                                                      |
-| **Conformance**      | [`@harapter/conformance`](./packages/conformance/README.md)——可复用的可移植行为套件和确定性 Fake Provider                                                                                                                                                                                                 |
-| **Transport**        | [JSON-RPC stdio](./packages/transport-jsonrpc-stdio/README.md)、[严格 JSONL process RPC](./packages/transport-jsonl-process/README.md)、[HTTP/SSE](./packages/transport-http-sse/README.md) 和 [ACP v1](./packages/transport-acp/README.md)                                                               |
-| **Provider Adapter** | [Codex](./providers/codex/README.md)、[OpenCode](./providers/opencode/README.md)、[Claude](./providers/claude/README.md)、[DeepSeek Harness](./providers/dsh/README.md)、[Hermes Agent](./providers/hermes/README.md)、[OpenClaw](./providers/openclaw/README.md) 和 [Pi Agent](./providers/pi/README.md) |
-| **参考实现**         | [单 Provider 生命周期](./examples/single-provider/README.md)与[并发多 Provider Client](./examples/multi-provider-client/README.md)                                                                                                                                                                        |
+| 范围                 | Package 与模块                                                                                                                                                                                                                                                    |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Portable API**     | [`@harapter/core`](./packages/core/README.md)——契约、Registry、Capability Requirement、所有权检查、Error、Extension 和 Native Access                                                                                                                              |
+| **Conformance**      | [`@harapter/conformance`](./packages/conformance/README.md)——可复用的可移植行为套件和确定性 Fake Provider                                                                                                                                                         |
+| **Transport**        | [JSON-RPC stdio](./packages/transport-jsonrpc-stdio/README.md)、[严格 JSONL process RPC](./packages/transport-jsonl-process/README.md)、[HTTP/SSE](./packages/transport-http-sse/README.md) 和 [ACP v1](./packages/transport-acp/README.md)                       |
+| **Provider Adapter** | [Codex](./providers/codex/README.md)、[OpenCode](./providers/opencode/README.md)、[DeepSeek Harness](./providers/dsh/README.md)、[Hermes Agent](./providers/hermes/README.md)、[OpenClaw](./providers/openclaw/README.md) 和 [Pi Agent](./providers/pi/README.md) |
+| **参考实现**         | [单 Provider 生命周期](./examples/single-provider/README.md)与[并发多 Provider Client](./examples/multi-provider-client/README.md)                                                                                                                                |
 
 ## 先有证据，再声明支持
 
@@ -229,7 +229,6 @@ SDK，不根据 Provider 名称分支，也不根据 Provider 身份推断 Capab
 | --------------------------------------------- | ----------------------- | ------------------------------------------------------------- |
 | [Codex](./providers/codex/README.md)          | 稳定 App Server         | **源码级支持**——具备 Fixture、Conformance、兼容与真实运行证据 |
 | [OpenCode](./providers/opencode/README.md)    | 稳定 HTTP/OpenAPI + SSE | **源码级支持**——具备 Fixture、Conformance、兼容与真实运行证据 |
-| [Claude](./providers/claude/README.md)        | Claude Agent SDK        | **源码级实验**——具备确定性证据，尚缺真实运行证据              |
 | [DeepSeek Harness](./providers/dsh/README.md) | SDK Runtime JSON-RPC    | **源码级实验**——已有真实运行证据，但 Runtime 不协商兼容版本   |
 | [Hermes Agent](./providers/hermes/README.md)  | API Server HTTP/SSE     | **源码级实验**——具备确定性证据，尚缺真实运行证据              |
 | [OpenClaw](./providers/openclaw/README.md)    | ACP v1 Bridge           | **源码级实验**——具备确定性证据，尚缺真实运行证据              |

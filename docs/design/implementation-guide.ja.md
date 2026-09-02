@@ -24,7 +24,6 @@ harapter/
 │   ├── transport-http-sse/
 │   └── transport-local-socket/
 ├── providers/
-│   ├── claude/
 │   ├── codex/
 │   ├── opencode/
 │   ├── goose/
@@ -88,10 +87,8 @@ Topology をカバーできる Provider を優先します。
    RPC、Session/Turn、Approval、Interrupt、Schema-driven Compatibility を検証
 2. **OpenCode**：HTTP/OpenAPI、SSE、Long-running Service、External Lifecycle
    Ownership を検証
-3. **Claude Code**：Official SDK、SDK-managed Process、Streaming Tool
-   Event を検証
 
-SDK、Process、Service の 3 種類の Topology で自然に実装できる場合にのみ、Portable
+Process と Service の 2 種類の Topology で自然に実装できる場合にのみ、Portable
 API は Stabilization に適します。
 
 ### 2.3 次の Vertical Slice

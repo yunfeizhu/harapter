@@ -1,7 +1,7 @@
 <!-- 权威源：harapter-architecture.drawio（简体中文页面）。编辑源文件后，请同步此 SVG。 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title description">
   <title id="title">Harapter 架构</title>
-  <desc id="description">宿主应用使用 Harapter Core 的可移植生命周期，并通过七个独立 Adapter 连接不同 Provider 的原生接口。</desc>
+  <desc id="description">宿主应用使用 Harapter Core 的可移植生命周期，并通过六个独立 Adapter 连接不同 Provider 的原生接口。</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0 0L10 5L0 10Z" fill="#475569"/>
@@ -57,21 +57,17 @@
   <text x="1204" y="403" class="body" text-anchor="end">协议 Mapping · 兼容检查 · 有界 Stream · 脱敏 Raw Channel</text>
 
   <g>
-    <rect x="80" y="438" width="250" height="78" rx="6" fill="#ffffff" stroke="#94a3b8"/>
-    <text x="106" y="469" class="provider">Codex</text>
-    <text x="106" y="494" class="interface">App Server · JSON-RPC stdio</text>
+    <rect x="225" y="438" width="250" height="78" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="251" y="469" class="provider">Codex</text>
+    <text x="251" y="494" class="interface">App Server · JSON-RPC stdio</text>
 
-    <rect x="370" y="438" width="250" height="78" rx="6" fill="#ffffff" stroke="#94a3b8"/>
-    <text x="396" y="469" class="provider">OpenCode</text>
-    <text x="396" y="494" class="interface">HTTP/OpenAPI · SSE</text>
+    <rect x="515" y="438" width="250" height="78" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="541" y="469" class="provider">OpenCode</text>
+    <text x="541" y="494" class="interface">HTTP/OpenAPI · SSE</text>
 
-    <rect x="660" y="438" width="250" height="78" rx="6" fill="#ffffff" stroke="#94a3b8"/>
-    <text x="686" y="469" class="provider">Claude</text>
-    <text x="686" y="494" class="interface">Agent SDK</text>
-
-    <rect x="950" y="438" width="250" height="78" rx="6" fill="#ffffff" stroke="#94a3b8"/>
-    <text x="976" y="469" class="provider">DeepSeek Harness</text>
-    <text x="976" y="494" class="interface">SDK Runtime · JSON-RPC stdio</text>
+    <rect x="805" y="438" width="250" height="78" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="831" y="469" class="provider">DeepSeek Harness</text>
+    <text x="831" y="494" class="interface">SDK Runtime · JSON-RPC stdio</text>
 
     <rect x="225" y="548" width="250" height="78" rx="6" fill="#ffffff" stroke="#94a3b8"/>
     <text x="251" y="579" class="provider">Hermes Agent</text>

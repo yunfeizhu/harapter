@@ -24,7 +24,6 @@ harapter/
 │   ├── transport-http-sse/
 │   └── transport-local-socket/
 ├── providers/
-│   ├── claude/
 │   ├── codex/
 │   ├── opencode/
 │   ├── goose/
@@ -87,12 +86,10 @@ accumulating brand names:
 1. **Codex**: verify bidirectional process RPC, Session/Turn, Approval,
    Interrupt, and Schema-driven compatibility;
 2. **OpenCode**: verify HTTP/OpenAPI, SSE, a long-running service, and external
-   lifecycle ownership; and
-3. **Claude Code**: verify an official SDK, SDK-managed processes, and streaming
-   Tool Events.
+   lifecycle ownership.
 
-The portable API is suitable for stabilization only when SDK, process, and
-service topologies can all implement it naturally.
+The portable API is suitable for stabilization only when process and service
+topologies can implement it naturally.
 
 ### 2.3 Next vertical slices
 

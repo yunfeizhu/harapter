@@ -24,7 +24,6 @@ Harapter Core
         ├── adapter-qwen ──────▶ Qwen Code
         ├── adapter-opencode ──▶ OpenCode
         ├── adapter-codex ─────▶ Codex Harness
-        ├── adapter-claude ────▶ Claude Code
         ├── adapter-dsh ───────▶ DeepSeek Harness
         ├── adapter-hermes ────▶ Hermes Agent
         ├── adapter-openclaw ──▶ OpenClaw

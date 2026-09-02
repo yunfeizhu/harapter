@@ -1,2 +1,0 @@
-{"type":"system","subtype":"init","session_id":"00000000-0000-4000-8000-000000000001","claude_code_version":"2.1.250-synthetic","cwd":"/synthetic/workspace","model":"claude-synthetic","permissionMode":"default","capabilities":[]}
-{"type":"result","subtype":"error_max_turns","is_error":true,"session_id":"00000000-0000-4000-8000-000000000001","terminal_reason":"max_turns","usage":{"input_tokens":13,"output_tokens":5},"errors":["synthetic-sensitive-value"],"uuid":"00000000-0000-4000-8000-000000000002"}

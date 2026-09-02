@@ -45,7 +45,7 @@ The design must satisfy all of these requirements:
                 │                │                │
 ┌───────────────▼────────────────▼────────────────▼───────────┐
 │ User-provided Harness Runtimes                              │
-│ Qwen · OpenCode · Codex · Claude · Goose · Crush · ...      │
+│ Qwen · OpenCode · Codex · Goose · Crush · DSH · ...         │
 └─────────────────────────────────────────────────────────────┘
 ```
 

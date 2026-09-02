@@ -22,7 +22,6 @@ harapter/
 │   ├── transport-http-sse/
 │   └── transport-local-socket/
 ├── providers/
-│   ├── claude/
 │   ├── codex/
 │   ├── opencode/
 │   ├── goose/
@@ -77,10 +76,9 @@ Fake Provider 用于固定：
 优先选择能够覆盖不同连接形态的 Provider，而不是按品牌数量堆实现：
 
 1. **Codex**：验证双向进程 RPC、Session/Turn、Approval、Interrupt 和 Schema 驱动兼容；
-2. **OpenCode**：验证 HTTP/OpenAPI、SSE、长期服务和外部生命周期所有权；
-3. **Claude Code**：验证官方 SDK、SDK 托管进程和流式 Tool 事件。
+2. **OpenCode**：验证 HTTP/OpenAPI、SSE、长期服务和外部生命周期所有权。
 
-公共 API 只有在 SDK、Process 和 Service 三种形态都能自然实现时才适合稳定。
+公共 API 只有在 Process 和 Service 两种形态都能自然实现时才适合稳定。
 
 ### 2.3 下一组纵向切片
 

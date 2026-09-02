@@ -9,6 +9,9 @@ A provider is supported only when the pull request includes all of the
 following:
 
 - an official, documented machine interface and a reviewed license boundary;
+- a record of whether the Harness implementation is publicly reviewable; when it
+  is not, a separate reviewed Agent Note that justifies the proposed maintenance
+  and evidence boundary;
 - runtime identity and a declared compatibility range or protocol fingerprint;
 - mappings for session, run, event, interaction, capability, error, and cleanup
   behavior;

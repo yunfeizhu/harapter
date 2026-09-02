@@ -44,7 +44,7 @@ Store、Checkpoint、内部 Security Mechanism は引き続き各 Harness が所
                 │                │                │
 ┌───────────────▼────────────────▼────────────────▼───────────┐
 │ User-provided Harness Runtimes                              │
-│ Qwen · OpenCode · Codex · Claude · Goose · Crush · ...      │
+│ Qwen · OpenCode · Codex · Goose · Crush · DSH · ...         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
