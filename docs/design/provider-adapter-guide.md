@@ -1,31 +1,37 @@
-# Provider Adapter 开发指南
+[English](./provider-adapter-guide.md) ·
+[简体中文](./provider-adapter-guide.zh-CN.md) ·
+[日本語](./provider-adapter-guide.ja.md)
 
-## 1. 职责
+# Provider Adapter development guide
 
-Provider Adapter 调用一个 Harness 已公开的 SDK/API，并把外部语义映射到 Harapter
-Core。
+## 1. Responsibilities
 
-它必须：
+A Provider Adapter calls a published SDK or API of one Harness and maps its
+external semantics to Harapter Core.
 
-- 使用官方 SDK、RPC、HTTP API 或文档化机器协议；
-- 建立 Client、Session 和 Run 映射；
-- 转换流式事件、交互请求和错误；
-- 探测当前连接真实支持的 Capability；
-- 区分 Provider 原生行为和 Adapter 连接控制行为；
-- 暴露 Provider Extension、Native Client 和可选 Raw Event；
-- 通过公共 Conformance Test Kit。
+It must:
 
-它不得：
+- use an official SDK, RPC, HTTP API, or documented machine protocol;
+- establish Client, Session, and Run mappings;
+- translate streaming Events, Interaction requests, and Errors;
+- probe the Capabilities actually supported by the current connection;
+- distinguish Provider-native behavior from Adapter connection control;
+- expose Provider Extensions, a Native Client, and optional Raw Events only when
+  observed Capabilities support them, otherwise keep them absent and document
+  the limitation; and
+- pass the shared Conformance Test Kit.
 
-- 复制目标 Harness 的 Agent Loop；
-- 抓取 TUI 文本或操作图形界面；
-- 自动下载、选择或更新第三方 Runtime；
-- 接管 Harness 插件、Tool、Skill、Checkpoint 或沙箱；
-- 把 Provider 特有类型加入 Core；
-- 为不存在的能力编造兼容实现；
-- 把终止进程描述为 Provider 已确认的原生 Run Cancel。
+It must not:
 
-## 2. 包结构
+- copy the target Harness's Agent Loop;
+- scrape TUI text or operate a graphical interface;
+- download, select, or update a third-party Runtime automatically;
+- take ownership of Harness plugins, Tools, Skills, Checkpoints, or sandbox;
+- add Provider-specific types to Core;
+- fabricate a compatibility implementation for behavior that does not exist; or
+- describe process termination as Provider-confirmed native Run Cancel.
+
+## 2. Package structure
 
 ```text
 providers/<provider-id>/
@@ -44,44 +50,44 @@ providers/<provider-id>/
 └── README
 ```
 
-- `adapter`：实现 Provider Adapter SPI；
-- `manifest`：稳定 Provider ID、显示信息和连接形态；
-- `connections`：封装 SDK、进程、ACP、RPC、Socket 或服务连接；
-- `compatibility`：Runtime 探测和 Strategy 选择；
-- `session-mapper`：SessionRef、RunRef 和恢复映射；
-- `event-mapper`：原生事件到公共 Event；
-- `error-mapper`：公共错误分类和脱敏；
-- `capabilities`：生成当前连接的 Capability Manifest；
-- `extensions`：类型化 Provider 独有接口；
-- `native`：官方 SDK Client 或协议客户端出口；
-- `fixtures`：脱敏协议和事件样本；
-- `conformance`：公共行为和 Provider 特有行为测试。
+- `adapter`: implements the Provider Adapter SPI;
+- `manifest`: stable Provider ID, display metadata, and connection kinds;
+- `connections`: wraps SDK, process, ACP, RPC, Socket, or service connections;
+- `compatibility`: Runtime probes and Strategy selection;
+- `session-mapper`: SessionRef, RunRef, and resume mapping;
+- `event-mapper`: native Event to portable Event mapping;
+- `error-mapper`: portable Error classification and redaction;
+- `capabilities`: produces the current connection's Capability Manifest;
+- `extensions`: typed Provider-specific interfaces;
+- `native`: escape hatch to an official SDK or protocol Client;
+- `fixtures`: redacted protocol and Event samples; and
+- `conformance`: shared behavior and Provider-specific behavior tests.
 
-## 3. 接入面选择
+## 3. Selecting an integration interface
 
-选择顺序：
+Preferred order:
 
-1. 官方、文档化且适合嵌入的 SDK；
-2. 官方双向机器协议或 Agent Server；
-3. 官方 HTTP/OpenAPI、ACP、JSON-RPC 或本地 Socket API；
-4. 官方 Headless JSON/JSONL CLI；
-5. Provider 维护者发布的稳定 Shim；
-6. 不将交互式终端文本和 UI 自动化作为正式接入面。
+1. an official, documented SDK suitable for embedding;
+2. an official bidirectional machine protocol or Agent Server;
+3. an official HTTP/OpenAPI, ACP, JSON-RPC, or local Socket API;
+4. an official Headless JSON/JSONL CLI;
+5. a stable Shim published by the Provider maintainer; and
+6. never use interactive terminal text or UI automation as a formal interface.
 
-选择前必须确认：
+Before selecting an interface, establish:
 
-- 如何建立和关闭连接；
-- 如何发现 Runtime 身份和协议；
-- 如何创建、恢复和引用 Session；
-- 如何提交一次输入；
-- 如何接收流式事件并判断唯一终态；
-- 是否支持原生 Cancel、Approval 和 User Input；
-- 是否允许多个并发 Session 或 Run；
-- 如何访问 Provider 原始错误和特有功能；
-- 当前接口的许可和分发要求。
+- how a connection is opened and closed;
+- how Runtime identity and protocol are discovered;
+- how a Session is created, resumed, and referenced;
+- how one input is submitted;
+- how streaming Events are received and the one terminal state is determined;
+- whether native Cancel, Approval, and User Input are supported;
+- whether concurrent Sessions or Runs are permitted;
+- how native Provider Errors and specific behavior are accessed; and
+- the interface's license and distribution requirements.
 
-同一 Provider 可以实现多个 Connection
-Strategy，但不同 Strategy 必须共享公共语义测试并分别声明 Capability。
+One Provider may implement several Connection Strategies. Each Strategy must
+share the portable semantic tests and declare its Capabilities separately.
 
 ## 4. Provider Manifest
 
@@ -94,195 +100,214 @@ const manifest = {
 };
 ```
 
-Provider
-ID 一经公开保持稳定。Core 不添加对应枚举或条件分支。衍生 Harness 如果拥有不同协议、版本治理或扩展语义，应注册独立 Provider
-ID，而不是冒充底层基础框架。
+A public Provider ID remains stable. Core adds no corresponding enum or
+conditional branch. A derived Harness with different protocol, version
+governance, or Extension semantics registers an independent Provider ID instead
+of impersonating its underlying framework.
 
-## 5. 连接实现
+## 5. Connection implementation
 
 ### SDK
 
-- 明确 SDK Client 由宿主还是 Adapter 创建；
-- 会携带 Provider
-  Runtime 的 SDK 必须是宿主提供的可选 Peer，不得进入默认 Workspace 依赖或锁文件；Adapter 使用动态加载或显式 Binding；
-- 不读取未声明的全局配置和环境变量；
-- 关闭时不释放宿主拥有的 SDK Client；
-- 官方 SDK 内部启动子进程时，在 Descriptor 中说明真实运行形态。
+- State whether the host or Adapter creates the SDK Client.
+- An SDK that carries a Provider Runtime must be an optional Peer supplied by
+  the host. It cannot enter default Workspace dependencies or the lockfile; the
+  Adapter uses dynamic loading or an explicit Binding.
+- Do not read undeclared global configuration or environment variables.
+- Do not dispose an SDK Client owned by the host when closing.
+- When an official SDK starts a child process internally, describe the actual
+  Runtime topology in the Descriptor.
 
 ### Process
 
-- 使用结构化 `command` 和 `args`，不经 Shell 拼接；
-- stdout 只解析官方协议，stderr 作为有界诊断流；
-- 实现启动超时、健康检查、背压、异常退出和幂等关闭；
-- 进程所有权为 `adapter` 时才允许主动终止；
-- 非零退出或协议截断必须结束所有受影响 Run。
+- Use structured `command` and `args` without Shell concatenation.
+- Parse only the official protocol on stdout and treat stderr as a bounded
+  diagnostic stream.
+- Implement startup timeout, health checks, backpressure, unexpected exit, and
+  idempotent close.
+- Terminate a process proactively only when its ownership is `adapter`.
+- A nonzero exit or truncated protocol settles every affected Run.
 
-### Endpoint 和 Socket
+### Endpoint and Socket
 
-- 验证 URL、Socket 类型、认证引用和连接超时；
-- 不在日志中打印 Authorization、Cookie 或完整敏感查询；
-- 明确重连是否能够恢复事件游标；
-- 不扫描未知本地端口或用户目录猜测服务；
-- 服务由宿主或外部管理时，`close()` 只关闭 Client 连接。
+- Validate the URL, Socket kind, authentication reference, and connection
+  timeout.
+- Do not log Authorization, Cookie, or a complete sensitive query.
+- State whether reconnection can resume an Event cursor.
+- Do not scan unknown local ports or user directories to guess a service.
+- When a host or external system manages the service, `close()` closes only the
+  Client connection.
 
-## 6. Session 映射
+## 6. Session mapping
 
-| Core           | Provider 可能使用的概念                           |
+| Core           | Possible Provider concept                         |
 | -------------- | ------------------------------------------------- |
-| HarnessClient  | SDK Client、App Server Connection、Service Client |
-| HarnessSession | Thread、Session、Conversation、Agent Session      |
-| HarnessRun     | Turn、Prompt、Graph Run、Agent Prompt             |
-| Interaction    | Approval Request、Interrupt、Server Request       |
+| HarnessClient  | SDK Client, App Server Connection, Service Client |
+| HarnessSession | Thread, Session, Conversation, Agent Session      |
+| HarnessRun     | Turn, Prompt, Graph Run, Agent Prompt             |
+| Interaction    | Approval Request, Interrupt, Server Request       |
 
-映射要求：
+Mapping requirements:
 
-- SessionRef 保存 `providerId`、`profileId` 和原生 Session ID；
-- Provider 没有原生 Run ID 时可以生成 Client 内唯一 ID，但不得宣称持久语义；
-- Provider 没有 Resume 时返回 `unsupported_capability`；
-- 不通过偷偷重放完整历史伪造原生 Resume；
-- 恢复前检查 SessionRef 的 Provider 和兼容性身份；
-- 多 Session 之间不得串用事件和交互请求。
+- SessionRef stores `providerId`, `profileId`, and the native Session ID.
+- When a Provider has no native Run ID, the Adapter may generate a Client-local
+  unique ID but cannot claim persistent semantics.
+- A Provider without Resume returns `unsupported_capability`.
+- Do not fabricate native Resume by silently replaying complete history.
+- Before resume, validate the SessionRef's Provider, Profile, and compatibility
+  identity.
+- Events and Interaction requests cannot cross between Sessions.
 
-## 7. Event 映射
+## 7. Event mapping
 
-每种原生消息都应进入明确映射表：
+Every native message enters an explicit mapping table:
 
-| 原生消息              | Core Event              | 未统一信息      | 处理方式                   |
-| --------------------- | ----------------------- | --------------- | -------------------------- |
-| Assistant text delta  | `message.delta`         | Provider 元数据 | 可选进入 Raw               |
-| Tool begin            | `tool.started`          | 原生参数        | 公共摘要和脱敏 Raw         |
-| Approval request      | `interaction.requested` | 原生 Schema     | `providerState`            |
-| Unknown event         | `provider`              | 全部可公开字段  | `providerEventType` 和 Raw |
-| Process non-zero exit | `run.failed`            | 脱敏 stderr     | 公共错误和诊断             |
+| Native message         | Core Event              | Nonportable information | Handling                          |
+| ---------------------- | ----------------------- | ----------------------- | --------------------------------- |
+| Assistant text delta   | `message.delta`         | Provider metadata       | Optional Raw                      |
+| Tool begin             | `tool.started`          | Native arguments        | Portable summary and redacted Raw |
+| Approval request       | `interaction.requested` | Native Schema           | `providerState`                   |
+| Unknown event          | `provider`              | All publishable fields  | `providerEventType` and Raw       |
+| Unexpected exit or EOF | `connection.aborted`    | Redacted stderr         | Abort affected non-terminal Runs  |
 
-事件转换要求：
+Event translation requirements:
 
-- 保持原始顺序；
-- 单个 Run 只产生一个终态；
-- 不根据展示文本猜测事件类型；
-- 不生成 Provider 未暴露的 Reasoning；
-- Raw 关闭时不影响公共事件；
-- 未知事件不能丢失，也不能误判成成功；
-- Raw Event、Tool 参数和错误必须脱敏、限长和限速。
+- preserve original ordering;
+- produce exactly one terminal state for one Run;
+- never guess an Event type from display text;
+- never generate Reasoning that the Provider did not expose;
+- keep portable Events independent of whether Raw is enabled;
+- preserve unknown Events and never reinterpret them as success;
+- use `run.failed` for process exit only when the official interface defines
+  that exit as an authoritative Provider failure; otherwise unexpected exit,
+  EOF, or missing terminal authority produces `connection.aborted`; and
+- redact and bound Raw Events, Tool arguments, and Errors by length and rate.
 
-## 8. Capability 映射
+## 8. Capability mapping
 
-Capability 来自当前连接，不从 Provider 品牌名称推断。可以使用：
+Capabilities come from the current connection and are never inferred from a
+Provider brand name. Evidence can include:
 
-- 官方握手和能力列表；
-- 当前 Runtime 生成的 Schema；
-- SDK 对象公开方法和类型；
-- 当前 Connection Strategy；
-- 启动配置和许可状态；
-- 无副作用的功能探测；
-- 已验证兼容性策略。
+- an official handshake and capability list;
+- Schema generated by the current Runtime;
+- methods and types exposed by the SDK object;
+- the current Connection Strategy;
+- startup configuration and license state;
+- side-effect-free feature probes; and
+- a verified compatibility Strategy.
 
-禁止通过执行真实用户任务探测能力。
+Do not probe Capabilities by executing a real user task.
 
-对于 Cancel 必须分别判断：
+Cancel requires separate determinations:
 
 ```text
 run.cancel = native
 connection.abort = adapter_controlled
 ```
 
-只会杀进程的 Adapter 不得声明 `run.cancel = native`。
+An Adapter that only kills a process cannot claim `run.cancel = native`.
 
 ## 9. Provider Extension
 
-Provider 独有功能使用命名空间：
+Provider-specific behavior uses a namespace:
 
 ```ts
 extensions.register('goose.recipes', gooseRecipes);
 extensions.register('qwen.code.goal', qwenGoals);
 ```
 
-Extension 必须直接调用官方接口，不得在 Adapter 中重新实现插件市场、App 系统或 Package
-Manager。
+An Extension calls an official interface directly. The Adapter does not
+reimplement a plugin marketplace, App system, or Package Manager.
 
-如果官方 SDK/API 已支持但 Adapter 尚未提供类型化 Extension，调用方可以通过 Native
-Client 访问。
+When an official SDK or API supports behavior for which the Adapter does not yet
+provide a typed Extension, a caller can access it through the Native Client.
 
 ## 10. Error Mapper
 
-Error Mapper 应区分：
+An Error Mapper distinguishes:
 
-- Runtime 不存在；
-- 连接或握手失败；
-- 认证失败；
-- Provider API 不兼容；
-- 不支持的 Capability；
-- 无效输入；
-- Session 不存在或 Provider 不匹配；
-- Provider 执行失败；
-- 超时；
-- 连接被 Adapter 中止。
+- Runtime unavailable;
+- connection or handshake failure;
+- authentication failure;
+- incompatible Provider API;
+- unsupported Capability;
+- invalid input;
+- Session unavailable or Provider/Profile mismatch;
+- Provider execution failure;
+- timeout; and
+- connection aborted by the Adapter.
 
-未知 Provider 故障不能包装成成功、空响应或普通超时。`providerCode`
-可以保留，但错误正文必须先脱敏。
+An unknown Provider failure cannot become success, an empty response, or an
+ordinary timeout. `providerCode` may be preserved, but the Error body is
+redacted first.
 
-## 11. Conformance Test
+## 11. Conformance Tests
 
-### 连接
+### Connection
 
-- 正常连接和幂等关闭；
-- Runtime 不存在、认证失败和协议不兼容；
-- Adapter、宿主和外部进程所有权；
-- 启动超时、连接丢失和异常退出。
+- successful connection and idempotent close;
+- unavailable Runtime, authentication failure, and incompatible protocol;
+- Adapter-, host-, and externally owned processes; and
+- startup timeout, connection loss, and unexpected exit.
 
 ### Session
 
-- 创建、多轮调用和关闭；
-- 支持时恢复，不支持时明确拒绝；
-- Profile 和 Provider 不匹配；
-- 多 Session 隔离；
-- Provider 并发限制。
+- creation, multi-turn calls, and close;
+- resume when supported and explicit rejection when unsupported;
+- Profile and Provider mismatch;
+- isolation across Sessions; and
+- Provider concurrency limits.
 
 ### Streaming
 
-- Text Delta 顺序；
-- Tool、Interaction、Artifact 和 Usage；
-- 未知 Event 和 Raw；
-- 慢消费者和缓冲上限；
-- 唯一终态；
-- 事件流截断。
+- Text Delta ordering;
+- Tools, Interactions, Artifacts, and Usage;
+- unknown Events and Raw;
+- slow consumers and buffer limits;
+- unique terminality; and
+- truncated Event streams.
 
-### Cancel 与 Interaction
+### Cancel and Interaction
 
-- 原生 Cancel、连接中止和终态后 Cancel；
-- Approval、Deny、User Input 和无效 Request ID；
-- 不支持时 Capability 与错误一致；
-- 不把自动批准模式误报为交互能力。
+- native Cancel, connection abort, and Cancel after terminality;
+- Approval, Deny, User Input, and invalid Request IDs;
+- agreement between Capabilities and Errors when unsupported; and
+- no reporting of auto-approval mode as an Interaction capability.
 
-### Extension 与 Native
+### Extension and Native
 
-- Extension Registry 和命名空间；
-- Extension 直接调用官方接口；
-- Native Client 来源明确；
-- Extension 不改变 Portable Core 语义。
+- Extension Registry and namespaces;
+- Extensions call the official interface directly;
+- Native Client provenance is explicit; and
+- Extensions do not change Portable Core semantics.
 
-### 脱敏
+### Redaction
 
-- Secret、Authorization、Cookie 和环境变量值不进入日志、错误和 Fixture；
-- Raw Event 和 Provider Error 在默认关闭时不泄漏；
-- 用户 Prompt、文件正文和 Tool 大输出不会进入公共 Fixture。
+- Secrets, Authorization, Cookies, and environment-variable values do not enter
+  logs, Errors, or Fixtures;
+- Raw Events and Provider Errors do not leak when Raw is disabled; and
+- user Prompts, file contents, and large Tool output do not enter public
+  Fixtures.
 
-## 12. 完成标准
+## 12. Completion criteria
 
-Provider Adapter 发布前必须满足：
+Before release, a Provider Adapter must have:
 
-- 官方接入面、许可和 Runtime 前提清楚；
-- Connection Strategy、Session、Run、Event、Capability 和 Error 映射有文档；
-- 公共 Conformance Test 通过；
-- 目标 Runtime 的 Live Test 通过；
-- Provider Extension 具有独立类型和测试；
-- Native Escape Hatch 可用或明确说明不提供；
-- 已知限制和 Experimental 能力明确；
-- 连接失败和不支持能力不会静默降级；
-- 新 Provider 不要求 Core 添加名称判断。
+- clear official interface, license, and Runtime prerequisites;
+- documented Connection Strategy, Session, Run, Event, Capability, and Error
+  mappings;
+- passing shared Conformance Tests;
+- passing Live Tests against the target Runtime;
+- independently typed and tested Provider Extensions for every Extension the
+  Adapter claims;
+- a usable Native Escape Hatch or an explicit statement that none is provided;
+- explicit known limitations and Experimental behavior;
+- no silent degradation for connection failure or unsupported behavior; and
+- no need for Core to add a Provider-name branch.
 
-## 13. 官方资料
+## 13. Official references
 
-首批 Provider 的机器接口和限制统一记录在
-[Provider 接入矩阵](./provider-matrix.zh-CN.md)。实现时还应在 Provider 包 README 中固定目标官方文档、协议 Schema、许可和 Live
-Test 环境。
+The machine interfaces and limitations for the initial Providers are recorded in
+the [Provider integration matrix](./provider-matrix.md). An implementation also
+pins its target official documentation, protocol Schema, license, and Live Test
+environment in the Provider package README.

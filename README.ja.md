@@ -273,16 +273,16 @@ Code、Crush、GitHub Copilot CLI、Cursor Agent CLI は現在の実装範囲外
 
 ## ドキュメント
 
-| はじめに読むもの                                                               | 確認できる内容                                             |
-| ------------------------------------------------------------------------------ | ---------------------------------------------------------- |
-| [アーキテクチャと設計](./docs/design/README.ja.md)                             | システム境界、不変条件、契約、設計順序                     |
-| [Portable Core 契約](./packages/core/README.md)                                | Public TypeScript API と所有権セマンティクス               |
-| [Provider マトリクス](./docs/design/provider-matrix.ja.md)                     | Provider ごとの Interface、Evidence、Capability ステータス |
-| [Provider 実装ガイド（簡体字中国語）](./docs/design/provider-adapter-guide.md) | ポータブルな事実を弱めずに Adapter を構築する方法          |
-| [開発ワークフロー](./docs/development.md)                                      | Toolchain、Branch、Validation、Review、Pull Request        |
-| [コントリビューション](./CONTRIBUTING.md)                                      | Contribution の要件と Repository Workflow                  |
-| [セキュリティポリシー](./SECURITY.md)                                          | Vulnerability の報告とサポート対象の Security Boundary     |
-| [リリースポリシー](./RELEASING.md)                                             | Release Please、Versioning、公開準備                       |
+| はじめに読むもの                                                  | 確認できる内容                                             |
+| ----------------------------------------------------------------- | ---------------------------------------------------------- |
+| [アーキテクチャと設計](./docs/design/README.ja.md)                | システム境界、不変条件、契約、設計順序                     |
+| [Portable Core 契約](./packages/core/README.md)                   | Public TypeScript API と所有権セマンティクス               |
+| [Provider マトリクス](./docs/design/provider-matrix.ja.md)        | Provider ごとの Interface、Evidence、Capability ステータス |
+| [Provider 実装ガイド](./docs/design/provider-adapter-guide.ja.md) | ポータブルな事実を弱めずに Adapter を構築する方法          |
+| [開発ワークフロー](./docs/development.md)                         | Toolchain、Branch、Validation、Review、Pull Request        |
+| [コントリビューション](./CONTRIBUTING.md)                         | Contribution の要件と Repository Workflow                  |
+| [セキュリティポリシー](./SECURITY.md)                             | Vulnerability の報告とサポート対象の Security Boundary     |
+| [リリースポリシー](./RELEASING.md)                                | Release Please、Versioning、公開準備                       |
 
 ## よくある質問
 

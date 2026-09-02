@@ -165,10 +165,10 @@ plugin marketplaces, or in-run mode changes.
   levels, and limitations for target Harnesses.
 - [Provider-specific capabilities](./provider-extensions.md): the three-layer
   capability model, Extension interfaces, and Native Escape Hatch.
-- [Provider Adapter guide (Simplified Chinese)](./provider-adapter-guide.md):
-  requirements for implementing a new Provider package.
-- [Compatibility (Simplified Chinese)](./compatibility.md): upstream changes,
-  runtime probes, support ranges, and replacement strategy.
+- [Provider Adapter guide](./provider-adapter-guide.md): requirements for
+  implementing a new Provider package.
+- [Compatibility](./compatibility.md): upstream changes, runtime probes, support
+  ranges, and replacement strategy.
 - [Implementation guide (Simplified Chinese)](./implementation-guide.md):
   independent repository structure, build order, and acceptance requirements.
 

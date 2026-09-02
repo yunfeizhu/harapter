@@ -1,62 +1,82 @@
-# 兼容性设计
+[English](./compatibility.md) · [简体中文](./compatibility.zh-CN.md) ·
+[日本語](./compatibility.ja.md)
 
-## 1. 基本判断
+# Compatibility design
 
-Core 应当与具体 Harness 版本无关，但 Provider Adapter 不能完全不关心版本。
+## 1. Basic judgment
 
-Adapter 调用的是第三方 SDK/API。只要方法、字段、事件、错误或生命周期可能改变，映射层就必须能识别当前接口是否仍然兼容。忽略版本不会消除破坏性变化，只会把它推迟到用户任务执行时，以空事件、错误映射或状态丢失的形式出现。
+Core should be independent of specific Harness versions, but a Provider Adapter
+cannot ignore versions entirely.
 
-正确边界是：
+An Adapter calls a third-party SDK or API. Whenever methods, fields, Events,
+Errors, or lifecycles can change, the mapping layer must recognize whether the
+current interface remains compatible. Ignoring versions does not remove a
+breaking change. It delays the failure until a user task is running, where it
+appears as an empty Event, incorrect Error mapping, or lost state.
 
-- Core 不知道 Qwen、Codex、DSH 等具体版本；
-- 每个 Provider Adapter 独立处理自己的协议兼容性；
-- 宿主可以选择使用最新版 Runtime，但不能把“最新版”自动等同于“已验证兼容”；
-- 接口兼容依据以握手、Schema 和行为探测为主，版本号只是证据之一。
+The correct boundary is:
 
-## 2. 三种版本
+- Core knows no specific Qwen, Codex, DSH, or other Harness version;
+- each Provider Adapter owns its protocol compatibility independently;
+- a host may choose the latest Runtime but cannot automatically equate “latest”
+  with “verified compatible”; and
+- compatibility relies primarily on handshake, Schema, and behavior probes, with
+  version numbers as only one form of evidence.
 
-需要区分：
+## 2. Three versions
 
-| 对象             | 版本职责                            |
-| ---------------- | ----------------------------------- |
-| Core             | 稳定公共契约和 Provider Adapter SPI |
-| Provider Adapter | 目标 Harness 接口映射和兼容策略     |
-| Harness Runtime  | 实际 SDK、CLI、服务或协议实现       |
+Distinguish these versioning responsibilities:
 
-三者可以独立发布。更新 Qwen Code
-Adapter 不应要求发布新的 Core；修复 Cursor 事件解析也不应影响 OpenCode Adapter。
+| Object           | Version responsibility                               |
+| ---------------- | ---------------------------------------------------- |
+| Core             | Stable portable contracts and Provider Adapter SPI   |
+| Provider Adapter | Target Harness mapping and compatibility Strategy    |
+| Harness Runtime  | Actual SDK, CLI, service, or protocol implementation |
 
-## 3. 建连时兼容探测
+The three can be released independently. Updating the Qwen Code Adapter should
+not require a new Core release; fixing Cursor Event parsing should not affect
+the OpenCode Adapter.
 
-`connect()` 在创建用户 Session 前完成接口允许的无副作用或低副作用验证：
+## 3. Compatibility probes at connection time
 
-1. 确认 Runtime 或 Endpoint 存在；
-2. 读取公开的协议兼容承诺、握手信息和可用的运行时 Schema；
-3. 选择已具备 Fixture 和 Conformance 证据的兼容性策略；
-4. 在握手阶段校验可探测的必需结构；
-5. 生成 Client Descriptor 和 Capability Manifest；
-6. 对已知不兼容接口返回 `provider_api_incompatible`。
+Before creating a user Session, `connect()` performs the side-effect-free or
+low-side-effect validation permitted by the interface:
 
-无法通过握手枚举的响应和事件结构在对应操作首次出现时做结构校验。缺失必需字段返回
-`provider_api_incompatible`；新增可选字段按上游公开的前向兼容规则处理。不能通过执行真实用户任务来探测 Capability。无法安全判断时，应标记
-`experimental`、`unknown` 或失败关闭。
+1. confirm that the Runtime or Endpoint exists;
+2. read published protocol compatibility promises, handshake data, and available
+   Runtime Schema;
+3. select a compatibility Strategy backed by Fixtures and Conformance evidence;
+4. validate probeable required structures during the handshake;
+5. produce the Client Descriptor and Capability Manifest; and
+6. return `provider_api_incompatible` for a known incompatible interface.
 
-## 4. Schema 优先
+Response and Event structures that cannot be enumerated during the handshake
+undergo structural validation when the corresponding operation first appears. A
+missing required field returns `provider_api_incompatible`. A new optional field
+follows the upstream's published forward-compatibility rules. Capability probing
+cannot execute a real user task. When a safe determination is impossible, mark
+the behavior `experimental` or `unknown`, or fail closed.
 
-如果 Provider 能生成或发布机器可读 Schema，应优先使用它：
+## 4. Schema first
 
-- Codex App Server 按当前 Runtime 生成 TypeScript 或 JSON
-  Schema，用于 Fixture、Mapping 和 Conformance 证据；
-- OpenCode 提供 OpenAPI；
-- ACP Provider 遵循 ACP 基础协议，同时探测 Provider 通知和扩展；
-- JSONL CLI 使用公开 Event Schema 和 Recorded Fixture；
-- SDK Provider 使用官方导出类型和最小运行时特征探测。
+When a Provider can generate or publish a machine-readable Schema, prefer it:
 
-版本范围只能说明“可能兼容”。官方稳定协议承诺、当前 Schema、操作时结构校验和 Conformance 共同界定 Adapter 支持的接口。
+- Codex App Server generates TypeScript or JSON Schema from the current Runtime
+  for Fixture, Mapping, and Conformance evidence;
+- OpenCode publishes OpenAPI;
+- ACP Providers follow the base ACP protocol and additionally probe Provider
+  notifications and Extensions;
+- JSONL CLIs use a published Event Schema and recorded Fixtures; and
+- SDK Providers use official exported types and minimal Runtime feature probes.
+
+A version range establishes only possible compatibility. Official stable
+protocol promises, current Schema, operation-time structural validation, and
+Conformance jointly define the interface supported by an Adapter.
 
 ## 5. Compatibility Strategy
 
-Provider 包内部可以为不同协议族保留独立策略：
+A Provider package can retain independent Strategies for different protocol
+families:
 
 ```text
 adapter-qwen
@@ -70,67 +90,78 @@ adapter-opencode
     └── strategy-acp
 ```
 
-不同 Strategy 共享公共 Provider 语义测试，但可以产生不同 Capability。Strategy 是 Provider 包内部实现，不进入 Core 枚举。
+Different Strategies share portable Provider semantic tests but may produce
+different Capabilities. A Strategy is an internal implementation detail of the
+Provider package and does not enter a Core enum.
 
-当上游发生破坏性变化时，通常只需要：
+When an upstream makes a breaking change, the usual response is to:
 
-1. 保留仍被用户使用的旧 Strategy；
-2. 新增或替换新协议 Strategy；
-3. 更新 Event、Error 和 Capability 映射；
-4. 增加新旧 Fixture 与 Live Conformance；
-5. 发布该 Provider Adapter；
-6. 不修改 Core 和其他 Provider 包。
+1. retain an old Strategy still used by users;
+2. add or replace the new protocol Strategy;
+3. update Event, Error, and Capability mappings;
+4. add old and new Fixtures and Live Conformance;
+5. release that Provider Adapter; and
+6. leave Core and other Provider packages unchanged.
 
-这使替换速度足够快，但不能保证任何未知未来变化都无需代码修改。
+This makes replacement fast enough, but it cannot guarantee that every unknown
+future change requires no code update.
 
-## 6. 是否必须锁定 Runtime 版本
+## 6. Must a Runtime version be pinned?
 
-Adapter 设计不要求用户永远固定某个 Harness 版本，但生产部署需要可复现性。
+Adapter design does not require users to pin one Harness version forever, but a
+production deployment needs reproducibility.
 
-推荐支持三种宿主策略：
+Support three host policies:
 
 ### 6.1 Verified
 
-只运行 Adapter CI 已验证的 Runtime 版本或协议指纹。适合企业和稳定客户端。
+Run only Runtime versions or protocol fingerprints verified by Adapter CI.
+Suitable for enterprise and stable clients.
 
 ### 6.2 Compatible Range
 
-允许符合已知 Schema 和行为探测的版本范围。适合日常桌面产品。
+Allow versions that match known Schema and behavior probes. Suitable for
+ordinary desktop products.
 
 ### 6.3 Latest Canary
 
-允许用户跟随最新 Runtime，但首次连接必须重新探测并明确展示实验状态。适合开发者预览，不应自动扩大稳定支持声明。
+Allow users to follow the latest Runtime, but reprobe the first connection and
+show Experimental status explicitly. Suitable for developer previews; it does
+not automatically expand stable support claims.
 
-因此，类似 `adapter-dsh 0.4.1` 的 Adapter 包版本不是要求 Harness
-Runtime 永久锁死在同一个版本。更合理的是让 Adapter 声明和探测它能理解的协议族，并由宿主决定部署是否固定 Runtime。
+An Adapter package version such as `adapter-dsh 0.4.1` therefore does not pin
+the Harness Runtime permanently to the same version. The Adapter declares and
+probes the protocol families it understands, while the host decides whether to
+pin the deployed Runtime.
 
-## 7. Capability 是运行时结果
+## 7. Capability is a Runtime result
 
-Capability 不能只写在静态表中。它至少受到以下因素影响：
+A Capability cannot live only in a static table. It is affected by at least:
 
-- Runtime 版本和协议；
-- Connection Strategy；
-- 启动参数；
-- 账号和许可；
-- 已启用的插件、Skill、App 或 MCP；
-- 服务端功能开关；
-- 操作系统和部署方式。
+- Runtime version and protocol;
+- Connection Strategy;
+- startup arguments;
+- account and license;
+- enabled plugins, Skills, Apps, or MCP;
+- server-side feature flags; and
+- operating system and deployment topology.
 
-同一个 `github.copilot-cli`
-Provider 使用不同 Server 启动参数时，Capability 可能不同；同一个 OpenCode
-Provider 使用 HTTP 和 ACP 时也可能不同。
+The same `github.copilot-cli` Provider can produce different Capabilities with
+different Server startup arguments. The same OpenCode Provider can differ
+between HTTP and ACP.
 
-Capability 缓存必须以 Runtime
-Identity 和关键非敏感配置摘要为键，不能只以 Provider ID 为键。
+A Capability cache is keyed by Runtime Identity and a digest of critical
+nonsensitive configuration, not only by Provider ID.
 
-Capability 结果必须区分 `native`、有证据的 `emulated`、
-`adapter_controlled`、`unsupported` 和
-`unknown`。Manifest 缺少某个名称表示当前 Adapter 不认识该能力，而显式 `unknown`
-表示认识名称但证据不足；两者都不能默认通过只接受 `native` 的宿主要求。
+Capability results distinguish `native`, evidence-backed `emulated`,
+`adapter_controlled`, `unsupported`, and `unknown`. A missing name means the
+current Adapter does not recognize that Capability, while explicit `unknown`
+means the name is recognized but evidence is insufficient. Neither satisfies a
+host requirement that accepts only `native` by default.
 
 ## 8. Runtime Identity
 
-诊断和兼容缓存可以使用以下非敏感身份：
+Diagnostics and compatibility caches can use this nonsensitive identity:
 
 ```text
 Runtime Identity =
@@ -141,62 +172,78 @@ Runtime Identity =
   + Extension/Profile Fingerprint when relevant
 ```
 
-Identity 不保存 Secret、完整环境变量、用户 Prompt、文件正文或本地凭据路径。
+The identity contains no Secret, complete environment variable, user Prompt,
+file contents, or local credential path.
 
-对于插件化 Harness，插件集合可能改变事件、Tool 和 Agent 行为。Provider 能读取扩展指纹时，应将它纳入 Capability 缓存和 Session
-Compatibility Ref；不能读取时必须在限制文档中说明。
+For a plugin-based Harness, the plugin set can change Events, Tools, and Agent
+behavior. When the Provider can read an Extension fingerprint, include it in the
+Capability cache and Session Compatibility Ref. When it cannot, document the
+limitation.
 
-## 9. 未知字段与未知事件
+## 9. Unknown fields and Events
 
-- 文档明确允许新增字段时，Adapter 应忽略不认识的可选字段；
-- 缺失必需字段时返回协议不兼容，不能填入误导性默认值；
-- 未知 Event 保留为 `provider` Event；
-- 未知终态不能推断为成功；
-- CLI 非零退出且缺少终止 JSON 时映射为 `run.failed` 或 `connection.aborted`；
-- Provider 原始错误必须脱敏、限长并保留原始错误码。
+- When documentation explicitly permits added fields, ignore unknown optional
+  fields.
+- A missing required field is protocol incompatibility, never a misleading
+  default value.
+- Preserve an unknown Event as a `provider` Event with its `providerEventType`
+  and a safe bounded summary. Optional Raw data is bounded in size and
+  structure, redacted, and rate-limited.
+- Never infer success from an unknown terminal state.
+- A nonzero CLI exit without an authoritative terminal result maps to
+  `connection.aborted`. It maps to `run.failed` only when the official interface
+  defines that exit as an authoritative Provider failure.
+- Redact and bound the native Provider Error while retaining its original Error
+  code.
 
-## 10. 回滚与并存
+## 10. Rollback and coexistence
 
-Provider Adapter 包应允许兼容 Strategy 并存。宿主升级失败时，可以：
+A Provider Adapter package should allow compatible Strategies to coexist. When
+an upgrade fails, the host can:
 
-- 回滚单个 Provider Adapter；
-- 切换到旧 Strategy；
-- 继续使用旧 Runtime；
-- 将新 Runtime Profile 标记不可用，而不影响其他 Provider；
-- 为新任务选择另一个 Harness Profile。
+- roll back one Provider Adapter;
+- switch to an older Strategy;
+- continue using an older Runtime;
+- mark a new Runtime Profile unavailable without affecting other Providers; or
+- select another Harness Profile for new tasks.
 
-已创建 Session 仍受原 Provider 和兼容性身份约束。回滚不能让另一个 Provider 接管该 Session，也不能保证新 Runtime 能恢复旧 Checkpoint。
+An existing Session remains bound to its original Provider, Profile, and
+compatibility identity. A rollback cannot let another Provider or Profile take
+over that Session and does not guarantee that a new Runtime can resume an old
+Checkpoint.
 
-## 11. 支持声明
+## 11. Support claims
 
-每个 Provider 发布物必须说明：
+Every Provider release states:
 
-- 支持的 Connection Strategy；
-- 已验证的 Runtime 或协议范围；
-- 必需和可选 Capability；
-- 已知不兼容版本或特征；
-- Authentication 和 Runtime 安装前提；
-- Experimental 能力；
-- Fixture 和 Live Conformance 覆盖范围；
-- Provider Extension 和 Native Client 稳定边界。
+- supported Connection Strategies;
+- verified Runtime or protocol range;
+- required and optional Capabilities;
+- known incompatible versions or features;
+- authentication and Runtime installation prerequisites;
+- Experimental behavior;
+- Fixture and Live Conformance coverage; and
+- stability boundaries of Provider Extensions and the Native Client.
 
-静态文档用于解释范围，运行时 Capability
-Manifest 用于决定当前连接能做什么。二者都不能由品牌名替代。
+Static documentation explains the range. The Runtime Capability Manifest decides
+what the current connection can do. Neither can be replaced by a brand name.
 
-## 12. 兼容性测试
+## 12. Compatibility tests
 
-每个 Provider 至少覆盖：
+Every Provider covers at least:
 
-- 最低已支持接口；
-- 当前主流接口；
-- 未知新增字段；
-- 必需字段删除或重命名；
-- Event 类型新增和终态改变；
-- 错误结构改变；
-- 连接中断和进程异常退出；
-- Capability 与实际行为一致；
-- 旧 SessionRef 在兼容与不兼容 Runtime 上的恢复结果；
-- Provider Extension 不影响 Portable Core；
-- Secret 和敏感原始信息不会进入 Fixture、日志和错误。
+- the oldest supported interface;
+- the current mainstream interface;
+- unknown added fields;
+- removed or renamed required fields;
+- new Event types and changed terminal states;
+- changed Error structures;
+- connection loss and unexpected process exit;
+- agreement between Capabilities and actual behavior;
+- resume results for an old SessionRef on compatible and incompatible Runtimes;
+- Provider Extensions do not affect Portable Core; and
+- Secrets and sensitive native information do not enter Fixtures, logs, or
+  Errors.
 
-最新上游可以进入定时 Canary 测试，但 Canary 通过之前不能自动扩大稳定兼容范围。
+The latest upstream can enter scheduled Canary tests, but stable compatibility
+does not expand automatically before that Canary passes.
