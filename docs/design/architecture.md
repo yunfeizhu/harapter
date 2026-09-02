@@ -1,23 +1,29 @@
-# Harapter 架构设计
+[English](./architecture.md) · [简体中文](./architecture.zh-CN.md) ·
+[日本語](./architecture.ja.md)
 
-## 1. 架构目标
+# Harapter architecture
 
-Harapter 只解决一个问题：让上层应用通过稳定接口连接和使用多个不同 Harness 的公开机器接口。
+## 1. Architecture goals
 
-它不是另一个 Harness，也不在多个 Harness 之上维护第二套 Agent 执行循环。Graph、Agent
-Loop、Tool、Skill、Plugin、Session
-Store、Checkpoint 和内部安全机制仍由对应 Harness 自己拥有。
+Harapter solves one problem: allow upper-layer applications to connect to and
+use the published machine interfaces of several different Harnesses through a
+stable API.
 
-设计必须同时满足：
+It is not another Harness and does not maintain a second agent execution loop
+above existing Harnesses. Each Harness continues to own its Graph, Agent Loop,
+Tool, Skill, Plugin, Session Store, Checkpoint, and internal security controls.
 
-- 一个应用可以注册和连接多个 Harness；
-- 同一个 Provider 可以存在多个连接 Profile；
-- Portable Core 不依赖任何具体 Provider；
-- Provider 特有功能不会因统一抽象而丢失；
-- 上游破坏性变化被限制在单个 Provider Adapter 内；
-- 未被官方机器接口暴露的能力不会被模拟成正式支持。
+The design must satisfy all of these requirements:
 
-## 2. 逻辑架构
+- one application can register and connect to multiple Harnesses;
+- one Provider can have multiple connection Profiles;
+- Portable Core does not depend on a specific Provider;
+- a unified abstraction does not discard Provider-specific behavior;
+- an upstream breaking change remains isolated to one Provider Adapter; and
+- behavior absent from an official machine interface is not simulated as
+  supported behavior.
+
+## 2. Logical architecture
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -43,33 +49,36 @@ Store、Checkpoint 和内部安全机制仍由对应 Harness 自己拥有。
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Core、Provider Adapter 和 Harness
-Runtime 是三层独立边界。共享 Transport 库可以复用 ACP、JSONL、JSON-RPC、HTTP、SSE 或进程托管，但 Transport 只负责通信，不决定 Provider 语义。
+Core, Provider Adapters, and Harness Runtimes form three independent boundaries.
+Shared transport libraries can reuse ACP, JSONL, JSON-RPC, HTTP, SSE, or process
+hosting, but a transport handles communication only and does not decide Provider
+semantics.
 
 ## 3. Core
 
-Core 只包含与具体 Provider 无关的内容：
+Core contains only Provider-agnostic behavior:
 
-- Provider Registry 和 Adapter Factory；
-- Harness Profile 和连接配置契约；
-- `HarnessClient`、`HarnessSession` 和 `HarnessRun` 接口；
-- Input、Event、Interaction、Capability 和 Error 类型；
-- Provider Extension Registry；
-- 公共 Conformance Test Kit。
+- Provider Registry and Adapter Factory;
+- Harness Profile and connection-configuration contracts;
+- `HarnessClient`, `HarnessSession`, and `HarnessRun` interfaces;
+- Input, Event, Interaction, Capability, and Error types;
+- Provider Extension Registry; and
+- a shared Conformance Test Kit.
 
-Core 不包含：
+Core does not contain:
 
-- Harness SDK 依赖；
-- Provider 名称枚举或条件分支；
-- Provider 原生 API 字段；
-- Runtime 安装器和第三方账号登录实现；
-- Graph State、Checkpoint 或 Tool 内部对象；
-- 宿主产品的数据库、任务和 UI 类型。
+- Harness SDK dependencies;
+- a Provider-name enum or Provider-specific conditional branch;
+- Provider-native API fields;
+- a Runtime installer or third-party account-login implementation;
+- Graph State, Checkpoint, or internal Tool objects; or
+- host-product database, task, or UI types.
 
-## 4. Provider Registry 与 Profile
+## 4. Provider Registry and Profiles
 
-Provider Adapter 通过 Registry 动态注册。Provider ID 描述适配实现，例如
-`qwen.code`；Profile ID描述宿主中的一份实际连接配置，例如 `qwen-local`。
+A Provider Adapter registers dynamically through the Registry. A Provider ID
+identifies an adapter implementation, such as `qwen.code`; a Profile ID
+identifies an actual host connection configuration, such as `qwen-local`.
 
 ```text
 Provider: qwen.code
@@ -81,27 +90,31 @@ Provider: opencode
     └── Profile: opencode-remote
 ```
 
-Profile 允许同一应用同时连接不同 Harness，也允许同一 Harness 使用不同账号、工作空间或部署地址。Adapter
-Core 不决定默认 Profile；这是宿主设置和任务创建流程的职责。
+Profiles allow one application to connect to different Harnesses at the same
+time and allow one Harness to use different accounts, workspaces, or deployment
+endpoints. Core does not choose a default Profile; that belongs to host settings
+and task creation.
 
 ## 5. Provider Adapter
 
-每个 Provider Adapter 负责一个 Harness 的公开接口映射：
+Each Provider Adapter maps the published interface of one Harness:
 
-- 校验并建立 SDK、进程、Socket 或服务连接；
-- 读取 Runtime 身份、协议特征和实际 Capability；
-- 将统一 Session 映射为 Thread、Conversation、Agent Session 或 Provider
-  Session；
-- 将统一 Run 映射为 Turn、Prompt、Graph Run 或 Agent Prompt；
-- 将 Provider 流式消息转换为统一 Event；
-- 映射原生取消、审批、用户输入和关闭语义；
-- 将 Provider 错误归入公共错误类别；
-- 暴露 Provider Extension、Native Client 和原始事件；
-- 通过公共 Conformance Test 和 Provider 特有测试。
+- validate and establish an SDK, process, socket, or service connection;
+- read Runtime identity, protocol characteristics, and observed capabilities;
+- map a portable Session to a Thread, Conversation, Agent Session, or Provider
+  Session;
+- map a portable Run to a Turn, Prompt, Graph Run, or Agent Prompt;
+- convert Provider streaming messages to portable Events;
+- map native cancellation, approval, user input, and close semantics;
+- classify Provider errors into portable error categories;
+- expose Provider Extensions, a Native Client, and raw Events; and
+- pass the shared Conformance Test and Provider-specific tests.
 
-Adapter 不复制目标 Harness 内部实现。它可以使用官方 SDK，也可以实现官方公开 RPC/HTTP 协议的客户端。
+An Adapter does not copy the target Harness's internal implementation. It may
+use an official SDK or implement a client for an officially published RPC or
+HTTP protocol.
 
-## 6. 连接形态
+## 6. Connection forms
 
 ### 6.1 Embedded SDK
 
@@ -109,44 +122,52 @@ Adapter 不复制目标 Harness 内部实现。它可以使用官方 SDK，也�
 Host Process ──▶ Provider Adapter ──▶ Official Harness SDK
 ```
 
-适用于提供正式 SDK 的 Harness。SDK 对象可以由宿主注入，也可以由 Provider
-Adapter 使用宿主提供的非敏感配置创建。
+This form suits a Harness with an official SDK. The host can inject the SDK
+object, or the Provider Adapter can create it from non-sensitive configuration
+supplied by the host.
 
-### 6.2 Managed Process
+### 6.2 Managed process
 
 ```text
 Host Process ──▶ Provider Adapter ──▶ official stdio/RPC ──▶ Harness Process
 ```
 
-适用于 Codex App Server、ACP Server 和 Headless JSONL
-CLI。Adapter 可以启动宿主明确指定的命令，但不负责下载、升级或寻找可执行文件。
+This form suits Codex App Server, ACP Server, and a headless JSONL CLI. An
+Adapter may start a command explicitly selected by the host, but does not
+download, upgrade, or discover an executable.
 
-进程所有权必须明确：
+Process ownership must be explicit:
 
-- `adapter`：Adapter 负责启动、健康检查和关闭该进程；
-- `host`：宿主拥有进程，Adapter 只关闭通信通道；
-- `external`：进程由用户或外部服务管理，Adapter 不控制其生命周期。
+- `adapter`: the Adapter starts, health-checks, and closes the process;
+- `host`: the host owns the process, and the Adapter closes only its
+  communication channel; or
+- `external`: a user or external service manages the process, and the Adapter
+  does not control its lifecycle.
 
-### 6.3 Service Endpoint
+### 6.3 Service endpoint
 
 ```text
 Host Process ──▶ Provider Adapter ──▶ HTTP / SSE / WebSocket ──▶ Harness Service
 ```
 
-适用于 OpenCode Server、OpenHands Agent
-Server 和其他长期运行服务。部署、认证、网络边界和服务生命周期由宿主负责。
+This form suits OpenCode Server, OpenHands Agent Server, and other long-running
+services. The host owns deployment, authentication, the network boundary, and
+the service lifecycle.
 
-### 6.4 Local Socket
+### 6.4 Local socket
 
 ```text
 Host Process ──▶ Provider Adapter ──▶ Unix Socket / Named Pipe ──▶ Harness Service
 ```
 
-适用于公开本地控制 API 的 Harness。Socket 路径、访问权限和进程所有权必须显式配置，不能通过扫描用户目录猜测活动服务。
+This form suits a Harness with a published local control API. The socket path,
+access permissions, and process ownership must be configured explicitly; an
+Adapter does not scan user directories to guess which service is active.
 
-## 7. 多 Harness 运行拓扑
+## 7. Multi-Harness runtime topology
 
-一个客户端同时连接 Qwen Code 和 OpenCode 时，推荐拓扑如下：
+When one client connects to Qwen Code and OpenCode at the same time, use this
+topology:
 
 ```text
 Application
@@ -158,76 +179,87 @@ Application
             └── Session o-456 ─▶ OpenCode
 ```
 
-宿主可以并行执行两个 Session，也可以为新任务选择任意 Profile。公共事件进入同一个 UI 渲染层，但 Session、Run、原始事件、认证和错误仍保留 Provider 身份。
+The host may execute both Sessions concurrently or select any Profile for a new
+task. Portable Events can enter one UI rendering layer, while Sessions, Runs,
+raw Events, authentication, and errors retain Provider identity.
 
-## 8. 会话绑定与迁移
+## 8. Session binding and migration
 
-`SessionRef` 至少绑定：
+A `SessionRef` binds at least:
 
-- `providerId`；
-- `profileId`；
-- Provider 原生 Session ID；
-- 创建该引用时的兼容性身份摘要。
+- `providerId`;
+- `profileId`;
+- the Provider-native Session ID; and
+- a compatibility identity summary captured when the reference is created.
 
-恢复时必须交给相同 Provider Adapter 和兼容 Profile。Core 不允许把 Qwen
-SessionRef 交给 OpenCode，也不通过重放聊天历史伪造“原生恢复”。
+Resume must use the same Provider Adapter and a compatible Profile. Core does
+not pass a Qwen `SessionRef` to OpenCode and does not replay chat history to
+imitate native resume.
 
-跨 Harness 继续任务属于宿主级导出和重新创建：宿主可以将任务说明、经过用户允许的消息摘要、文件引用和产物作为新输入，但新 Harness 会创建新的 Session，原 Harness 的内部状态不会迁移。
+Continuing a task across Harnesses is a host-level export and recreation. The
+host may pass a task description, a user-approved message summary, file
+references, and artifacts as new input, but the new Harness creates a new
+Session and does not receive the original Harness's internal state.
 
-## 9. 三层能力模型
+## 9. Three-layer capability model
 
 ### 9.1 Portable Core
 
-公共最低语义包括：
+The minimum portable semantics include:
 
-- 建立 Client；
-- 创建 Session；
-- 提交文本输入；
-- 接收顺序化事件；
-- 获得完成、失败或连接中止等明确终态；
-- 关闭 Session 和 Client。
+- establish a Client;
+- create a Session;
+- submit text input;
+- receive ordered Events;
+- obtain an explicit terminal state such as completion, failure, or connection
+  abort; and
+- close the Session and Client.
 
 ### 9.2 Optional Capability
 
-以下行为只有对应 Capability 为 `native` 时才可宣称具有 Provider 语义：
+The following behavior has Provider semantics only when its Capability is
+declared `native`:
 
-- Session Resume 或 Fork；
-- Run Cancel 或 Interrupt；
-- Approval 和 User Input；
-- Reasoning、Tool、Artifact 和 Usage 事件；
-- 动态模型、模式或权限切换。
+- Session Resume or Fork;
+- Run Cancel or Interrupt;
+- Approval and User Input;
+- Reasoning, Tool, Artifact, and Usage Events; and
+- dynamic model, mode, or permission changes.
 
-Adapter 终止自己拥有的进程属于 `connection.abort`，不自动等同于 Provider 原生
-`run.cancel`。
+Terminating a process owned by an Adapter is `connection.abort`; it is not
+automatically Provider-native `run.cancel`.
 
-`emulated` 只表示 portable 结果经过证据证明等价，不继承 Provider 原生状态；
-`adapter_controlled` 只表示 Adapter 拥有的连接控制；`unsupported`
-表示已确认无法可靠实现； `unknown`
-表示证据不足。Manifest 中缺失的名称表示当前连接不认识该能力，不能与 `unknown`
-合并。
+`emulated` means only that evidence proves an equivalent portable result; it
+does not inherit Provider-native state. `adapter_controlled` means only that the
+Adapter controls its connection. `unsupported` confirms that behavior cannot be
+implemented reliably. `unknown` means evidence is insufficient. A name absent
+from a Manifest is not recognized by the current connection and is not merged
+with `unknown`.
 
 ### 9.3 Provider Extension
 
-DSH 插件市场、Goose Recipe、Qwen Goal、Codex App 和 Copilot Slash
-Command 等能力进入 Provider 命名空间。Core 不解释这些接口，也不保证使用 Extension 的代码可以切换 Provider。
+Provider-specific behavior such as a DSH plugin marketplace, Goose Recipe, Qwen
+Goal, Codex App, or Copilot Slash Command enters a Provider namespace. Core does
+not interpret these interfaces and does not promise that code using an Extension
+can switch Providers.
 
-## 10. 状态所有权
+## 10. State ownership
 
-| 状态                      | 所有者                       | Adapter 行为                   |
-| ------------------------- | ---------------------------- | ------------------------------ |
-| Agent Loop / Graph State  | Harness                      | 不读取或复制内部结构           |
-| Provider Session / Thread | Harness                      | 返回绑定 Provider 的不透明引用 |
-| Checkpoint                | Harness                      | 不转换、不迁移                 |
-| Tool / Skill / Plugin     | Harness                      | 通过公开能力观察或原生访问     |
-| Provider 原始事件         | Harness                      | 可选脱敏后保留                 |
-| Profile 配置              | 宿主                         | Core 只消费，不成为配置数据库  |
-| 产品 Task / Message / Run | 宿主                         | Adapter 不持久化               |
-| 用户文件和产物            | 宿主或 Harness               | Adapter 传递引用和事件         |
-| Secret                    | 宿主 Secret Store 或官方 SDK | Adapter 不记录明文             |
+| State                     | Owner                    | Adapter behavior                                  |
+| ------------------------- | ------------------------ | ------------------------------------------------- |
+| Agent Loop / Graph State  | Harness                  | Does not read or copy internal structures         |
+| Provider Session / Thread | Harness                  | Returns an opaque Provider-bound reference        |
+| Checkpoint                | Harness                  | Does not convert or migrate it                    |
+| Tool / Skill / Plugin     | Harness                  | Observes public behavior or uses native access    |
+| Raw Provider Event        | Harness                  | Optionally preserves it after redaction           |
+| Profile configuration     | Host                     | Core consumes it but is not a configuration store |
+| Product Task/Message/Run  | Host                     | Adapter does not persist it                       |
+| User files and artifacts  | Host or Harness          | Adapter passes references and Events              |
+| Secret                    | Host Secret Store or SDK | Adapter does not log plaintext                    |
 
-## 11. 事件边界
+## 11. Event boundary
 
-能够稳定解释的原生消息映射为公共 Event：
+Native messages with stable interpretations map to portable Events:
 
 ```text
 run.started
@@ -248,36 +280,47 @@ connection.aborted
 provider
 ```
 
-每个 Run 事件流的 Sequence 单调递增，并且只能产生一个终态。未知事件映射为
-`provider`，保留 `providerEventType` 和可选脱敏 Raw
-Payload。Adapter 不根据 TUI 展示文本猜测事件类型。
+The Sequence of each Run's Event stream increases monotonically, and the stream
+produces exactly one terminal state. An unknown Event maps to `provider` and
+preserves `providerEventType` plus an optional redacted Raw Payload. An Adapter
+does not infer an Event type from TUI display text.
 
-## 12. 安全与信任边界
+## 12. Security and trust boundary
 
-- Adapter 不接收可序列化 Secret 明文，配置只保存 Secret Reference；
-- Provider 原始错误、环境变量、请求头和 Raw Event 默认脱敏；
-- Runtime 的工具权限和沙箱仍由 Runtime 或宿主产品控制；
-- Adapter 不因统一了接口而为第三方 Runtime 或插件安全性背书；
-- Adapter 启动进程时只使用结构化命令和参数，不通过 Shell 拼接用户输入；
-- 宿主必须决定哪些 Profile、工作目录、网络端点和 Runtime 可以被用户选择。
+- An Adapter does not accept serializable plaintext Secrets; configuration
+  stores only a Secret Reference.
+- Raw Provider errors, environment variables, request headers, and raw Events
+  are redacted by default.
+- Runtime tool permissions and sandboxes remain under Runtime or host-product
+  control.
+- A unified interface does not make Harapter endorse the security of a
+  third-party Runtime or plugin.
+- An Adapter starts processes with structured commands and arguments and does
+  not interpolate user input through a shell.
+- The host decides which Profiles, working directories, network endpoints, and
+  Runtimes a user may select.
 
-## 13. 与宿主产品的关系
+## 13. Relationship to a host product
 
-宿主产品仍然拥有自己的 Task、Message、Run、数据库、Artifact、设置、Secret
-Store、审批体验和安全策略。Harapter
-Event 只能被单向投影为宿主产品事件，不能替代宿主产品的事实来源。
+The host product continues to own its Task, Message, Run, database, Artifact,
+settings, Secret Store, approval experience, and security policy. Harapter
+Events can be projected one way into host-product Events but cannot replace the
+host product's source of truth.
 
-宿主接入或替换生产 Harness 时，应在自己的架构决策中明确跨进程契约、恢复语义、安全边界和回归测试。Harapter 不替宿主决定这些产品级边界。
+When integrating or replacing a production Harness, the host records the
+cross-process contract, resume semantics, security boundary, and regression
+tests in its own architecture decisions. Harapter does not decide these
+product-level boundaries for the host.
 
-## 14. 扩展新 Provider
+## 14. Extending a new Provider
 
-新增 Harness 只需要：
+Adding a Harness requires:
 
-1. 创建独立 Provider 包并注册稳定 Provider ID；
-2. 选择目标 Harness 的官方机器接口；
-3. 实现连接、Session、Run、Event 和 Error 映射；
-4. 探测并声明真实 Capability；
-5. 暴露必要的 Provider Extension 和 Native Client；
-6. 通过公共 Conformance Test 和真实 Runtime 测试。
+1. create an independent Provider package and register a stable Provider ID;
+2. select an official machine interface of the target Harness;
+3. implement connection, Session, Run, Event, and Error mappings;
+4. probe and declare observed capabilities;
+5. expose necessary Provider Extensions and a Native Client; and
+6. pass shared Conformance Tests and real-Runtime tests.
 
-新增 Provider 不要求修改 Core，也不要求其他 Provider 同步升级。
+Adding a Provider does not require changing Core or upgrading other Providers.
