@@ -2,7 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { profileId } from '@harapter/core';
+import { profileId, type RunResult } from '@harapter/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DSH_PROVIDER_ID, createDshProviderFactory } from '../src/index.js';
 
@@ -47,24 +47,31 @@ describe.runIf(liveEnabled)(
         const session = await client.createSession({
           workspace: { uri: pathToFileURL(workspace).href },
         });
-        const run = await session.start(
-          {
-            parts: [
-              {
-                type: 'text',
-                text: 'Reply with exactly HARAPTER_DSH_LIVE_OK.',
-              },
-            ],
-          },
-          { timeoutMs: 120_000 },
-        );
-        for await (const event of run.events()) {
-          assertToolFreeLiveEvent(event);
+        try {
+          const run = await session.start(
+            {
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Reply with exactly HARAPTER_DSH_LIVE_OK.',
+                },
+              ],
+            },
+            { timeoutMs: 120_000 },
+          );
+          const eventTypes: string[] = [];
+          for await (const event of run.events()) {
+            assertToolFreeLiveEvent(event);
+            eventTypes.push(event.type);
+          }
+          const result = await run.result();
+          assertCompletedTextRun(result, 'HARAPTER_DSH_LIVE_OK');
+          expect(eventTypes).toContain('run.started');
+          expect(eventTypes).toContain('message.completed');
+          expect(eventTypes.at(-1)).toBe('run.completed');
+        } finally {
+          await session.close();
         }
-        await expect(run.result()).resolves.toMatchObject({
-          status: 'completed',
-        });
-        await session.close();
       } finally {
         await client.close();
       }
@@ -104,6 +111,12 @@ describe('DSH live-canary safety guard', () => {
     expect(() => {
       assertToolFreeLiveEvent({ type: 'message.delta' });
     }).not.toThrow();
+    assertThrowsExactMessage(() => {
+      assertCompletedTextRun(
+        { status: 'completed', finalMessage: 'sensitive-provider-output' },
+        'HARAPTER_DSH_LIVE_OK',
+      );
+    }, 'DSH did not return the expected synthetic response.');
   });
 });
 
@@ -113,5 +126,26 @@ function assertToolFreeLiveEvent(event: { readonly type: string }): void {
     event.type === 'interaction.requested'
   ) {
     throw new Error('The live canary observed a model-facing action.');
+  }
+}
+
+function assertCompletedTextRun(result: RunResult, expected: string): void {
+  if (
+    result.status !== 'completed' ||
+    result.finalMessage?.trim() !== expected
+  ) {
+    throw new Error('DSH did not return the expected synthetic response.');
+  }
+}
+
+function assertThrowsExactMessage(action: () => void, expected: string): void {
+  let thrown: unknown;
+  try {
+    action();
+  } catch (error) {
+    thrown = error;
+  }
+  if (!(thrown instanceof Error) || thrown.message !== expected) {
+    throw new Error('The DSH live safety assertion was not content-free.');
   }
 }
