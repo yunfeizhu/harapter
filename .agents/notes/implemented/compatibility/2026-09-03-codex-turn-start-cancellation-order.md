@@ -74,5 +74,10 @@ evidence.
   leaving cancellation pending or overstating its outcome.
 - The stable `run.cancel` capability remains native because success still
   requires the documented start, interrupt, and interrupted-terminal sequence.
+- A trusted current-release
+  [live canary](https://github.com/yunfeizhu/harapter/actions/runs/33745075649)
+  passed on 2026-09-03 with `@openai/codex@0.153.0`. Its second synthetic Turn
+  was cancelled immediately after Run creation and settled only after native
+  start, an acknowledged interrupt, and authoritative `run.cancelled`.
 - Fixture, conformance, and trusted current-release live evidence remain
-  required for the complete cancellation claim.
+  required when the cancellation contract changes.
