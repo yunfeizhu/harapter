@@ -165,20 +165,29 @@ Evidence for this experimental Adapter includes:
   malformed-terminal, event-bound, process cleanup, native-access, and Provider
   negative tests;
 - the shared portable Provider conformance suite;
-- an opt-in live connection test for a host-installed authenticated bridge.
+- an opt-in live connection test for a host-installed authenticated bridge; and
+- a trusted live canary that installs the current OpenClaw release on an
+  ephemeral runner and exercises only runtime probing, the ACP handshake,
+  isolated Session creation, Session close, and Client disposal.
 
 Run live verification only when starting and closing an isolated bridge Session
 is acceptable to the host:
 
 ```bash
 HARAPTER_OPENCLAW_LIVE=1 \
-HARAPTER_OPENCLAW_COMMAND=openclaw \
+HARAPTER_OPENCLAW_COMMAND="$(command -v openclaw)" \
 pnpm vitest run providers/openclaw/test/live.test.ts
 ```
 
 The live test sends no prompt and logs no Provider traffic. A skipped or
-unrecorded live test is not support evidence, so the Adapter remains
-experimental in source.
+unrecorded live test is not support evidence. The scheduled canary likewise
+receives no model credential, disables model catalog refresh, plugins, browser
+automation, MCP, channels, cron, heartbeat, telemetry, auditing, and shell
+environment loading, and retains no Runtime state or logs after its ephemeral
+job ends. Its schedule flag remains disabled until a trusted manual run passes.
+These Session-only checks do not prove Run, Event, terminal, cancellation,
+resume, approval, or workspace behavior, so the Adapter remains experimental in
+source.
 
 Shared Gateway session routing, history replay, per-Session MCP configuration,
 audio input, generic file input, filesystem or terminal client services,

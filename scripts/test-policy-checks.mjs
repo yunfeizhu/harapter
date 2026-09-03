@@ -162,6 +162,7 @@ const liveJobs = liveCanary['jobs'];
 assert.deepEqual(Object.keys(liveJobs).sort(), [
   'codex',
   'dsh',
+  'openclaw',
   'opencode',
   'pi',
   'selection',
@@ -205,6 +206,13 @@ const providerJobExpectations = {
       'Run OpenCode live lifecycle',
       'Validate live configuration',
     ]),
+  },
+  openclaw: {
+    install: 'npm install --global --ignore-scripts openclaw@latest',
+    liveStep: 'Run OpenClaw live Session lifecycle',
+    liveTest: 'providers/openclaw/test/live.test.ts',
+    processTimeoutSeconds: 120,
+    secretSteps: new Set(),
   },
   pi: {
     install:
@@ -276,9 +284,54 @@ assert.deepEqual(piLiveStep['env'], {
   PI_TELEMETRY: '0',
 });
 assert.match(JSON.stringify(piLiveStep), /HARAPTER_PI_COMMAND/u);
+const openClawLiveStep = requiredStep(
+  requiredJob(liveJobs, 'openclaw'),
+  'Run OpenClaw live Session lifecycle',
+);
+assert.deepEqual(openClawLiveStep['env'], {
+  DO_NOT_TRACK: '1',
+  HARAPTER_OPENCLAW_LIVE: '1',
+  OPENCLAW_CONFIG_PATH:
+    '${{ runner.temp }}/harapter-openclaw-state/openclaw.json',
+  OPENCLAW_DISABLE_BONJOUR: '1',
+  OPENCLAW_GATEWAY_PORT: '18961',
+  OPENCLAW_LOAD_SHELL_ENV: '0',
+  OPENCLAW_NO_AUTO_UPDATE: '1',
+  OPENCLAW_NO_RESPAWN: '1',
+  OPENCLAW_OFFLINE: '1',
+  OPENCLAW_SKIP_BROWSER_CONTROL_SERVER: '1',
+  OPENCLAW_SKIP_CANVAS_HOST: '1',
+  OPENCLAW_SKIP_CHANNELS: '1',
+  OPENCLAW_SKIP_CRON: '1',
+  OPENCLAW_SKIP_GMAIL_WATCHER: '1',
+  OPENCLAW_SKIP_PROVIDERS: '1',
+  OPENCLAW_SKIP_STARTUP_MODEL_PREWARM: '1',
+  OPENCLAW_STATE_DIR: '${{ runner.temp }}/harapter-openclaw-state',
+  TMPDIR: '${{ runner.temp }}/harapter-openclaw-tmp',
+  XDG_CACHE_HOME: '${{ runner.temp }}/harapter-openclaw-cache',
+});
+assert.match(
+  openClawLiveStep['run'],
+  /openclaw_command=\$\(command -v openclaw\)/u,
+);
+assert.match(openClawLiveStep['run'], /randomBytes\(32\)/u);
+assert.match(
+  openClawLiveStep['run'],
+  /gateway run .*--bind loopback --auth token/u,
+);
+assert.match(
+  openClawLiveStep['run'],
+  /timeout --signal=TERM --kill-after=2s 5s .* health --json --timeout 2000/u,
+);
+assert.match(openClawLiveStep['run'], /trap cleanup_gateway EXIT/u);
+assert.match(openClawLiveStep['run'], /kill -KILL "\$gateway_pid"/u);
+assert.doesNotMatch(
+  JSON.stringify(requiredJob(liveJobs, 'openclaw')),
+  /HARAPTER_LIVE_MODEL_/u,
+);
 assert.doesNotMatch(
   liveCanaryWorkflow,
-  /npm install --global (?:@openai\/codex|opencode-ai|@deepseek-ai\/dsh|@earendil-works\/pi-coding-agent)@\d/u,
+  /npm install --global (?:@openai\/codex|opencode-ai|@deepseek-ai\/dsh|@earendil-works\/pi-coding-agent|openclaw)@\d/u,
 );
 assert.match(liveCanaryWorkflow, /DSH_TELEMETRY_DISABLED: '1'/u);
 assert.doesNotMatch(liveCanaryWorkflow, /continue-on-error/u);
@@ -291,6 +344,20 @@ assert.match(piLiveTest, /describe\.runIf\(liveEnabled\)/u);
 assert.match(piLiveTest, /providerOptions: \{ persistSessions: false \}/u);
 assert.match(piLiveTest, /PI_CODING_AGENT_SESSION_DIR/u);
 assert.match(piLiveTest, /readdir\(sessionDirectory, \{ recursive: true \}\)/u);
+
+const openClawLiveTest = readFileSync(
+  resolve(repositoryRoot, 'providers/openclaw/test/live.test.ts'),
+  'utf8',
+);
+assert.match(openClawLiveTest, /describe\.runIf\(liveEnabled\)/u);
+assert.match(openClawLiveTest, /isAbsolute\(liveCommand\)/u);
+assert.match(openClawLiveTest, /client\.createSession\(\)/u);
+assert.match(openClawLiveTest, /timeout: 10_000/u);
+assertOpenClawSessionOnly(openClawLiveTest);
+assert.throws(
+  () => assertOpenClawSessionOnly(`${openClawLiveTest}\nsession.start({});`),
+  /session\.start/u,
+);
 
 const prepareLiveCanary = resolve(
   repositoryRoot,
@@ -469,6 +536,58 @@ assert.doesNotMatch(
   /test-key-that-must-not-be-written/u,
 );
 
+const openClawConfigPath = join(fixtureRoot, 'live-config', 'openclaw.json');
+const openClawWorkspacePath = join(fixtureRoot, 'openclaw-workspace');
+const openClawLogPath = join(fixtureRoot, 'openclaw.log');
+requireSuccess(
+  run(
+    prepareLiveCanary,
+    [
+      'write-openclaw-config',
+      openClawConfigPath,
+      openClawWorkspacePath,
+      openClawLogPath,
+    ],
+    liveEnvironment,
+  ),
+  'OpenClaw live-canary config',
+);
+const openClawConfig = JSON.parse(readFileSync(openClawConfigPath, 'utf8'));
+assert.equal(openClawConfig.agents.defaults.heartbeat.every, '0m');
+assert.equal(openClawConfig.agents.defaults.workspace, openClawWorkspacePath);
+assert.equal(openClawConfig.browser.enabled, false);
+assert.equal(openClawConfig.cron.enabled, false);
+assert.equal(openClawConfig.gateway.bind, 'loopback');
+assert.equal(openClawConfig.gateway.controlUi.enabled, false);
+assert.equal(openClawConfig.gateway.nodes.browser.mode, 'off');
+assert.equal(openClawConfig.hooks.internal.enabled, false);
+assert.equal(openClawConfig.logging.audit.enabled, false);
+assert.equal(openClawConfig.logging.file, openClawLogPath);
+assert.deepEqual(openClawConfig.mcp.servers, {});
+assert.equal(openClawConfig.models.catalogRefresh.enabled, false);
+assert.equal(openClawConfig.plugins.enabled, false);
+assert.deepEqual(openClawConfig.skills.allowBundled, []);
+assert.equal(openClawConfig.skills.workshop.autonomous.mode, 'off');
+assert.equal(openClawConfig.telemetry.enabled, false);
+assert.doesNotMatch(
+  readFileSync(openClawConfigPath, 'utf8'),
+  /test-key-that-must-not-be-written/u,
+);
+requireFailure(
+  run(
+    prepareLiveCanary,
+    [
+      'write-openclaw-config',
+      join(fixtureRoot, 'live-config', 'invalid-openclaw.json'),
+      'relative-workspace',
+      openClawLogPath,
+    ],
+    liveEnvironment,
+  ),
+  'The OpenClaw canary workspace must be absolute.',
+  'OpenClaw relative canary workspace',
+);
+
 const safeDshRows = [
   ['agent', '@deepseek-ai/dsh-agent', false],
   ['agent-invariant', '@deepseek-ai/dsh-agent/invariant', false],
@@ -598,6 +717,10 @@ function requireFailure(result, expected, label) {
 
 function isObject(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function assertOpenClawSessionOnly(source) {
+  assert.doesNotMatch(source, /session\.start\s*\(/u);
 }
 
 function requiredJob(jobs, id) {

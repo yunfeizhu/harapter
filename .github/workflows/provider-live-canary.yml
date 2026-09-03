@@ -15,6 +15,7 @@ on:
           - codex
           - opencode
           - dsh
+          - openclaw
           - pi
 
 permissions:
@@ -32,6 +33,7 @@ jobs:
     outputs:
       codex: ${{ steps.providers.outputs.codex }}
       dsh: ${{ steps.providers.outputs.dsh }}
+      openclaw: ${{ steps.providers.outputs.openclaw }}
       opencode: ${{ steps.providers.outputs.opencode }}
       pi: ${{ steps.providers.outputs.pi }}
     steps:
@@ -45,6 +47,7 @@ jobs:
         env:
           CODEX_ENABLED: ${{ vars.HARAPTER_LIVE_CODEX_ENABLED }}
           DSH_ENABLED: ${{ vars.HARAPTER_LIVE_DSH_ENABLED }}
+          OPENCLAW_ENABLED: ${{ vars.HARAPTER_LIVE_OPENCLAW_ENABLED }}
           OPENCODE_ENABLED: ${{ vars.HARAPTER_LIVE_OPENCODE_ENABLED }}
           PI_ENABLED: ${{ vars.HARAPTER_LIVE_PI_ENABLED }}
           REQUESTED_PROVIDER: ${{ inputs.provider }}
@@ -63,23 +66,27 @@ jobs:
 
           validate_flag HARAPTER_LIVE_CODEX_ENABLED "$CODEX_ENABLED"
           validate_flag HARAPTER_LIVE_DSH_ENABLED "$DSH_ENABLED"
+          validate_flag HARAPTER_LIVE_OPENCLAW_ENABLED "$OPENCLAW_ENABLED"
           validate_flag HARAPTER_LIVE_OPENCODE_ENABLED "$OPENCODE_ENABLED"
           validate_flag HARAPTER_LIVE_PI_ENABLED "$PI_ENABLED"
 
           codex=false
           dsh=false
+          openclaw=false
           opencode=false
           pi=false
           if [ "$GITHUB_EVENT_NAME" = schedule ]; then
             [ "$CODEX_ENABLED" = true ] && codex=true
             [ "$DSH_ENABLED" = true ] && dsh=true
+            [ "$OPENCLAW_ENABLED" = true ] && openclaw=true
             [ "$OPENCODE_ENABLED" = true ] && opencode=true
             [ "$PI_ENABLED" = true ] && pi=true
           else
             case "$REQUESTED_PROVIDER" in
-              all) codex=true; dsh=true; opencode=true; pi=true ;;
+              all) codex=true; dsh=true; openclaw=true; opencode=true; pi=true ;;
               codex) codex=true ;;
               dsh) dsh=true ;;
+              openclaw) openclaw=true ;;
               opencode) opencode=true ;;
               pi) pi=true ;;
               *)
@@ -89,13 +96,14 @@ jobs:
             esac
           fi
 
-          if [ "$codex" = false ] && [ "$dsh" = false ] && [ "$opencode" = false ] && [ "$pi" = false ]; then
+          if [ "$codex" = false ] && [ "$dsh" = false ] && [ "$openclaw" = false ] && [ "$opencode" = false ] && [ "$pi" = false ]; then
             echo "::error title=No scheduled live canary enabled::Enable at least one Provider repository variable."
             exit 1
           fi
 
           echo "codex=$codex" >> "$GITHUB_OUTPUT"
           echo "dsh=$dsh" >> "$GITHUB_OUTPUT"
+          echo "openclaw=$openclaw" >> "$GITHUB_OUTPUT"
           echo "opencode=$opencode" >> "$GITHUB_OUTPUT"
           echo "pi=$pi" >> "$GITHUB_OUTPUT"
 
@@ -403,6 +411,126 @@ jobs:
           HARAPTER_PI_COMMAND="$pi_command" timeout --signal=TERM --kill-after=10s 120s pnpm vitest run providers/pi/test/live.test.ts
 
       - name: Record passing Pi Agent evidence
+        run: |
+          printf '%s\n' '- Session lifecycle: passed' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Prompt submitted: no' >> "$GITHUB_STEP_SUMMARY"
+
+  openclaw:
+    name: OpenClaw latest live Session lifecycle
+    needs: selection
+    if: needs.selection.outputs.openclaw == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Harapter dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install current OpenClaw release
+        run: npm install --global --ignore-scripts openclaw@latest
+
+      - name: Record OpenClaw runtime identity
+        run: |
+          printf '%s\n' '### OpenClaw live canary' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "- Harapter revision: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          node scripts/prepare-live-canary.mjs record-global-package Runtime openclaw
+
+      - name: Prepare isolated OpenClaw configuration
+        env:
+          OPENCLAW_CONFIG_PATH:
+            ${{ runner.temp }}/harapter-openclaw-state/openclaw.json
+          OPENCLAW_STATE_DIR: ${{ runner.temp }}/harapter-openclaw-state
+          TMPDIR: ${{ runner.temp }}/harapter-openclaw-tmp
+          XDG_CACHE_HOME: ${{ runner.temp }}/harapter-openclaw-cache
+        run: |
+          node scripts/prepare-live-canary.mjs write-openclaw-config "$OPENCLAW_CONFIG_PATH" "$RUNNER_TEMP/harapter-openclaw-workspace" "$RUNNER_TEMP/harapter-openclaw.log"
+          openclaw config validate
+
+      - name: Run OpenClaw live Session lifecycle
+        env:
+          DO_NOT_TRACK: '1'
+          HARAPTER_OPENCLAW_LIVE: '1'
+          OPENCLAW_CONFIG_PATH:
+            ${{ runner.temp }}/harapter-openclaw-state/openclaw.json
+          OPENCLAW_DISABLE_BONJOUR: '1'
+          OPENCLAW_GATEWAY_PORT: '18961'
+          OPENCLAW_LOAD_SHELL_ENV: '0'
+          OPENCLAW_NO_AUTO_UPDATE: '1'
+          OPENCLAW_NO_RESPAWN: '1'
+          OPENCLAW_OFFLINE: '1'
+          OPENCLAW_SKIP_BROWSER_CONTROL_SERVER: '1'
+          OPENCLAW_SKIP_CANVAS_HOST: '1'
+          OPENCLAW_SKIP_CHANNELS: '1'
+          OPENCLAW_SKIP_CRON: '1'
+          OPENCLAW_SKIP_GMAIL_WATCHER: '1'
+          OPENCLAW_SKIP_PROVIDERS: '1'
+          OPENCLAW_SKIP_STARTUP_MODEL_PREWARM: '1'
+          OPENCLAW_STATE_DIR: ${{ runner.temp }}/harapter-openclaw-state
+          TMPDIR: ${{ runner.temp }}/harapter-openclaw-tmp
+          XDG_CACHE_HOME: ${{ runner.temp }}/harapter-openclaw-cache
+        run: |
+          set -eu
+          mkdir -p "$TMPDIR" "$XDG_CACHE_HOME" "$RUNNER_TEMP/harapter-openclaw-workspace"
+          openclaw_command=$(command -v openclaw)
+          case "$openclaw_command" in
+            /*) ;;
+            *)
+              echo "::error title=Invalid OpenClaw command::The installed CLI path must be absolute."
+              exit 1
+              ;;
+          esac
+          OPENCLAW_GATEWAY_TOKEN=$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")
+          export OPENCLAW_GATEWAY_TOKEN
+          "$openclaw_command" gateway run --port "$OPENCLAW_GATEWAY_PORT" --bind loopback --auth token > "$RUNNER_TEMP/openclaw-gateway-stdout.log" 2>&1 &
+          gateway_pid=$!
+          cleanup_gateway() {
+            kill "$gateway_pid" 2>/dev/null || true
+            cleanup_attempt=0
+            while kill -0 "$gateway_pid" 2>/dev/null && [ "$cleanup_attempt" -lt 5 ]; do
+              cleanup_attempt=$((cleanup_attempt + 1))
+              sleep 1
+            done
+            if kill -0 "$gateway_pid" 2>/dev/null; then
+              kill -KILL "$gateway_pid" 2>/dev/null || true
+            fi
+            wait "$gateway_pid" 2>/dev/null || true
+          }
+          trap cleanup_gateway EXIT
+
+          ready=false
+          for _attempt in $(seq 1 45); do
+            if timeout --signal=TERM --kill-after=2s 5s "$openclaw_command" health --json --timeout 2000 > "$RUNNER_TEMP/openclaw-health.json" 2>/dev/null; then
+              ready=true
+              break
+            fi
+            if ! kill -0 "$gateway_pid" 2>/dev/null; then
+              echo "::error title=OpenClaw startup failed::The isolated Gateway exited before readiness."
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            echo "::error title=OpenClaw startup timed out::The isolated Gateway did not become ready."
+            exit 1
+          fi
+
+          HARAPTER_OPENCLAW_COMMAND="$openclaw_command" timeout --signal=TERM --kill-after=10s 120s pnpm vitest run providers/openclaw/test/live.test.ts
+
+      - name: Record passing OpenClaw evidence
         run: |
           printf '%s\n' '- Session lifecycle: passed' >> "$GITHUB_STEP_SUMMARY"
           printf '%s\n' '- Prompt submitted: no' >> "$GITHUB_STEP_SUMMARY"

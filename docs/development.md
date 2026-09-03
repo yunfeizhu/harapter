@@ -205,10 +205,9 @@ execute repository code with model credentials.
 
 Scheduled coverage is enabled per Provider with repository variables named
 `HARAPTER_LIVE_CODEX_ENABLED`, `HARAPTER_LIVE_OPENCODE_ENABLED`, and
-`HARAPTER_LIVE_DSH_ENABLED`, plus `HARAPTER_LIVE_PI_ENABLED`. Set a value to
-`true` only after its Runtime and canary configuration have been reviewed. A
-manual dispatch may select one Provider or all configured Providers without
-changing those schedule flags.
+`HARAPTER_LIVE_DSH_ENABLED`, plus `HARAPTER_LIVE_OPENCLAW_ENABLED` and
+`HARAPTER_LIVE_PI_ENABLED`. Enable one only after review. Manual dispatch does
+not change schedule flags.
 
 The model-facing Codex, OpenCode, and DSH jobs require these repository Secrets:
 
@@ -225,10 +224,13 @@ and DSH must pass an exact effective-composition check. OpenCode denies every
 permission, disables its configured tools, and loads no plugins. Their minimal
 Run tests reject any tool or interaction event.
 
-Pi receives no model Secret and sends no Prompt. Its canary disables Runtime
-resource discovery and network update checks, opens an isolated non-persistent
-RPC Session, closes it, and verifies that its isolated Session directory remains
-empty.
+Pi receives no model Secret or Prompt. It opens and closes an isolated,
+non-persistent RPC Session and verifies that its Session directory stays empty.
+
+OpenClaw receives no model Secret or Prompt. Its loopback Gateway uses generated
+per-job authentication and isolated paths. Config disables model catalog
+refresh, plugins, browser, MCP, channels, scheduling, telemetry, audit, and
+shell loading. No job artifacts are retained.
 
 Each job installs its current Runtime release only on the ephemeral runner,
 records the installed package identity and Harapter revision in the workflow
