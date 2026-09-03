@@ -58,8 +58,8 @@ describe.runIf(liveEnabled)(
           },
           { timeoutMs: 120_000 },
         );
-        for await (const _event of run.events()) {
-          // Drain without logging Provider traffic.
+        for await (const event of run.events()) {
+          assertToolFreeLiveEvent(event);
         }
         await expect(run.result()).resolves.toMatchObject({
           status: 'completed',
@@ -91,4 +91,27 @@ function liveArguments(): readonly string[] {
     throw new Error('HARAPTER_DSH_ARGS_JSON must encode a string array.');
   }
   return value;
+}
+
+describe('DSH live-canary safety guard', () => {
+  it('rejects model-facing actions without exposing event data', () => {
+    expect(() => {
+      assertToolFreeLiveEvent({ type: 'tool.updated' });
+    }).toThrow('The live canary observed a model-facing action.');
+    expect(() => {
+      assertToolFreeLiveEvent({ type: 'interaction.requested' });
+    }).toThrow('The live canary observed a model-facing action.');
+    expect(() => {
+      assertToolFreeLiveEvent({ type: 'message.delta' });
+    }).not.toThrow();
+  });
+});
+
+function assertToolFreeLiveEvent(event: { readonly type: string }): void {
+  if (
+    event.type.startsWith('tool.') ||
+    event.type === 'interaction.requested'
+  ) {
+    throw new Error('The live canary observed a model-facing action.');
+  }
 }

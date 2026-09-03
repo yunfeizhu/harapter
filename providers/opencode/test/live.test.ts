@@ -59,8 +59,8 @@ describe.runIf(liveEnabled)('OpenCode Server live runtime', () => {
           },
         ],
       });
-      for await (const _event of run.events()) {
-        // Drain without logging Provider traffic.
+      for await (const event of run.events()) {
+        assertToolFreeLiveEvent(event);
       }
       await expect(run.result()).resolves.toMatchObject({
         status: 'completed',
@@ -190,4 +190,27 @@ function requiredEnvironment(name: string): string {
     throw new Error(`The ${name} live-test setting is required.`);
   }
   return value;
+}
+
+describe('OpenCode live-canary safety guard', () => {
+  it('rejects model-facing actions without exposing event data', () => {
+    expect(() => {
+      assertToolFreeLiveEvent({ type: 'tool.completed' });
+    }).toThrow('The live canary observed a model-facing action.');
+    expect(() => {
+      assertToolFreeLiveEvent({ type: 'interaction.requested' });
+    }).toThrow('The live canary observed a model-facing action.');
+    expect(() => {
+      assertToolFreeLiveEvent({ type: 'message.delta' });
+    }).not.toThrow();
+  });
+});
+
+function assertToolFreeLiveEvent(event: { readonly type: string }): void {
+  if (
+    event.type.startsWith('tool.') ||
+    event.type === 'interaction.requested'
+  ) {
+    throw new Error('The live canary observed a model-facing action.');
+  }
 }

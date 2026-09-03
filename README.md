@@ -252,8 +252,10 @@ evidence before Harapter describes the interface as supported in source.
 published package guarantee. “Experimental in source” means the Adapter is
 implemented and deterministically tested against its declared interface, but
 either required live-runtime evidence is outstanding or the connected Runtime
-cannot be matched safely to verified evidence. Harapter does not install a
-runtime to obtain evidence.
+cannot be matched safely to verified evidence. Harapter libraries never install
+Provider runtimes in a host application. The trusted live-canary workflow may
+install selected current runtimes only inside ephemeral GitHub-hosted jobs to
+collect recurring evidence.
 
 See the [Provider matrix](./docs/design/provider-matrix.md) and each Provider
 README for exact capabilities and compatibility boundaries.

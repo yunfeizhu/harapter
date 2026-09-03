@@ -234,7 +234,10 @@ SDK，不根据 Provider 名称分支，也不根据 Provider 身份推断 Capab
 | [OpenClaw](./providers/openclaw/README.md)    | ACP v1 Bridge           | **源码级实验**——具备确定性证据，尚缺真实运行证据              |
 | [Pi Agent](./providers/pi/README.md)          | 严格 JSONL RPC 模式     | **源码级实验**——具备确定性证据，尚缺真实运行证据              |
 
-“源码级支持”描述源码 Adapter 所持有的证据，不是已发布 Package 的保证。“源码级实验”表示 Adapter 已经实现，并按声明的接口完成确定性测试，但仍缺所需的真实 Runtime 证据，或当前连接的 Runtime 无法与已验证证据安全匹配。Harapter 不会为了获取证据自动安装 Runtime。
+“源码级支持”描述源码 Adapter 所持有的证据，不是已发布 Package 的保证。“源码级实验”表示 Adapter 已经实现，并按声明的接口完成确定性测试，但仍缺所需的真实 Runtime 证据，或当前连接的 Runtime 无法与已验证证据安全匹配。
+
+Harapter 的库不会在宿主应用中安装 Provider Runtime；可信 Live
+Canary 仅在临时 GitHub Runner 中安装选定的当前 Runtime，以持续收集验证证据。
 
 准确的 Capability 和兼容边界请查看
 [Provider 接入矩阵](./docs/design/provider-matrix.zh-CN.md)与各 Provider

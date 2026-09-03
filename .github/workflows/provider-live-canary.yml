@@ -1,0 +1,334 @@
+name: Provider live canary
+
+on:
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: Provider runtime to validate
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - codex
+          - opencode
+          - dsh
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provider-live-canary
+  cancel-in-progress: false
+
+jobs:
+  selection:
+    name: Select trusted live canaries
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      codex: ${{ steps.providers.outputs.codex }}
+      dsh: ${{ steps.providers.outputs.dsh }}
+      opencode: ${{ steps.providers.outputs.opencode }}
+    steps:
+      - name: Verify trusted default branch
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"
+
+      - name: Select provider jobs
+        id: providers
+        env:
+          CODEX_ENABLED: ${{ vars.HARAPTER_LIVE_CODEX_ENABLED }}
+          DSH_ENABLED: ${{ vars.HARAPTER_LIVE_DSH_ENABLED }}
+          OPENCODE_ENABLED: ${{ vars.HARAPTER_LIVE_OPENCODE_ENABLED }}
+          REQUESTED_PROVIDER: ${{ inputs.provider }}
+        run: |
+          set -eu
+
+          validate_flag() {
+            case "$2" in
+              ''|true|false) ;;
+              *)
+                echo "::error title=Invalid live-canary variable::$1 must be true or false."
+                exit 1
+                ;;
+            esac
+          }
+
+          validate_flag HARAPTER_LIVE_CODEX_ENABLED "$CODEX_ENABLED"
+          validate_flag HARAPTER_LIVE_DSH_ENABLED "$DSH_ENABLED"
+          validate_flag HARAPTER_LIVE_OPENCODE_ENABLED "$OPENCODE_ENABLED"
+
+          codex=false
+          dsh=false
+          opencode=false
+          if [ "$GITHUB_EVENT_NAME" = schedule ]; then
+            [ "$CODEX_ENABLED" = true ] && codex=true
+            [ "$DSH_ENABLED" = true ] && dsh=true
+            [ "$OPENCODE_ENABLED" = true ] && opencode=true
+          else
+            case "$REQUESTED_PROVIDER" in
+              all) codex=true; dsh=true; opencode=true ;;
+              codex) codex=true ;;
+              dsh) dsh=true ;;
+              opencode) opencode=true ;;
+              *)
+                echo "::error title=Invalid live-canary selection::Select one listed Provider."
+                exit 1
+                ;;
+            esac
+          fi
+
+          if [ "$codex" = false ] && [ "$dsh" = false ] && [ "$opencode" = false ]; then
+            echo "::error title=No scheduled live canary enabled::Enable at least one Provider repository variable."
+            exit 1
+          fi
+
+          echo "codex=$codex" >> "$GITHUB_OUTPUT"
+          echo "dsh=$dsh" >> "$GITHUB_OUTPUT"
+          echo "opencode=$opencode" >> "$GITHUB_OUTPUT"
+
+  codex:
+    name: Codex latest live lifecycle
+    needs: selection
+    if: needs.selection.outputs.codex == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Harapter dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install current Codex release
+        run: npm install --global @openai/codex@latest
+
+      - name: Record Codex runtime identity
+        run: |
+          printf '%s\n' '### Codex live canary' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "- Harapter revision: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          node scripts/prepare-live-canary.mjs record-global-package Runtime @openai/codex
+
+      - name: Verify Codex model-facing surface
+        env:
+          CODEX_HOME: ${{ runner.temp }}/harapter-codex-safety-home
+          HARAPTER_LIVE_MODEL_API_KEY: unused-canary-safety-value
+          HARAPTER_LIVE_MODEL_ID: harapter-live-safety-check
+          HARAPTER_LIVE_MODEL_URL: https://model.invalid/v1
+        run: |
+          node scripts/prepare-live-canary.mjs write-codex-config "$CODEX_HOME/config.toml"
+          codex features list > "$RUNNER_TEMP/codex-features.txt"
+          node scripts/prepare-live-canary.mjs validate-codex-features "$RUNNER_TEMP/codex-features.txt"
+
+      - name: Validate live configuration
+        env:
+          HARAPTER_LIVE_MODEL_API_KEY:
+            ${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}
+          HARAPTER_LIVE_MODEL_ID: ${{ secrets.HARAPTER_LIVE_MODEL_ID }}
+          HARAPTER_LIVE_MODEL_URL: ${{ secrets.HARAPTER_LIVE_MODEL_URL }}
+        run: node scripts/prepare-live-canary.mjs validate
+
+      - name: Prepare isolated Codex live configuration
+        env:
+          CODEX_HOME: ${{ runner.temp }}/harapter-codex-home
+          HARAPTER_LIVE_MODEL_API_KEY:
+            ${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}
+          HARAPTER_LIVE_MODEL_ID: ${{ secrets.HARAPTER_LIVE_MODEL_ID }}
+          HARAPTER_LIVE_MODEL_URL: ${{ secrets.HARAPTER_LIVE_MODEL_URL }}
+        run: |
+          node scripts/prepare-live-canary.mjs write-codex-config "$CODEX_HOME/config.toml"
+
+      - name: Run Codex live lifecycle
+        env:
+          CODEX_HOME: ${{ runner.temp }}/harapter-codex-home
+          HARAPTER_CODEX_LIVE: '1'
+          HARAPTER_LIVE_MODEL_API_KEY:
+            ${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}
+        run: pnpm vitest run providers/codex/test/live.test.ts
+
+      - name: Record passing Codex evidence
+        run: |
+          printf '%s\n' '- Lifecycle: passed' >> "$GITHUB_STEP_SUMMARY"
+
+  opencode:
+    name: OpenCode latest live lifecycle
+    needs: selection
+    if: needs.selection.outputs.opencode == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Harapter dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate live configuration
+        env:
+          HARAPTER_LIVE_MODEL_API_KEY:
+            ${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}
+          HARAPTER_LIVE_MODEL_ID: ${{ secrets.HARAPTER_LIVE_MODEL_ID }}
+          HARAPTER_LIVE_MODEL_URL: ${{ secrets.HARAPTER_LIVE_MODEL_URL }}
+        run: node scripts/prepare-live-canary.mjs validate
+
+      - name: Install current OpenCode release
+        run: npm install --global opencode-ai@latest
+
+      - name: Record OpenCode runtime identity
+        run: |
+          printf '%s\n' '### OpenCode live canary' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "- Harapter revision: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          node scripts/prepare-live-canary.mjs record-global-package Runtime opencode-ai
+
+      - name: Prepare isolated OpenCode configuration
+        env:
+          HARAPTER_LIVE_MODEL_API_KEY:
+            ${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}
+          HARAPTER_LIVE_MODEL_ID: ${{ secrets.HARAPTER_LIVE_MODEL_ID }}
+          HARAPTER_LIVE_MODEL_URL: ${{ secrets.HARAPTER_LIVE_MODEL_URL }}
+          OPENCODE_CONFIG: ${{ runner.temp }}/harapter-opencode.json
+        run: |
+          node scripts/prepare-live-canary.mjs write-opencode-config "$OPENCODE_CONFIG"
+
+      - name: Run OpenCode live lifecycle
+        env:
+          HARAPTER_LIVE_MODEL_API_KEY:
+            ${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}
+          HARAPTER_LIVE_MODEL_ID: ${{ secrets.HARAPTER_LIVE_MODEL_ID }}
+          HARAPTER_LIVE_MODEL_URL: ${{ secrets.HARAPTER_LIVE_MODEL_URL }}
+          HARAPTER_OPENCODE_ENDPOINT: http://127.0.0.1:4096
+          HARAPTER_OPENCODE_LIVE: '1'
+          HARAPTER_OPENCODE_MODEL: ${{ secrets.HARAPTER_LIVE_MODEL_ID }}
+          HARAPTER_OPENCODE_MODEL_PROVIDER: harapter-live
+          OPENCODE_CONFIG: ${{ runner.temp }}/harapter-opencode.json
+        run: |
+          set -eu
+          opencode serve --hostname 127.0.0.1 --port 4096 > "$RUNNER_TEMP/opencode-server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true' EXIT
+
+          ready=false
+          for _attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error --output /dev/null http://127.0.0.1:4096/global/health; then
+              ready=true
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              echo "::error title=OpenCode startup failed::The isolated server exited before readiness."
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            echo "::error title=OpenCode startup timed out::The isolated server did not become ready."
+            exit 1
+          fi
+
+          pnpm vitest run providers/opencode/test/live.test.ts
+
+      - name: Record passing OpenCode evidence
+        run: |
+          printf '%s\n' '- Lifecycle: passed' >> "$GITHUB_STEP_SUMMARY"
+
+  dsh:
+    name: DSH current SDK Profile live lifecycle
+    needs: selection
+    if: needs.selection.outputs.dsh == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Harapter dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install current DSH SDK Profile release
+        run: npm install --global @deepseek-ai/dsh@alpha
+
+      - name: Record DSH runtime identity
+        run: |
+          printf '%s\n' '### DSH live canary' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "- Harapter revision: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          node scripts/prepare-live-canary.mjs record-global-package CLI @deepseek-ai/dsh
+          node scripts/prepare-live-canary.mjs record-global-package 'SDK Profile' @deepseek-ai/dsh-sdk-minimal @deepseek-ai/dsh
+          node scripts/prepare-live-canary.mjs record-global-package 'SDK Runtime' @deepseek-ai/dsh-sdk-app @deepseek-ai/dsh
+
+      - name: Verify DSH model-facing surface
+        env:
+          DSH_HOME: ${{ runner.temp }}/harapter-dsh-safety-home
+          DSH_TELEMETRY_DISABLED: '1'
+          HARAPTER_LIVE_MODEL_ID: harapter-live-safety-check
+          HARAPTER_LIVE_MODEL_URL: https://model.invalid/v1
+        run: |
+          dsh --profile sdk-minimal --patch "${{ github.workspace }}/.github/live/dsh-model.cordis.patch.yml" --dump-config > "$RUNNER_TEMP/dsh-effective-config.yml"
+          node scripts/prepare-live-canary.mjs validate-dsh-config "$RUNNER_TEMP/dsh-effective-config.yml"
+
+      - name: Validate live configuration
+        env:
+          HARAPTER_LIVE_MODEL_API_KEY:
+            ${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}
+          HARAPTER_LIVE_MODEL_ID: ${{ secrets.HARAPTER_LIVE_MODEL_ID }}
+          HARAPTER_LIVE_MODEL_URL: ${{ secrets.HARAPTER_LIVE_MODEL_URL }}
+        run: node scripts/prepare-live-canary.mjs validate
+
+      - name: Run DSH live lifecycle
+        env:
+          DSH_HOME: ${{ runner.temp }}/harapter-dsh-home
+          DSH_PERMISSION_MODE: read-only
+          DSH_TELEMETRY_DISABLED: '1'
+          HARAPTER_DSH_ARGS_JSON: >-
+            ["--profile","sdk-minimal","--patch","${{ github.workspace
+            }}/.github/live/dsh-model.cordis.patch.yml"]
+          HARAPTER_DSH_LIVE: '1'
+          HARAPTER_DSH_MODEL: ${{ secrets.HARAPTER_LIVE_MODEL_ID }}
+          HARAPTER_DSH_PROVIDER: harapter-live
+          HARAPTER_LIVE_MODEL_API_KEY:
+            ${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}
+          HARAPTER_LIVE_MODEL_ID: ${{ secrets.HARAPTER_LIVE_MODEL_ID }}
+          HARAPTER_LIVE_MODEL_URL: ${{ secrets.HARAPTER_LIVE_MODEL_URL }}
+        run: pnpm vitest run providers/dsh/test/live.test.ts
+
+      - name: Record passing DSH evidence
+        run: |
+          printf '%s\n' '- Lifecycle: passed' >> "$GITHUB_STEP_SUMMARY"

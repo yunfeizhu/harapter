@@ -1,0 +1,41 @@
+# Trusted live-canary overlay for the official minimal SDK composition.
+
+- id: llm-deepseek
+  disabled: true
+
+- insert:
+    - id: llm-pi-ai
+      name: '@deepseek-ai/dsh-llm-pi-ai'
+      config:
+        providers:
+          harapter-live:
+            apiKeyEnv: HARAPTER_LIVE_MODEL_API_KEY
+            api: openai-completions
+            baseURL: !!js process.env.HARAPTER_LIVE_MODEL_URL
+            defaultContextWindow: 131072
+            defaultMaxTokens: 4096
+            models:
+              - id: !!js process.env.HARAPTER_LIVE_MODEL_ID
+                contextWindow: 131072
+                maxTokens: 4096
+                reasoningEfforts: false
+
+- id: sandbox-policy
+  config:
+    mode: read-only
+    workspaceRoot: !!js process.cwd()
+
+- id: persistent-bash
+  disabled: true
+
+- id: persistent-pwsh
+  disabled: true
+
+- id: str-replace-editor
+  disabled: true
+
+- id: terminal-bash
+  disabled: true
+
+- id: terminal-pwsh
+  disabled: true

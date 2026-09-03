@@ -239,7 +239,11 @@ Mapping とライフサイクルテスト、Provider-negative テスト、共通
 | [OpenClaw](./providers/openclaw/README.md)    | ACP v1 bridge             | **ソース上で Experimental** — 決定論的証拠あり、live 証拠は未記録            |
 | [Pi Agent](./providers/pi/README.md)          | strict JSONL RPC mode     | **ソース上で Experimental** — 決定論的証拠あり、live 証拠は未記録            |
 
-「ソース上でサポート」はソース Adapter が保持する証拠を示すもので、公開 Package の保証ではありません。「ソース上で Experimental」は Adapter の実装と、宣言したインターフェースに対する決定論的テストは完了しているものの、必要な live-runtime 証拠が未記録か、接続した Runtime を検証済み証拠へ安全に対応付けられない状態です。Harapter が証拠取得のために Runtime を自動インストールすることはありません。
+「ソース上でサポート」はソース Adapter が保持する証拠を示すもので、公開 Package の保証ではありません。「ソース上で Experimental」は Adapter の実装と、宣言したインターフェースに対する決定論的テストは完了しているものの、必要な live-runtime 証拠が未記録か、接続した Runtime を検証済み証拠へ安全に対応付けられない状態です。
+
+Harapter のライブラリは、ホストアプリケーションに Provider
+Runtime をインストールしません。信頼済み Live Canary だけが、一時的な GitHub
+Runner 内で選択された現行 Runtime をインストールし、継続的な検証証拠を収集します。
 
 Capability と互換性境界の詳細は、[Provider マトリクス](./docs/design/provider-matrix.ja.md)と各 Provider
 README を参照してください。
