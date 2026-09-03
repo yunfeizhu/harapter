@@ -201,20 +201,25 @@ Evidence for the supported interface includes:
   process-exit, ownership, and cleanup tests;
 - the shared portable Provider conformance suite;
 - a local live test against the current Codex release using a read-only,
-  ephemeral Session/Run that performs no Tool calls and logs no Provider
-  traffic.
+  resumable Thread that performs no Tool calls, verifies one completed Turn and
+  one natively interrupted Turn, and logs no Provider traffic.
 
 The live test is opt-in and requires an authenticated Codex installation:
 
 ```bash
-HARAPTER_CODEX_LIVE=1 pnpm vitest run providers/codex/test/live.test.ts
+HARAPTER_CODEX_LIVE=1 \
+HARAPTER_CODEX_COMMAND="$(command -v codex)" \
+pnpm vitest run providers/codex/test/live.test.ts
 ```
 
 The last repository-recorded live run passed on 2026-09-03 with
 `@openai/codex@0.153.0`. A production host may pin that release for a
 reproducible deployment. Harapter continues to admit newer stable releases and
 validates the observed handshake, response, Event, and terminal structures
-instead of using the recorded version as an executable allowlist.
+instead of using the recorded version as an executable allowlist. That recorded
+run proves the completed text Turn path; the strengthened current canary adds
+Thread resume and native cancellation, which become repository live evidence
+only after a trusted run passes.
 
 The trusted scheduled live-canary workflow can install the current stable Codex
 release on an ephemeral runner and execute the same lifecycle with an isolated
@@ -222,8 +227,11 @@ configuration. It is enabled independently from pull request CI, records the
 installed package version, and requires a configured model service that supports
 the Responses interface used by Codex. Before the job receives the real model
 credential, the current Codex feature inventory must match the reviewed
-tool-disabled surface. The lifecycle fails if a tool or interaction event is
-observed.
+tool-disabled surface. The lifecycle requires one exact completed response,
+closes and resumes the same non-ephemeral Thread on the App Server connection,
+then requires native interruption and an authoritative cancelled terminal for a
+second Turn. It fails if a tool or interaction event is observed and stores only
+Event type strings in the test.
 
 Experimental App Server APIs, Session fork, paginated history, direct account or
 authentication management, and host-owned process streams are not supported by
