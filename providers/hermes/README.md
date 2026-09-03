@@ -30,16 +30,20 @@ Agent is MIT licensed; Harapter does not redistribute it. See the
 
 The latest trusted live validation ran on 2026-09-03 against
 `hermes-agent@0.21.0` from
-`nousresearch/hermes-agent@sha256:6212c35b6dab6366b016c2a316fa3dc2af42c2315b83a2b0ce6f9fe72cc0fb27`.
-The [passing workflow run][hermes-live-2026-09-03] completed Session creation
-and close, Run submission, SSE event streaming, authoritative terminal
-reconciliation, and Client disposal. The API Server does not negotiate a Runtime
-compatibility version, so the Adapter remains `experimental`. Harapter attempts
-other Runtime releases and rejects incompatible response or event shapes when
-they are used; it does not reject a release by version number alone.
+`nousresearch/hermes-agent@sha256:023d61b3ec803093827e10999e54abdbd379d1ed6adba59b45a6b89c1b4233b8`.
+The [passing workflow run][hermes-live-2026-09-03] verified an exact completed
+text response with `run.started`, `message.completed`, and authoritative
+`run.completed` Events. It then closed the first local handle, resumed the same
+native Session, and verified native cancellation of a second Run with an
+authoritative `run.cancelled` terminal. Both local Session handles and the
+Client were disposed, and no model-facing toolset was enabled. The API Server
+does not negotiate a Runtime compatibility version, so the Adapter remains
+`experimental`. Harapter attempts other Runtime releases and rejects
+incompatible response or event shapes when they are used; it does not reject a
+release by version number alone.
 
 [hermes-live-2026-09-03]:
-  https://github.com/yunfeizhu/harapter/actions/runs/33722354703
+  https://github.com/yunfeizhu/harapter/actions/runs/33737478620
 
 ## Profile and authentication
 
