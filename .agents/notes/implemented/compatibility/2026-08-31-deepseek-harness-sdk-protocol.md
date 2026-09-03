@@ -82,8 +82,12 @@ terminal authority, so weaker observations cannot safely produce success.
   official protocol provenance at `4e84901e6471b79ec0338099867ebb4606d12bb5`
   (`@deepseek-ai/dsh-sdk-protocol` `0.1.2-alpha.4`), synthetic redacted
   fixtures, Provider-negative tests, shared conformance, and a successful
-  isolated live run of the matching official SDK Profile. Live revalidation
-  remains opt-in.
+  isolated live run of the matching official SDK Profile. The trusted 2026-09-03
+  run used `@deepseek-ai/dsh@0.1.2-alpha.5` with
+  `@deepseek-ai/dsh-sdk-minimal@0.1.2-rc.1` and
+  `@deepseek-ai/dsh-sdk-app@0.1.2-rc.1`, and verified an exact text result,
+  started and completed Events, the authoritative completed terminal, and no
+  tool or interaction Events. Live revalidation remains opt-in.
 - Hosts must supply an isolated SDK Profile. Native calls that inject competing
   work into the owned Session interval fall outside the compatibility boundary.
 - Harapter gives up native mid-Run cancellation, Session resume, Session
