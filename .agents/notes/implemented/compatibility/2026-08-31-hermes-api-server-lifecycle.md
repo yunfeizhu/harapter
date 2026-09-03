@@ -59,9 +59,13 @@ does not advertise child events, so the extension capability remains unknown.
 
 A trusted live canary on 2026-09-03 validated the current lifecycle against
 `hermes-agent@0.21.0` from the immutable image digest
-`nousresearch/hermes-agent@sha256:6212c35b6dab6366b016c2a316fa3dc2af42c2315b83a2b0ce6f9fe72cc0fb27`.
-The passing path covered Session creation and close, Run submission, SSE event
-streaming, authoritative terminal reconciliation, and Client disposal. The API
+`nousresearch/hermes-agent@sha256:023d61b3ec803093827e10999e54abdbd379d1ed6adba59b45a6b89c1b4233b8`.
+The passing path required an exact completed text response with `run.started`,
+`message.completed`, and authoritative `run.completed` Events. It closed the
+first local handle, resumed the same native Session, then required native
+cancellation of a second Run and an authoritative `run.cancelled` terminal. Both
+Session handles and the Client were disposed, while the public toolset inventory
+and full Agent-side resolver reported no enabled model-facing toolsets. The API
 Server does not negotiate a Runtime compatibility version, so this evidence is
 not a version allowlist and does not promote the Adapter beyond `experimental`.
 Other releases are attempted and remain subject to the same fail-closed
