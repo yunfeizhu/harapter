@@ -91,21 +91,31 @@ authoritative `run.cancelled` terminal. Tool and interaction Events remain
 forbidden, and failure diagnostics do not include response or native identity
 values.
 
+The OpenClaw lifecycle requires an exact completed text response with
+`run.started`, `message.completed`, and authoritative `run.completed` Events. It
+then closes the first ACP Client, opens a new bridge connection, resumes the
+same isolated Gateway Session, and requires a second Run to settle only after
+native cancellation and an authoritative `run.cancelled` terminal. The canary
+stores only Event type strings and keeps failure diagnostics free of response
+and native Session values.
+
 DSH follows the current SDK Profile prerelease channel without an exact version
 allowlist. Each run records the DSH CLI, `@deepseek-ai/dsh-sdk-minimal`, and
 `@deepseek-ai/dsh-sdk-app` versions. Codex and OpenCode follow their current
 stable package channels. OpenClaw follows its current official package channel,
 uses isolated per-job state, and disables model catalog refresh, plugins,
 browser automation, MCP, channels, cron, heartbeat, telemetry, auditing, and
-shell environment loading. It submits one synthetic text Prompt through the
-Gateway with Runtime-level tool support disabled and retains no state, logs,
-Prompt, response, or Provider traffic artifact. Pi follows the current official
-package channel, uses isolated configuration, Session storage, and Workspace
-paths, and submits one exact-response Prompt before resuming the persisted
-Session and requesting cancellation of a second Run. It retains no state,
-Prompt, response, credential, or Provider traffic artifact after the ephemeral
-job. A Provider that needs a different model interface or cannot safely isolate
-its Runtime stays disabled until its own canary configuration is reviewed.
+shell environment loading. It submits one exact-response Prompt before opening a
+new ACP bridge, resuming the isolated Gateway Session, and requesting
+cancellation of a second Run. Runtime-level tool support remains disabled, and
+the job retains no state, logs, Prompt, response, or Provider traffic artifact.
+Pi follows the current official package channel, uses isolated configuration,
+Session storage, and Workspace paths, and submits one exact-response Prompt
+before resuming the persisted Session and requesting cancellation of a second
+Run. It retains no state, Prompt, response, credential, or Provider traffic
+artifact after the ephemeral job. A Provider that needs a different model
+interface or cannot safely isolate its Runtime stays disabled until its own
+canary configuration is reviewed.
 
 Hermes Agent follows its current official container channel. A run records the
 resolved package version, immutable image digest, and Harapter revision. Its
