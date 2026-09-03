@@ -162,6 +162,15 @@ Evidence for this experimental Adapter includes:
   ephemeral runner and opens a non-persistent Session without a Prompt or model
   credential.
 
+The last repository-recorded live Session run passed on 2026-09-03 with
+`@earendil-works/pi-coding-agent@0.84.4`. It verified current-package
+installation, version probing, RPC handshake, non-persistent Session open and
+close, and an empty isolated Session directory after shutdown. It did not submit
+a Prompt or prove Run, Event, terminal, cancellation, resume, or interaction
+behavior. A production host may pin that release for reproducibility. Harapter
+continues to admit newer releases and validates their observed structures
+instead of using the recorded version as an executable allowlist.
+
 Run live verification only when starting and closing an isolated Pi RPC Session
 is acceptable to the host:
 
