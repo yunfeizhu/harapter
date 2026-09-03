@@ -153,6 +153,10 @@ function main(args) {
         openClawConfig(rest[1], rest[2], modelSettings()),
       );
       return;
+    case 'write-pi-config':
+      requireCount(rest, 1, 'write-pi-config');
+      writePrivateFile(rest[0], piConfig(modelSettings()));
+      return;
     case 'validate-codex-features':
       requireCount(rest, 1, 'validate-codex-features');
       validateCodexFeatures(rest[0]);
@@ -656,6 +660,42 @@ function openClawConfig(workspacePath, logPath, { modelId, modelUrl }) {
         workshop: { autonomous: { mode: 'off' } },
       },
       telemetry: { enabled: false },
+    },
+    undefined,
+    2,
+  )}\n`;
+}
+
+function piConfig({ modelId, modelUrl }) {
+  return `${JSON.stringify(
+    {
+      providers: {
+        'harapter-live': {
+          api: 'openai-completions',
+          apiKey: `$${API_KEY_SETTING}`,
+          baseUrl: modelUrl,
+          models: [
+            {
+              compat: {
+                supportsDeveloperRole: false,
+                supportsReasoningEffort: false,
+              },
+              contextWindow: 131_072,
+              cost: {
+                input: 0,
+                output: 0,
+                cacheRead: 0,
+                cacheWrite: 0,
+              },
+              id: modelId,
+              input: ['text'],
+              maxTokens: 1_024,
+              name: 'Harapter Live Model',
+              reasoning: false,
+            },
+          ],
+        },
+      },
     },
     undefined,
     2,

@@ -157,10 +157,11 @@ Evidence for this experimental Adapter includes:
   disconnect, malformed-input, event-bound, process cleanup, version-probe,
   native-access, and Provider-negative tests;
 - the shared portable Provider conformance suite;
-- an opt-in live connection test for a host-installed Pi Runtime;
+- an opt-in live lifecycle test for a host-installed Pi Runtime;
 - a trusted live-canary path that installs the current official release on an
-  ephemeral runner and opens a non-persistent Session without a Prompt or model
-  credential.
+  ephemeral runner and is configured to exercise a completed text Run, streamed
+  Events, the authoritative terminal, persisted Session resume, native
+  cancellation, Session close, and Client disposal.
 
 The last repository-recorded live Session run passed on 2026-09-03 with
 `@earendil-works/pi-coding-agent@0.84.4`. It verified current-package
@@ -171,28 +172,43 @@ behavior. A production host may pin that release for reproducibility. Harapter
 continues to admit newer releases and validates their observed structures
 instead of using the recorded version as an executable allowlist.
 
-Run live verification only when starting and closing an isolated Pi RPC Session
-is acceptable to the host:
+Run live verification only when two synthetic text Prompts, one completed model
+request, and one native cancellation attempt are acceptable to the host. The
+isolated config must define a `harapter-live` model and reference
+`HARAPTER_LIVE_MODEL_API_KEY` rather than storing the credential:
 
 ```bash
 pi_live_home="$(mktemp -d)"
 trap 'rm -rf "$pi_live_home"' EXIT
 mkdir -p "$pi_live_home/sessions"
 
+HARAPTER_LIVE_MODEL_ID=... \
+HARAPTER_LIVE_MODEL_URL=https://model.example/v1 \
+node scripts/prepare-live-canary.mjs \
+  write-pi-config "$pi_live_home/config/models.json"
+
 PI_CODING_AGENT_DIR="$pi_live_home/config" \
 PI_CODING_AGENT_SESSION_DIR="$pi_live_home/sessions" \
 PI_OFFLINE=1 \
 PI_SKIP_VERSION_CHECK=1 \
 PI_TELEMETRY=0 \
+HARAPTER_LIVE_MODEL_API_KEY=... \
 HARAPTER_PI_LIVE=1 \
 HARAPTER_PI_COMMAND=/opt/harapter-runtimes/bin/pi \
+HARAPTER_PI_MODEL=... \
 pnpm vitest run providers/pi/test/live.test.ts
 ```
 
-The live test sends no prompt, logs no Provider traffic, and verifies that the
-isolated Session directory remains empty after shutdown. A skipped or unrecorded
-live test is not support evidence, so the Adapter remains experimental in
-source.
+The live test requires the exact completed response, a completed message Event,
+and the authoritative completed Run Event. It resumes the same native Session,
+then requires a correlated native cancellation and authoritative cancelled Run.
+The Pi Runtime starts with tools, extensions, skills, prompt templates, and
+context-file discovery disabled; any tool or interaction Event fails the test.
+The test logs no Provider traffic and deletes its isolated Session state. A
+skipped or unrecorded live test is not support evidence. The configured Run,
+resume, and cancellation path does not become recorded evidence until a trusted
+manual or scheduled run passes, and the Adapter remains experimental while the
+current RPC family has no protocol-version negotiation.
 
 Image and file input, portable model selection, system-context overrides,
 generic approvals, per-Session Workspace selection, Runtime extension loading,

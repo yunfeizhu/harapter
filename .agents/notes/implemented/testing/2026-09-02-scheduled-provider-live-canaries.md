@@ -53,7 +53,12 @@ isolated loopback Gateway with an environment-backed SecretRef. The key is
 removed from the Harapter test process before it starts the ACP bridge; only the
 already-running Gateway retains the credential required for the model request.
 The ACP bridge is also told not to prefix the synthetic Prompt with the
-ephemeral runner path.
+ephemeral runner path. Pi uses one generated `models.json` entry whose API key
+is an environment reference, and the current published CLI must expose
+`--no-tools` and `--no-context-files` before the credential-bearing test starts.
+The Pi process inherits the dedicated model credential only for the bounded RPC
+test because it owns the model request; extensions, skills, prompt templates,
+tools, and context-file discovery are disabled.
 
 The credential must be dedicated, revocable, and limited to the smallest useful
 test budget. Jobs that do not require a model call do not receive it. The
@@ -64,11 +69,11 @@ timeout, and the job timeout remains the final containment boundary.
 
 A passing canary is current live evidence only for its exercised path. Codex,
 OpenCode, DSH, Hermes Agent, and OpenClaw exercise Session, Run, Event, and
-terminal behavior. Pi exercises package installation, version probing, RPC
-handshake, non-persistent Session open and close, and the absence of persisted
-Session content. OpenClaw additionally exercises an isolated loopback-only
-Gateway and the ACP bridge, requires the expected synthetic response content,
-and rejects any observed tool or approval event. A passing result does not
+terminal behavior. The configured Pi path exercises installation, version
+probing, RPC handshake, a completed text Run with exact final content, persisted
+Session resume, native cancellation, Session close, and cleanup. OpenClaw and Pi
+reject any observed tool or interaction event. A configured path becomes
+evidence only after its trusted execution passes. A passing result does not
 promote every capability or convert an unnegotiated Runtime protocol into a
 negotiated compatibility range. A newly published Runtime failure means that
 release needs investigation or Adapter work; it does not make an older recorded
@@ -83,11 +88,12 @@ browser automation, MCP, channels, cron, heartbeat, telemetry, auditing, and
 shell environment loading. It submits one synthetic text Prompt through the
 Gateway with Runtime-level tool support disabled and retains no state, logs,
 Prompt, response, or Provider traffic artifact. Pi follows the current official
-package channel and opens a non-persistent isolated RPC Session with extensions,
-skills, and prompt templates disabled. Pi does not yet submit a Prompt, perform
-a model call, or receive a model credential. A Provider that needs a different
-model interface or cannot safely isolate its Runtime stays disabled until its
-own canary configuration is reviewed.
+package channel, uses isolated configuration, Session storage, and Workspace
+paths, and submits one exact-response Prompt before resuming the persisted
+Session and requesting cancellation of a second Run. It retains no state,
+Prompt, response, credential, or Provider traffic artifact after the ephemeral
+job. A Provider that needs a different model interface or cannot safely isolate
+its Runtime stays disabled until its own canary configuration is reviewed.
 
 Hermes Agent follows its current official container channel. A run records the
 resolved package version, immutable image digest, and Harapter revision. Its
