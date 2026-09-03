@@ -232,7 +232,7 @@ SDK，不根据 Provider 名称分支，也不根据 Provider 身份推断 Capab
 | [DeepSeek Harness](./providers/dsh/README.md) | SDK Runtime JSON-RPC    | **源码级实验**——已有真实运行证据，但 Runtime 不协商兼容版本   |
 | [Hermes Agent](./providers/hermes/README.md)  | API Server HTTP/SSE     | **源码级实验**——具备确定性证据，尚缺真实运行证据              |
 | [OpenClaw](./providers/openclaw/README.md)    | ACP v1 Bridge           | **源码级实验**——具备确定性证据，尚缺真实运行证据              |
-| [Pi Agent](./providers/pi/README.md)          | 严格 JSONL RPC 模式     | **源码级实验**——具备确定性证据，尚缺真实运行证据              |
+| [Pi Agent](./providers/pi/README.md)          | 严格 JSONL RPC 模式     | **源码级实验**——已有真实 Session 证据，尚缺认证 Run 证据      |
 
 “源码级支持”描述源码 Adapter 所持有的证据，不是已发布 Package 的保证。“源码级实验”表示 Adapter 已经实现，并按声明的接口完成确定性测试，但仍缺所需的真实 Runtime 证据，或当前连接的 Runtime 无法与已验证证据安全匹配。
 
