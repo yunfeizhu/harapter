@@ -523,6 +523,7 @@ class CodexClient implements HarnessClient {
       }
       return;
     }
+    if (method === 'turn/started') run.confirmProviderStart();
     for (const event of mapping.events) {
       if (event.raw !== undefined) this.emitUnknown(event.raw);
     }
@@ -755,11 +756,13 @@ class CodexSession implements HarnessSession {
 
 class CodexRun implements HarnessRun {
   private readonly eventQueue: EventQueue;
+  private readonly providerStart: Promise<boolean>;
   private readonly settlement: Promise<RunResult>;
   private readonly timeout: NodeJS.Timeout | undefined;
   private cancelPromise: Promise<CancelResult> | undefined;
   private finalMessage: string | undefined;
   private finalResult: RunResult | undefined;
+  private resolveProviderStart!: (started: boolean) => void;
   private resolveSettlement!: (result: RunResult) => void;
   private sequence = 0;
   private timeoutTriggered = false;
@@ -776,6 +779,9 @@ class CodexRun implements HarnessRun {
     private readonly onTerminal: (run: CodexRun) => void,
   ) {
     this.eventQueue = new EventQueue(maxRunEvents);
+    this.providerStart = new Promise((resolve) => {
+      this.resolveProviderStart = resolve;
+    });
     this.settlement = new Promise((resolve) => {
       this.resolveSettlement = resolve;
     });
@@ -812,6 +818,10 @@ class CodexRun implements HarnessRun {
 
   isTerminal(): boolean {
     return this.finalResult !== undefined;
+  }
+
+  confirmProviderStart(): void {
+    if (!this.isTerminal()) this.resolveProviderStart(true);
   }
 
   emit(mapped: MappedCodexEvent): void {
@@ -853,14 +863,26 @@ class CodexRun implements HarnessRun {
   }
 
   private async cancelOnce(): Promise<CancelResult> {
-    await this.interrupt(this);
     const watchdog = setTimeout(() => {
       this.abortOwnerConnection();
     }, this.cancelSettlementTimeoutMs);
     watchdog.unref();
     try {
+      const providerStarted = await this.providerStart;
+      let interruptAcknowledged = false;
+      if (providerStarted && !this.isTerminal()) {
+        try {
+          await this.interrupt(this);
+        } catch (error) {
+          if (this.finalResult?.status === 'connection_aborted')
+            return { mode: 'connection_aborted' };
+          throw error;
+        }
+        interruptAcknowledged = true;
+      }
       const result = await this.settlement;
-      if (result.status === 'cancelled') return { mode: 'native' };
+      if (result.status === 'cancelled' && interruptAcknowledged)
+        return { mode: 'native' };
       return result.status === 'connection_aborted'
         ? { mode: 'connection_aborted' }
         : { mode: 'already_terminal' };
@@ -876,6 +898,7 @@ class CodexRun implements HarnessRun {
   ): void {
     if (this.isTerminal()) return;
     this.finalResult = result;
+    this.resolveProviderStart(false);
     if (this.timeout !== undefined) clearTimeout(this.timeout);
     this.eventQueue.pushTerminal(
       this.portableEvent({ ...mapped, type: terminalType, data: result }),

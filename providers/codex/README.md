@@ -90,8 +90,8 @@ environment selected by the host process.
   `maxPendingInboundRequests`, and `maxPendingWrites` configure the shared JSONL
   RPC transport;
 - `requestTimeoutMs` bounds each App Server request wait;
-- `cancelSettlementTimeoutMs` bounds the wait for an authoritative terminal
-  notification after `turn/interrupt` acknowledges a request;
+- `cancelSettlementTimeoutMs` bounds the wait for native `turn/started`, the
+  `turn/interrupt` request, and its authoritative terminal notification;
 - `maxRunEvents` bounds unread portable events and must be at least two so a
   terminal event always has reserved space.
 
@@ -137,9 +137,11 @@ authoritative Run terminal notification:
 
 Closing the Client or losing the process settles active Runs as
 `connection_aborted`. Only a successful `turn/interrupt` followed by the
-authoritative `interrupted` terminal status reports native cancellation. An
-acknowledged interrupt without a terminal notification closes the owning
-connection after `cancelSettlementTimeoutMs` and reports `connection_aborted`.
+authoritative `interrupted` terminal status reports native cancellation. The
+Adapter waits for the matching native `turn/started` notification before
+requesting interruption. A missing start notification or an acknowledged
+interrupt without a terminal notification closes the owning connection after
+`cancelSettlementTimeoutMs` and reports `connection_aborted`.
 
 ## Events and interactions
 
