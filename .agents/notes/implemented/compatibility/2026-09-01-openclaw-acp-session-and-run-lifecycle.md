@@ -90,10 +90,12 @@ the boundary without depending on scheduling speed.
   fixtures, tests, documentation, and review.
 - Synthetic fixtures, shared conformance, and the trusted 2026-09-03 lifecycle
   run with `openclaw@2026.8.2` establish supported evidence for the validated
-  ACP v1 text Run path.
-- Native cancellation, resume, approval, image input, and effective Gateway
-  workspace execution remain outside the recorded live evidence and retain
-  capability-specific limits.
+  ACP v1 completed text Run, isolated Session resume, and native cancellation
+  paths. The live run required authoritative `run.completed` and `run.cancelled`
+  terminals across two independent ACP bridge connections to the same isolated
+  Gateway Session.
+- Approval, image input, and effective Gateway workspace execution remain
+  outside the recorded live evidence and retain capability-specific limits.
 - Shared Gateway routing, history replay, per-Session MCP, direct Gateway
   controls, generic files, audio, verified Gateway workspace execution, and
   client filesystem or terminal services remain outside the compatibility
