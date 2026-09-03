@@ -237,7 +237,7 @@ Mapping とライフサイクルテスト、Provider-negative テスト、共通
 | [DeepSeek Harness](./providers/dsh/README.md) | SDK Runtime JSON-RPC      | **ソース上で Experimental** — live 証拠あり、Runtime の互換 Version 交渉なし      |
 | [Hermes Agent](./providers/hermes/README.md)  | API Server HTTP/SSE       | **ソース上で Experimental** — 0.21.0 で live 検証済み、Runtime 互換性は未交渉     |
 | [OpenClaw](./providers/openclaw/README.md)    | ACP v1 bridge             | **ソース上で Supported** — Fixture、Conformance、互換性、live text Run の証拠あり |
-| [Pi Agent](./providers/pi/README.md)          | strict JSONL RPC mode     | **ソース上で Experimental** — live Session 証拠あり、認証済み Run 証拠は未記録    |
+| [Pi Agent](./providers/pi/README.md)          | strict JSONL RPC mode     | **ソース上で Experimental** — 0.84.4 で live 検証済み、Runtime 互換性は未交渉     |
 
 「ソース上でサポート」はソース Adapter が保持する証拠を示すもので、公開 Package の保証ではありません。「ソース上で Experimental」は Adapter の実装と、宣言したインターフェースに対する決定論的テストは完了しているものの、必要な live-runtime 証拠が未記録か、接続した Runtime を検証済み証拠へ安全に対応付けられない状態です。
 
