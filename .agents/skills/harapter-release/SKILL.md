@@ -26,8 +26,8 @@ user's explicit authorization.
    `scripts/public-packages.json`, the changelog, and release pull request
    title. They use one synchronized pre-1.0 version. The first approved release
    must be `0.1.0`; do not hand-edit one artifact to hide a configuration error.
-5. Verify that changelog entries describe user-visible behavior and breaking
-   migration requirements without leaking private data.
+5. Verify that changelog entries describe user-visible additions, removals, and
+   breaking migration requirements without leaking private data.
 6. Require all applicable CI, conformance, build, and security checks on the
    exact release pull request head. A skipped credential-backed test is not live
    compatibility evidence.

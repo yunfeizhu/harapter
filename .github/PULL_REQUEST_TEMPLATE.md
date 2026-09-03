@@ -36,3 +36,4 @@ None.
 ## Release impact
 
 <!-- State patch, minor, major, or no release. The Conventional Commit PR title is authoritative. -->
+<!-- User-visible additions and removals use `feat`, `fix`, or a breaking-change marker; `refactor` is behavior-preserving. -->

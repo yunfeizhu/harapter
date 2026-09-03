@@ -57,8 +57,12 @@ GitHub Release. The release job rejects non-`main` refs, and the CI dispatch
 rejects a branch head that differs from the queried pull request head. Enabling
 an automatic `main` trigger is a separate reviewed repository-policy change. The
 first approved pre-alpha release is `0.1.0`. Release Please owns its generated
-changelog formatting, while Markdown and link validation remain in force, and
-repository metadata accepts both observed GitHub Actions bot login forms.
+changelog formatting and retains its default visible commit types. A
+user-visible addition or removal uses `feat`, `fix`, or a breaking-change
+marker; `refactor` is reserved for behavior-preserving work because making a
+normally hidden type visible can create an otherwise unintended patch release.
+Markdown and link validation remain in force, and repository metadata accepts
+both observed GitHub Actions bot login forms.
 
 Public Core, conformance, transport, and Provider Adapter packages use a single
 synchronized version before 1.0. The Workspace root and examples remain private.
