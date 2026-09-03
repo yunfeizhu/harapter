@@ -285,9 +285,9 @@ class HermesClient implements HarnessClient {
       compatibility: 'experimental',
       warnings: [
         {
-          code: 'live_runtime_evidence_pending',
+          code: 'runtime_compatibility_unnegotiated',
           message:
-            'The current API Server mapping has fixture and conformance evidence but no recorded live-runtime result.',
+            'Hermes Agent 0.21.0 was live-verified on 2026-09-03, but the API Server does not negotiate a Runtime compatibility version.',
         },
       ],
     });
