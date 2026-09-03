@@ -235,7 +235,7 @@ Mapping とライフサイクルテスト、Provider-negative テスト、共通
 | [Codex](./providers/codex/README.md)          | stable App Server         | **ソース上でサポート** — Fixture、Conformance、互換性、live 証拠あり           |
 | [OpenCode](./providers/opencode/README.md)    | stable HTTP/OpenAPI + SSE | **ソース上でサポート** — Fixture、Conformance、互換性、live 証拠あり           |
 | [DeepSeek Harness](./providers/dsh/README.md) | SDK Runtime JSON-RPC      | **ソース上で Experimental** — live 証拠あり、Runtime の互換 Version 交渉なし   |
-| [Hermes Agent](./providers/hermes/README.md)  | API Server HTTP/SSE       | **ソース上で Experimental** — 決定論的証拠あり、live 証拠は未記録              |
+| [Hermes Agent](./providers/hermes/README.md)  | API Server HTTP/SSE       | **ソース上で Experimental** — 0.21.0 で live 検証済み、Runtime 互換性は未交渉  |
 | [OpenClaw](./providers/openclaw/README.md)    | ACP v1 bridge             | **ソース上で Experimental** — live Session 証拠あり、Run 証拠は未記録          |
 | [Pi Agent](./providers/pi/README.md)          | strict JSONL RPC mode     | **ソース上で Experimental** — live Session 証拠あり、認証済み Run 証拠は未記録 |
 

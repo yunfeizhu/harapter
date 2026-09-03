@@ -39,6 +39,7 @@ describe('Hermes Agent Adapter', () => {
         name: 'Hermes Agent API Server',
         protocol: 'HTTP + SSE',
       },
+      warnings: [{ code: 'runtime_compatibility_unnegotiated' }],
     });
     if (clientDescriptor.runtime === undefined) {
       throw new Error('Hermes runtime descriptor missing');

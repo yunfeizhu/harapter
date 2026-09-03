@@ -57,6 +57,16 @@ before the terminal boundary may also appear as parent Provider events; events
 after it cannot append to, delay, or alter the parent Run. The current handshake
 does not advertise child events, so the extension capability remains unknown.
 
+A trusted live canary on 2026-09-03 validated the current lifecycle against
+`hermes-agent@0.21.0` from the immutable image digest
+`nousresearch/hermes-agent@sha256:6212c35b6dab6366b016c2a316fa3dc2af42c2315b83a2b0ce6f9fe72cc0fb27`.
+The passing path covered Session creation and close, Run submission, SSE event
+streaming, authoritative terminal reconciliation, and Client disposal. The API
+Server does not negotiate a Runtime compatibility version, so this evidence is
+not a version allowlist and does not promote the Adapter beyond `experimental`.
+Other releases are attempted and remain subject to the same fail-closed
+structural validation.
+
 ## Alternatives considered
 
 ### Install or embed Hermes Agent

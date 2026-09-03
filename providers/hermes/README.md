@@ -28,6 +28,19 @@ evidence baseline. That revision is provenance, not a runtime allowlist. Hermes
 Agent is MIT licensed; Harapter does not redistribute it. See the
 [license record](../../licenses/hermes-agent.md).
 
+The latest trusted live validation ran on 2026-09-03 against
+`hermes-agent@0.21.0` from
+`nousresearch/hermes-agent@sha256:6212c35b6dab6366b016c2a316fa3dc2af42c2315b83a2b0ce6f9fe72cc0fb27`.
+The [passing workflow run][hermes-live-2026-09-03] completed Session creation
+and close, Run submission, SSE event streaming, authoritative terminal
+reconciliation, and Client disposal. The API Server does not negotiate a Runtime
+compatibility version, so the Adapter remains `experimental`. Harapter attempts
+other Runtime releases and rejects incompatible response or event shapes when
+they are used; it does not reject a release by version number alone.
+
+[hermes-live-2026-09-03]:
+  https://github.com/yunfeizhu/harapter/actions/runs/33722354703
+
 ## Profile and authentication
 
 Hermes Agent uses an `endpoint` Profile with HTTP transport and host or external
@@ -192,8 +205,8 @@ MCP servers, memory, compression, checkpoints, title generation, background
 review, and every API Server toolset. An authenticated toolset inventory must
 confirm that every configurable toolset is disabled, and the Runtime's full
 Agent-side resolver must return no enabled toolsets, before the canary submits
-its one synthetic Prompt. The schedule flag remains disabled until a trusted
-manual run passes.
+its one synthetic Prompt. The weekly schedule is enabled after the passing
+manual run recorded above.
 
 Portable workspace selection, file and image input, Server lifecycle, Session
 deletion, automatic SSE reconnection, and strict child-Session capability claims
