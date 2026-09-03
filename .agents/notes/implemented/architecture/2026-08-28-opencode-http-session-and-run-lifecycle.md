@@ -118,3 +118,9 @@ backpressure without making the generic transport Provider-aware.
 - Support evidence requires synthetic fixtures, shared conformance, Provider
   negatives, and applicable live-runtime execution; a skipped live test is not
   evidence.
+- A trusted current-release
+  [live canary](https://github.com/yunfeizhu/harapter/actions/runs/33747923398)
+  passed on 2026-09-03 with `opencode-ai@1.18.27`. It established exact text
+  completion, fresh-Client resume of the same directory-bound Session, native
+  abort, authoritative completed and cancelled terminals, and bounded Server
+  cleanup without turning the Runtime version into an allowlist.
