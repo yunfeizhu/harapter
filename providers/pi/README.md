@@ -157,20 +157,33 @@ Evidence for this experimental Adapter includes:
   disconnect, malformed-input, event-bound, process cleanup, version-probe,
   native-access, and Provider-negative tests;
 - the shared portable Provider conformance suite;
-- an opt-in live connection test for a host-installed Pi Runtime.
+- an opt-in live connection test for a host-installed Pi Runtime;
+- a trusted live-canary path that installs the current official release on an
+  ephemeral runner and opens a non-persistent Session without a Prompt or model
+  credential.
 
 Run live verification only when starting and closing an isolated Pi RPC Session
 is acceptable to the host:
 
 ```bash
+pi_live_home="$(mktemp -d)"
+trap 'rm -rf "$pi_live_home"' EXIT
+mkdir -p "$pi_live_home/sessions"
+
+PI_CODING_AGENT_DIR="$pi_live_home/config" \
+PI_CODING_AGENT_SESSION_DIR="$pi_live_home/sessions" \
+PI_OFFLINE=1 \
+PI_SKIP_VERSION_CHECK=1 \
+PI_TELEMETRY=0 \
 HARAPTER_PI_LIVE=1 \
 HARAPTER_PI_COMMAND=/opt/harapter-runtimes/bin/pi \
 pnpm vitest run providers/pi/test/live.test.ts
 ```
 
-The live test sends no prompt and logs no Provider traffic. A skipped or
-unrecorded live test is not support evidence, so the Adapter remains
-experimental in source.
+The live test sends no prompt, logs no Provider traffic, and verifies that the
+isolated Session directory remains empty after shutdown. A skipped or unrecorded
+live test is not support evidence, so the Adapter remains experimental in
+source.
 
 Image and file input, portable model selection, system-context overrides,
 generic approvals, per-Session Workspace selection, Runtime extension loading,

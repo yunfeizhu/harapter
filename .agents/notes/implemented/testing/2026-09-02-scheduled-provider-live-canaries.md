@@ -19,18 +19,19 @@ misleading or unsafe evidence.
 
 Harapter has a separate Provider live-canary workflow triggered only by a weekly
 schedule or manual dispatch. It verifies that the workflow runs from the default
-branch before any job receives Secrets, checks out the immutable trigger commit
-without persisting Git credentials, and uses read-only repository permissions.
-Pull requests and ordinary pushes cannot invoke the credential-backed path.
+branch before any model-facing job receives Secrets, checks out the immutable
+trigger commit without persisting Git credentials, and uses read-only repository
+permissions. Pull requests and ordinary pushes cannot invoke the trusted live
+path.
 
 Each Provider is enabled independently for scheduled runs through a repository
-variable. An enabled or manually selected job fails explicitly when the shared
-model-service Secret set is incomplete; an unconfigured job is not passing
-evidence. Runtime packages are installed only in an ephemeral GitHub-hosted job
-from their current release channel. The workflow records the installed package
-identity and the minimal live lifecycle result without retaining prompts,
-Provider traffic, credentials, configuration files, Runtime homes, or private
-paths.
+variable. An enabled or manually selected model-facing job fails explicitly when
+the shared model-service Secret set is incomplete; an unconfigured Run is not
+passing evidence. Runtime packages are installed only in an ephemeral
+GitHub-hosted job from their current release channel. The workflow records the
+installed package identity and the scoped live lifecycle result without
+retaining Prompts, Provider traffic, credentials, configuration files, Runtime
+homes, or private paths.
 
 The canary config disables Runtime sharing, telemetry, and model-facing tools.
 Before receiving a real credential, the Codex job verifies the complete feature
@@ -39,26 +40,34 @@ complete effective `sdk-minimal` composition against its reviewed rows and
 disabled states. An unknown enabled Codex feature or any DSH composition drift
 stops that job before the credential-bearing step. OpenCode combines an empty
 plugin list, explicit tool disabling, and a wildcard permission denial. Every
-minimal live test also fails if it observes a tool or interaction event.
+model-facing minimal Run test also fails if it observes a tool or interaction
+event.
 
 The credential must be dedicated, revocable, and limited to the smallest useful
-test budget. The synthetic task uses an empty temporary workspace and produces
-no repository mutation. Network readiness probes have per-request connection and
-total deadlines. Each live-test process has a hard deadline shorter than its job
+test budget. Jobs that do not require a model call do not receive it. The
+synthetic task uses an empty temporary workspace and produces no repository
+mutation. Network readiness probes have per-request connection and total
+deadlines. Each live-test process has a hard deadline shorter than its job
 timeout, and the job timeout remains the final containment boundary.
 
-A passing canary is current live evidence for the exercised Session, Run, Event,
-and terminal path. It does not promote every capability or convert an
-unnegotiated Runtime protocol into a negotiated compatibility range. A newly
-published Runtime failure means that release needs investigation or Adapter
-work; it does not make an older recorded live result false.
+A passing canary is current live evidence only for its exercised path. Codex,
+OpenCode, and DSH exercise Session, Run, Event, and terminal behavior. Pi
+exercises package installation, version probing, RPC handshake, non-persistent
+Session open and close, and the absence of persisted Session content. A passing
+result does not promote every capability or convert an unnegotiated Runtime
+protocol into a negotiated compatibility range. A newly published Runtime
+failure means that release needs investigation or Adapter work; it does not make
+an older recorded live result false.
 
 DSH follows the current SDK Profile prerelease channel without an exact version
 allowlist. Each run records the DSH CLI, `@deepseek-ai/dsh-sdk-minimal`, and
 `@deepseek-ai/dsh-sdk-app` versions. Codex and OpenCode follow their current
-stable package channels. A Provider that needs a different model interface or
-cannot safely isolate its Runtime stays disabled until its own canary
-configuration is reviewed.
+stable package channels. Pi follows the current official package channel and
+opens a non-persistent isolated RPC Session with extensions, skills, and prompt
+templates disabled. It submits no Prompt, performs no model call, and receives
+no model credential. A Provider that needs a different model interface or cannot
+safely isolate its Runtime stays disabled until its own canary configuration is
+reviewed.
 
 ## Alternatives considered
 
