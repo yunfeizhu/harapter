@@ -205,8 +205,11 @@ MCP servers, memory, compression, checkpoints, title generation, background
 review, and every API Server toolset. An authenticated toolset inventory must
 confirm that every configurable toolset is disabled, and the Runtime's full
 Agent-side resolver must return no enabled toolsets, before the canary submits
-its one synthetic Prompt. The weekly schedule is enabled after the passing
-manual run recorded above.
+two synthetic Prompts. The first requires one exact text response and validates
+the completed lifecycle. After closing and resuming the same native Session, the
+second requests a deliberately long response so the canary can require native
+cancellation and an authoritative cancelled terminal. The weekly schedule is
+enabled after the passing manual run recorded above.
 
 Portable workspace selection, file and image input, Server lifecycle, Session
 deletion, automatic SSE reconnection, and strict child-Session capability claims
