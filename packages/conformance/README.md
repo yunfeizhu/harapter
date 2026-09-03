@@ -5,6 +5,14 @@ Provider Adapters and a deterministic Fake Provider. Passing the Fake Provider
 suite proves the portable interfaces and test kit; it is not evidence that any
 real Provider or runtime is supported.
 
+## Installation
+
+Install the suite with Vitest 4:
+
+```bash
+pnpm add -D @harapter/conformance@next vitest@^4.1.11
+```
+
 ## Portable suite
 
 `definePortableProviderConformanceSuite()` accepts fresh Adapter factory and
@@ -60,5 +68,5 @@ Factory-scoped native Session state survives individual Client cleanup, so the
 suite can exercise a SessionRef round trip through a fresh Client without
 allowing two native Sessions to collide.
 
-The package is private and versioned `0.0.0` until real Provider packages use
-the suite and its public test API is reviewed for publication.
+The suite is a development dependency. A passing conformance suite is portable
+contract evidence, not live Provider compatibility evidence.

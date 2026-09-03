@@ -59,10 +59,32 @@ an automatic `main` trigger is a separate reviewed repository-policy change. The
 first approved pre-alpha release is `0.1.0`. Release Please owns its generated
 changelog formatting, while Markdown and link validation remain in force, and
 repository metadata accepts both observed GitHub Actions bot login forms.
-Registry publication remains disabled until a package has reviewed build,
-conformance, provenance or trusted-publishing, and rollback controls. The
-operational workflow is documented in
-[development.md](../../../../docs/development.md).
+
+Public Core, conformance, transport, and Provider Adapter packages use a single
+synchronized version before 1.0. The Workspace root and examples remain private.
+Pre-alpha packages publish under the npm `next` dist-tag so consumers opt in
+without assigning the stable `latest` channel. Registry publication is a
+separate manual workflow after an immutable GitHub Release exists. The workflow
+requires GitHub's immutable-release setting, resolves the tag exactly to the
+dispatch run's current protected `main` commit, rebuilds and verifies every
+tarball, publishes in dependency order with provenance, and uses a protected
+GitHub environment. It uses npm trusted publishing through GitHub Actions OIDC
+after bootstrap and stores no long-lived registry token.
+
+npm does not allow a trusted publisher to be configured before a package exists.
+The first `0.1.0` publication therefore permits one short-lived granular
+bootstrap token scoped to the protected environment. That token is revoked and
+removed after package creation and trusted-publisher setup. Later releases fail
+closed if OIDC is unavailable; the bootstrap path cannot publish another
+version. Registry recovery requires matching SHA-512 integrity, the `next`
+dist-tag, cryptographically verified attestation bundles, and provenance that
+identifies the expected repository, workflow, builder, commit, and tarball. It
+stops on any mismatch and reuses the same failed workflow run so a later `main`
+commit cannot change the provenance source. Ordinary rollback deprecates the bad
+version and releases a fix rather than moving tags, replacing packages, or
+unpublishing. The operational workflow is documented in
+[development.md](../../../../docs/development.md) and
+[RELEASING.md](../../../../RELEASING.md).
 
 ## Alternatives considered
 
@@ -98,6 +120,29 @@ a release pull request before the portable API and a usable provider slice are
 ready. Keeping the workflow manual during initial development avoids presenting
 an incomplete foundation as a release while preserving the commit history that
 Release Please will evaluate at activation.
+
+### Version every public package independently
+
+Independent versions reduce updates for packages that did not change, but they
+also allow a pre-1.0 Adapter and Core combination that was never tested together
+to appear current. A synchronized train makes the supported source revision and
+dependency graph explicit while the contracts are still changing. Independent
+versioning can be reconsidered after stable package boundaries and real consumer
+upgrade data exist.
+
+### Publish npm packages from every GitHub Release automatically
+
+Automatic publication shortens the release path but makes the GitHub Release
+event itself authorize an irreversible registry write. A separate manual
+dispatch keeps the immutable source selection deterministic while preserving a
+distinct approval boundary for npm publication and its protected environment.
+
+### Keep a reusable npm token for all releases
+
+A persistent token is simpler than OIDC but creates a credential that can be
+copied, leaked, or used outside the reviewed workflow. Only the unavoidable
+first-package bootstrap uses a short-lived token; normal releases use trusted
+publishing and provenance.
 
 ### Human-only review and merge
 
@@ -140,13 +185,16 @@ check rejects tool-specific or mismatched branch prefixes. Early feature work
 accumulates without creating release pull requests until a maintainer explicitly
 activates the first pre-alpha release. Release preparation and publication
 require separate explicit workflow dispatches around the manual release pull
-request merge. Package publication needs additional automation before any
-registry artifact is released. Maintainers preserve `Repository checks`,
-`Pull request metadata`, and `Dependency review` as required status checks.
-Local delivery retains one independent model review and test rerun while its
-termination rule prevents P2 churn. Pull requests no longer wait for a second
-model review or permit automated review-comment repair. Eligible contributors
-explicitly enable native auto-merge, and GitHub waits for the deterministic
-requirements and resolved conversations. The migration first removes the
-synthetic `AI code review` required context while preserving strict updates and
-the three deterministic contexts, then deletes its workflow producer.
+request merge. npm publication adds a third, separately authorized dispatch
+against an immutable GitHub Release at that run's current `main` commit. Public
+packages share the generated version and use `next`; the first publication has a
+documented one-time token bootstrap, while subsequent releases require OIDC.
+Maintainers preserve `Repository checks`, `Pull request metadata`, and
+`Dependency review` as required status checks. Local delivery retains one
+independent model review and test rerun while its termination rule prevents P2
+churn. Pull requests no longer wait for a second model review or permit
+automated review-comment repair. Eligible contributors explicitly enable native
+auto-merge, and GitHub waits for the deterministic requirements and resolved
+conversations. The migration first removes the synthetic `AI code review`
+required context while preserving strict updates and the three deterministic
+contexts, then deletes its workflow producer.

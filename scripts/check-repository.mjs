@@ -12,6 +12,7 @@ import {
   validateToolchain,
   validateWorkspacePackageManifest,
 } from './lib/repository-policy.mjs';
+import { validatePublicPackagePolicy } from './lib/package-publication.mjs';
 import { validateWorkflowActionPins } from './lib/workflow-actions.mjs';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -35,6 +36,7 @@ const requiredPaths = [
   '.github/live/dsh-model.cordis.patch.yml',
   '.github/workflows/ci.yml',
   '.github/workflows/provider-live-canary.yml',
+  '.github/workflows/publish-npm.yml',
   '.github/workflows/release-please.yml',
   '.prettierignore',
   'eslint.config.mjs',
@@ -67,7 +69,11 @@ const requiredPaths = [
   'scripts/lib/repository-policy.mjs',
   'scripts/provider-runtime-policy.json',
   'scripts/prepare-live-canary.mjs',
+  'scripts/check-packages.mjs',
+  'scripts/lib/package-publication.mjs',
   'scripts/lib/workflow-actions.mjs',
+  'scripts/public-packages.json',
+  'scripts/publish-packages.mjs',
   'scripts/test-policy-checks.mjs',
   'tsconfig.base.json',
   'tsconfig.json',
@@ -92,6 +98,7 @@ for (const path of [
   '.release-please-manifest.json',
   'scripts/doc-budgets.json',
   'scripts/provider-runtime-policy.json',
+  'scripts/public-packages.json',
 ]) {
   const absolutePath = resolve(repositoryRoot, path);
   if (!existsSync(absolutePath)) {
@@ -111,6 +118,8 @@ exitWithFailures();
 
 const packageJson = jsonDocuments.get('package.json');
 const releasePleaseConfig = jsonDocuments.get('release-please-config.json');
+const publicPackagePolicy = jsonDocuments.get('scripts/public-packages.json');
+failures.push(...validatePublicPackagePolicy(publicPackagePolicy));
 const providerRuntimePolicy = jsonDocuments.get(
   'scripts/provider-runtime-policy.json',
 );
@@ -146,6 +155,7 @@ failures.push(
       resolve(repositoryRoot, '.prettierignore'),
       'utf8',
     ),
+    publicPackagePolicy,
     releasePleaseConfig,
   }),
 );
@@ -159,6 +169,7 @@ for (const script of [
   'check:agent-notes',
   'check:doc-budgets',
   'check:links',
+  'check:packages',
   'check:pr-metadata',
   'check:policy-tests',
   'check:repository',

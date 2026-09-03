@@ -1,13 +1,18 @@
 # `@harapter/adapter-openclaw`
 
 `@harapter/adapter-openclaw` maps the official `openclaw acp` stdio bridge to
-the portable Harapter lifecycle. The package is private and versioned `0.0.0`
-during pre-alpha.
+the portable Harapter lifecycle.
 
 The host installs, configures, authenticates, and operates OpenClaw and its
 Gateway. Harapter starts only the exact adapter-owned command selected by the
 Profile. It does not install an OpenClaw Runtime or SDK, configure models or
 tools, manage Gateway credentials, or change host security policy.
+
+## Installation
+
+```bash
+pnpm add @harapter/core@next @harapter/adapter-openclaw@next
+```
 
 ## Runtime prerequisites and compatibility
 

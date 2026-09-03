@@ -28,3 +28,7 @@ Implemented packages:
 
 Additional packages remain unimplemented. Their target boundaries are defined in
 the [implementation guide](../docs/design/implementation-guide.md).
+
+Public packages follow the synchronized pre-1.0 release train declared in
+[`scripts/public-packages.json`](../scripts/public-packages.json) and publish to
+the opt-in npm `next` dist-tag. The Workspace root and examples remain private.

@@ -146,8 +146,9 @@ applicable. A passing command is evidence only for the surface it exercises.
   trigger a release.
 - Do not create versions, changelog entries, tags, or GitHub Releases manually.
   Release Please owns those artifacts.
-- Package publication remains disabled until the package, provenance or trusted
-  publishing, build evidence, and rollback policy are reviewed.
+- Publish packages only through the reviewed registry workflow for an immutable
+  GitHub Release tag, with explicit authorization, package evidence, provenance
+  or trusted publishing, and the documented rollback policy.
 
 ## Pre-alpha policy
 

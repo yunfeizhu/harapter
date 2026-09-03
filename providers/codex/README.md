@@ -4,9 +4,13 @@
 [Codex App Server](https://developers.openai.com/codex/app-server) interface and
 maps it to the portable Harapter lifecycle. The harness and App Server source
 live in the open-source
-[OpenAI Codex repository](https://github.com/openai/codex). The package is
-private and versioned `0.0.0` while the pre-alpha API is validated against
-additional Provider shapes.
+[OpenAI Codex repository](https://github.com/openai/codex).
+
+## Installation
+
+```bash
+pnpm add @harapter/core@next @harapter/adapter-codex@next
+```
 
 ## Runtime prerequisites and compatibility
 

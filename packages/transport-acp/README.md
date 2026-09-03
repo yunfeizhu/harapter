@@ -12,6 +12,12 @@ portable Harapter lifecycle events, or infer capabilities from an Agent name.
 The consuming Provider Adapter owns process policy, Provider meaning, Session
 ownership, compatibility, and portable event and error mapping.
 
+## Installation
+
+```bash
+pnpm add @harapter/transport-acp@next
+```
+
 ## Stable profile
 
 The client sends and requires JSON-RPC `"2.0"` and negotiates

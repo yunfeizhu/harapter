@@ -4,8 +4,13 @@
 [DeepSeek Harness SDK protocol](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/sdk/protocol/README.md)
 to the portable Harapter lifecycle. It connects to the newline-delimited
 JSON-RPC 2.0 server exposed by the SDK Runtime and does not embed or reproduce
-the DeepSeek Harness Agent Loop. The package is private and versioned `0.0.0`
-during pre-alpha.
+the DeepSeek Harness Agent Loop.
+
+## Installation
+
+```bash
+pnpm add @harapter/core@next @harapter/adapter-dsh@next
+```
 
 ## Runtime prerequisites and compatibility
 

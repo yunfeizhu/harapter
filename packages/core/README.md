@@ -2,8 +2,13 @@
 
 `@harapter/core` is the provider-agnostic TypeScript API for Harapter. It owns
 portable contracts and the runtime checks that can be applied without knowing a
-Provider identity. The package is private and versioned `0.0.0` while the
-pre-alpha API is exercised against real Provider Adapters.
+Provider identity.
+
+## Installation
+
+```bash
+pnpm add @harapter/core@next
+```
 
 ## Public entrypoints
 
@@ -99,9 +104,8 @@ await client.close();
   buffering, redaction, and terminal mapping.
 - Interaction, artifact, usage, resume, cancellation, and other optional
   behavior depend on the active Capability Manifest.
-- Package exports and versions are not publication-ready. Publication remains
-  disabled until real Provider conformance and consumer packaging evidence
-  exist.
+- The public API remains pre-alpha. Published packages use the opt-in `next`
+  dist-tag and may contain breaking changes before 1.0.
 
 The complete target contract remains in the
 [API design](../../docs/design/api-design.md).

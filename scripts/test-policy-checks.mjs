@@ -23,6 +23,18 @@ import {
   validateToolchain,
   validateWorkspacePackageManifest,
 } from './lib/repository-policy.mjs';
+import {
+  normalizeRegistryIntegrity,
+  validatePackageOrder,
+  validatePackedFiles,
+  validatePublicPackageManifest,
+  validatePublicPackagePolicy,
+  validateProvenanceStatement,
+  validateRegistryAudit,
+  validateRegistryDistribution,
+  validateRegistryDistTag,
+  validateReleaseVersion,
+} from './lib/package-publication.mjs';
 import { validateWorkflowActionPins } from './lib/workflow-actions.mjs';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -144,6 +156,94 @@ assert.match(releaseWorkflow, /^\s{2}workflow_dispatch:/mu);
 assert.doesNotMatch(releaseWorkflow, /^\s{2}push:/mu);
 assert.match(releaseWorkflow, /if: github\.ref == 'refs\/heads\/main'/u);
 assert.match(releaseWorkflow, /target-branch: main/u);
+
+const publishWorkflow = readFileSync(
+  resolve(repositoryRoot, '.github/workflows/publish-npm.yml'),
+  'utf8',
+);
+const publishNpm = load(publishWorkflow, { schema: JSON_SCHEMA });
+assert.ok(isObject(publishNpm));
+assert.deepEqual(Object.keys(publishNpm['on']), ['workflow_dispatch']);
+assert.deepEqual(publishNpm['permissions'], { contents: 'read' });
+assert.ok(isObject(publishNpm['jobs']));
+assert.deepEqual(Object.keys(publishNpm['jobs']).sort(), [
+  'publish',
+  'resolve-release',
+]);
+const resolveReleaseJob = requiredJob(publishNpm['jobs'], 'resolve-release');
+assert.equal(resolveReleaseJob['if'], "github.ref == 'refs/heads/main'");
+assert.doesNotMatch(JSON.stringify(resolveReleaseJob), /secrets\./u);
+const resolveReleaseStep = requiredStep(
+  resolveReleaseJob,
+  'Resolve published release tag',
+);
+assert.equal(
+  resolveReleaseStep['env']['EXPECTED_MAIN_SHA'],
+  '${{ github.sha }}',
+);
+assert.match(
+  resolveReleaseStep['run'],
+  /repos\/\$GITHUB_REPOSITORY\/releases\/tags\/\$RELEASE_TAG/u,
+);
+assert.match(
+  resolveReleaseStep['run'],
+  /repos\/\$GITHUB_REPOSITORY\/git\/ref\/tags\/\$RELEASE_TAG/u,
+);
+assert.match(resolveReleaseStep['run'], /\.immutable.*=.*"true"/u);
+assert.match(resolveReleaseStep['run'], /\.prerelease.*=.*"false"/u);
+assert.match(resolveReleaseStep['run'], /\.published_at.*!=.*"null"/u);
+assert.match(
+  resolveReleaseStep['run'],
+  /test "\$object_sha" = "\$EXPECTED_MAIN_SHA"/u,
+);
+const publishJob = requiredJob(publishNpm['jobs'], 'publish');
+assert.equal(publishJob['needs'], 'resolve-release');
+assert.equal(publishJob['environment'], 'npm');
+assert.deepEqual(publishJob['permissions'], {
+  contents: 'read',
+  'id-token': 'write',
+});
+const publishCheckout = requiredStep(
+  publishJob,
+  'Check out immutable release commit',
+);
+assert.equal(
+  publishCheckout['with']['ref'],
+  '${{ needs.resolve-release.outputs.sha }}',
+);
+assert.equal(publishCheckout['with']['persist-credentials'], false);
+assert.match(
+  requiredStep(publishJob, 'Run release evidence')['run'],
+  /^pnpm check$/u,
+);
+const bootstrapPublish = requiredStep(
+  publishJob,
+  'Publish first npm release with bootstrap credential',
+);
+assert.equal(
+  bootstrapPublish['env']['NODE_AUTH_TOKEN'],
+  '${{ secrets.NPM_BOOTSTRAP_TOKEN }}',
+);
+assert.equal(
+  bootstrapPublish['env']['EXPECTED_RELEASE_SHA'],
+  '${{ needs.resolve-release.outputs.sha }}',
+);
+assert.match(bootstrapPublish['run'], /--bootstrap/u);
+const trustedPublish = requiredStep(
+  publishJob,
+  'Publish npm release with trusted publishing',
+);
+assert.doesNotMatch(JSON.stringify(trustedPublish), /secrets\./u);
+assert.equal(
+  trustedPublish['env']['EXPECTED_RELEASE_SHA'],
+  '${{ needs.resolve-release.outputs.sha }}',
+);
+assert.equal(
+  (publishJob['steps'] ?? []).filter((step) =>
+    JSON.stringify(step).includes('${{ secrets.'),
+  ).length,
+  1,
+);
 
 const liveCanaryWorkflow = readFileSync(
   resolve(repositoryRoot, '.github/workflows/provider-live-canary.yml'),
@@ -1672,11 +1772,37 @@ assert.deepEqual(
   ],
 );
 
+const publicPackagePolicyFixture = {
+  schemaVersion: 1,
+  distTag: 'next',
+  packages: [
+    {
+      path: 'packages/core',
+      name: '@harapter/core',
+      smokeExport: 'HarnessRegistry',
+    },
+  ],
+};
+assert.deepEqual(validatePublicPackagePolicy(publicPackagePolicyFixture), []);
 assert.deepEqual(
   validateReleaseAutomation({
     prettierIgnore: 'node_modules\nCHANGELOG.md\n',
+    publicPackagePolicy: publicPackagePolicyFixture,
     releasePleaseConfig: {
-      packages: { '.': { 'initial-version': '0.1.0' } },
+      packages: {
+        '.': {
+          'initial-version': '0.1.0',
+          'release-type': 'simple',
+          'extra-files': [
+            { type: 'json', path: 'package.json', jsonpath: '$.version' },
+            {
+              type: 'json',
+              path: 'packages/core/package.json',
+              jsonpath: '$.version',
+            },
+          ],
+        },
+      },
     },
   }),
   [],
@@ -1684,13 +1810,317 @@ assert.deepEqual(
 assert.deepEqual(
   validateReleaseAutomation({
     prettierIgnore: 'node_modules\n',
+    publicPackagePolicy: publicPackagePolicyFixture,
     releasePleaseConfig: {
       packages: { '.': { 'initial-version': '1.0.0' } },
     },
   }),
   [
     'release-please-config.json must set packages["."].initial-version to 0.1.0.',
+    'release-please-config.json must keep one simple root release train.',
+    'release-please-config.json must update package.json on every release.',
+    'release-please-config.json must update packages/core/package.json on every release.',
     '.prettierignore must exclude Release Please-owned CHANGELOG.md.',
+  ],
+);
+
+assert.deepEqual(
+  validatePublicPackagePolicy({
+    schemaVersion: 2,
+    distTag: 'latest',
+    packages: [
+      { path: 'examples/demo', name: '@other/core', smokeExport: 'not-valid!' },
+      { path: 'examples/demo', name: '@other/core', smokeExport: '' },
+    ],
+    unexpected: true,
+  }),
+  [
+    'scripts/public-packages.json contains unknown key unexpected.',
+    'scripts/public-packages.json schemaVersion must be 1.',
+    'scripts/public-packages.json distTag must be next.',
+    'scripts/public-packages.json packages[0].path must identify one package directory.',
+    'scripts/public-packages.json packages[0].name must be an @harapter package name.',
+    'scripts/public-packages.json packages[0].smokeExport must be a public identifier.',
+    'scripts/public-packages.json packages[1].path must identify one package directory.',
+    'scripts/public-packages.json packages[1].name must be an @harapter package name.',
+    'scripts/public-packages.json packages[1].smokeExport must be a public identifier.',
+  ],
+);
+
+const validPublicManifest = {
+  name: '@harapter/core',
+  version: '0.0.0',
+  description: 'Portable contracts.',
+  license: 'Apache-2.0',
+  repository: {
+    type: 'git',
+    url: 'git+https://github.com/yunfeizhu/harapter.git',
+    directory: 'packages/core',
+  },
+  bugs: { url: 'https://github.com/yunfeizhu/harapter/issues' },
+  homepage: 'https://github.com/yunfeizhu/harapter#readme',
+  type: 'module',
+  sideEffects: false,
+  files: ['dist'],
+  main: './dist/index.js',
+  types: './dist/index.d.ts',
+  exports: {
+    '.': { types: './dist/index.d.ts', default: './dist/index.js' },
+  },
+  engines: { node: '>=24' },
+  publishConfig: {
+    access: 'public',
+    provenance: true,
+    registry: 'https://registry.npmjs.org/',
+    tag: 'next',
+  },
+  scripts: { build: 'tsc --build' },
+};
+assert.deepEqual(
+  validatePublicPackageManifest({
+    entry: publicPackagePolicyFixture.packages[0],
+    knownPackageNames: new Set(['@harapter/core']),
+    packageJson: validPublicManifest,
+  }),
+  [],
+);
+assert.deepEqual(
+  validatePublicPackageManifest({
+    entry: publicPackagePolicyFixture.packages[0],
+    knownPackageNames: new Set(['@harapter/core']),
+    packageJson: {
+      ...validPublicManifest,
+      private: false,
+      files: ['dist', 'src'],
+      dependencies: { '@harapter/missing': '^1.0.0' },
+    },
+  }),
+  [
+    'packages/core/package.json must not set private.',
+    'packages/core/package.json files must contain only dist.',
+    'packages/core/package.json dependencies contains unknown public package @harapter/missing.',
+    'packages/core/package.json dependencies.@harapter/missing must use workspace:* before packing.',
+  ],
+);
+assert.deepEqual(
+  validatePackageOrder(
+    [
+      { name: '@harapter/adapter', path: 'providers/adapter' },
+      { name: '@harapter/core', path: 'packages/core' },
+    ],
+    new Map([
+      [
+        'providers/adapter',
+        { dependencies: { '@harapter/core': 'workspace:*' } },
+      ],
+      ['packages/core', validPublicManifest],
+    ]),
+  ),
+  [
+    'scripts/public-packages.json must list @harapter/core before @harapter/adapter.',
+  ],
+);
+assert.deepEqual(
+  validatePackedFiles(
+    publicPackagePolicyFixture.packages[0],
+    [
+      'LICENSE',
+      'README.md',
+      'package.json',
+      'dist/index.js',
+      'dist/index.d.ts',
+    ].map((path) => ({ path })),
+  ),
+  [],
+);
+assert.deepEqual(
+  validatePackedFiles(publicPackagePolicyFixture.packages[0], [
+    { path: 'package.json' },
+    { path: 'src/index.ts' },
+    { path: 'dist/tsconfig.build.tsbuildinfo' },
+  ]),
+  [
+    '@harapter/core tarball is missing LICENSE.',
+    '@harapter/core tarball is missing README.md.',
+    '@harapter/core tarball is missing dist/index.js.',
+    '@harapter/core tarball is missing dist/index.d.ts.',
+    '@harapter/core tarball contains unexpected path src/index.ts.',
+    '@harapter/core tarball must not contain dist/tsconfig.build.tsbuildinfo.',
+  ],
+);
+assert.deepEqual(validateReleaseVersion('0.1.0'), []);
+assert.deepEqual(validateReleaseVersion('0.0.0'), [
+  'Release version 0.0.0 is not publishable.',
+]);
+assert.deepEqual(validateReleaseVersion('0.2.0', { bootstrap: true }), [
+  'The npm bootstrap path is restricted to release 0.1.0.',
+]);
+const registryIntegrity = `sha512-${Buffer.from('a'.repeat(128), 'hex').toString('base64')}`;
+const otherRegistryIntegrity = `sha512-${Buffer.from('b'.repeat(128), 'hex').toString('base64')}`;
+assert.equal(
+  normalizeRegistryIntegrity(`"${registryIntegrity}"\n`),
+  registryIntegrity,
+);
+assert.equal(normalizeRegistryIntegrity('sha1-not-accepted'), undefined);
+
+const registryDist = {
+  integrity: registryIntegrity,
+  attestations: {
+    url: 'https://registry.npmjs.org/-/npm/v1/attestations/@harapter%2fcore@0.1.0',
+    provenance: { predicateType: 'https://slsa.dev/provenance/v1' },
+  },
+};
+assert.deepEqual(
+  validateRegistryDistribution({
+    dist: registryDist,
+    localIntegrity: registryIntegrity,
+    name: '@harapter/core',
+    version: '0.1.0',
+  }),
+  [],
+);
+assert.deepEqual(
+  validateRegistryDistribution({
+    dist: {
+      ...registryDist,
+      integrity: otherRegistryIntegrity,
+      attestations: {
+        url: 'https://example.com/untrusted',
+        provenance: { predicateType: 'unexpected' },
+      },
+    },
+    localIntegrity: registryIntegrity,
+    name: '@harapter/core',
+    version: '0.1.0',
+  }),
+  [
+    '@harapter/core@0.1.0 has different immutable registry content.',
+    '@harapter/core@0.1.0 is missing npm provenance metadata.',
+    '@harapter/core@0.1.0 returned an unexpected npm attestation URL.',
+  ],
+);
+assert.deepEqual(
+  validateRegistryDistTag({
+    distTag: 'next',
+    distTags: { next: '0.1.0' },
+    name: '@harapter/core',
+    version: '0.1.0',
+  }),
+  [],
+);
+assert.deepEqual(
+  validateRegistryDistTag({
+    distTag: 'next',
+    distTags: { next: '0.2.0' },
+    name: '@harapter/core',
+    version: '0.1.0',
+  }),
+  ['@harapter/core@0.1.0 must own the npm next dist-tag.'],
+);
+
+const releaseCommit = 'c'.repeat(40);
+const provenanceStatement = {
+  predicateType: 'https://slsa.dev/provenance/v1',
+  subject: [{ digest: { sha512: 'a'.repeat(128) } }],
+  predicate: {
+    buildDefinition: {
+      externalParameters: {
+        workflow: {
+          repository: 'https://github.com/yunfeizhu/harapter',
+          path: '.github/workflows/publish-npm.yml',
+          ref: 'refs/heads/main',
+        },
+      },
+      resolvedDependencies: [{ digest: { gitCommit: releaseCommit } }],
+    },
+    runDetails: {
+      builder: { id: 'https://github.com/actions/runner/github-hosted' },
+    },
+  },
+};
+assert.deepEqual(
+  validateProvenanceStatement({
+    expectedCommit: releaseCommit,
+    localIntegrity: registryIntegrity,
+    name: '@harapter/core',
+    statement: provenanceStatement,
+    version: '0.1.0',
+  }),
+  [],
+);
+assert.deepEqual(
+  validateProvenanceStatement({
+    expectedCommit: 'd'.repeat(40),
+    localIntegrity: otherRegistryIntegrity,
+    name: '@harapter/core',
+    statement: {
+      ...provenanceStatement,
+      predicateType: 'unexpected',
+      predicate: {
+        ...provenanceStatement.predicate,
+        buildDefinition: {
+          ...provenanceStatement.predicate.buildDefinition,
+          externalParameters: {
+            workflow: {
+              repository: 'https://github.com/other/project',
+              path: '.github/workflows/publish.yml',
+              ref: 'refs/heads/feature',
+            },
+          },
+        },
+        runDetails: { builder: { id: 'unexpected' } },
+      },
+    },
+    version: '0.1.0',
+  }),
+  [
+    '@harapter/core@0.1.0 provenance uses an unexpected predicate.',
+    '@harapter/core@0.1.0 provenance identifies an unexpected workflow.',
+    '@harapter/core@0.1.0 provenance identifies an unexpected builder.',
+    '@harapter/core@0.1.0 provenance does not resolve the release commit.',
+    '@harapter/core@0.1.0 provenance does not identify the packed tarball.',
+  ],
+);
+const provenancePayload = Buffer.from(
+  JSON.stringify(provenanceStatement),
+).toString('base64');
+assert.deepEqual(
+  validateRegistryAudit({
+    audit: {
+      invalid: [],
+      missing: [],
+      verified: [
+        {
+          name: '@harapter/core',
+          version: '0.1.0',
+          attestationBundles: [
+            {
+              predicateType: 'https://slsa.dev/provenance/v1',
+              bundle: { dsseEnvelope: { payload: provenancePayload } },
+            },
+          ],
+        },
+      ],
+    },
+    entries: [{ name: '@harapter/core' }],
+    expectedCommit: releaseCommit,
+    localIntegrities: new Map([['@harapter/core', registryIntegrity]]),
+    version: '0.1.0',
+  }),
+  [],
+);
+assert.deepEqual(
+  validateRegistryAudit({
+    audit: { invalid: [{}], missing: [{}], verified: [] },
+    entries: [{ name: '@harapter/core' }],
+    expectedCommit: releaseCommit,
+    localIntegrities: new Map([['@harapter/core', registryIntegrity]]),
+    version: '0.1.0',
+  }),
+  [
+    'npm provenance audit reported invalid signatures.',
+    'npm provenance audit reported missing signatures.',
+    '@harapter/core@0.1.0 was not verified by npm provenance audit.',
   ],
 );
 
@@ -1837,6 +2267,7 @@ try {
   });
   for (const path of [
     'scripts/check-repository.mjs',
+    'scripts/lib/package-publication.mjs',
     'scripts/lib/repository-policy.mjs',
     'scripts/lib/workflow-actions.mjs',
   ]) {

@@ -2,9 +2,9 @@
 name: harapter-release
 description:
   Verify a Harapter Release Please pull request and complete an authorized
-  GitHub release safely, including version impact, changelog, checks, tags, and
-  recovery. Do not use to invent manual versions or publish packages without
-  configured trusted publishing.
+  GitHub and npm release safely, including version impact, package artifacts,
+  provenance, tags, and recovery. Do not use to invent manual versions or bypass
+  the reviewed publication workflows.
 ---
 
 # Harapter Release
@@ -22,21 +22,38 @@ user's explicit authorization.
 2. Confirm the pull request is owned by Release Please and targets `main`.
 3. Inspect every releasable squash commit since the previous tag. Verify that
    `feat`, `fix`, and breaking-change markers produce the intended SemVer bump.
-4. Compare the version file, manifest, changelog, and release pull request
-   title. The first approved pre-alpha release must be `0.1.0`. Do not hand-edit
-   one artifact to hide a configuration error.
+4. Compare `version.txt`, the root manifest, every manifest listed in
+   `scripts/public-packages.json`, the changelog, and release pull request
+   title. They use one synchronized pre-1.0 version. The first approved release
+   must be `0.1.0`; do not hand-edit one artifact to hide a configuration error.
 5. Verify that changelog entries describe user-visible behavior and breaking
    migration requirements without leaking private data.
 6. Require all applicable CI, conformance, build, and security checks on the
    exact release pull request head. A skipped credential-backed test is not live
    compatibility evidence.
+7. Confirm `pnpm check` validated the publish metadata, dependency order,
+   tarball contents, Workspace dependency rewrites, runtime imports, and strict
+   TypeScript imports.
 
 ## Package boundary
 
-The current repository publishes GitHub Releases only. Do not run `npm publish`
-or add a registry token. A future package job must use reviewed trusted
-publishing or provenance, verify the built artifact rather than the source tree,
-and document rollback and deprecation behavior.
+The Workspace root and examples remain private. Public packages follow
+`scripts/public-packages.json`, use the synchronized Release Please version, and
+publish under the npm `next` dist-tag. Never publish from a checkout, local
+tarball, mutable branch, or unreviewed workflow. Use only `publish-npm.yml`
+against an existing GitHub Release tag.
+
+Normal npm publication uses the protected `npm` GitHub environment, OIDC trusted
+publishing, and provenance without a registry token. The one-time `0.1.0`
+bootstrap may use the environment secret `NPM_BOOTSTRAP_TOKEN` only after the
+maintainer has created a short-lived granular token. Reject bootstrap for any
+later version. After the first packages exist, verify trusted-publisher setup,
+remove the GitHub secret, and revoke the token before treating the release as
+complete.
+
+Before creating the first GitHub Release, require explicit authorization to
+enable immutable releases; the setting is not retroactive. The npm workflow must
+resolve the Release tag exactly to its dispatch run's current `main` commit.
 
 ## Complete and verify
 
@@ -44,9 +61,23 @@ After explicit authorization, merge the release pull request through the normal
 protected flow. Because the workflow is manual-only during initial development,
 obtain authorization for publication and dispatch `release-please.yml` with
 `--ref main` a second time. Wait for that run, then verify the immutable tag,
-GitHub Release, changelog, target commit, and attached artifacts. Report the
-exact URLs and any package publication that was intentionally not configured.
+GitHub Release, changelog, and target commit.
+
+npm publication is a separate irreversible action and requires explicit
+authorization immediately before dispatch. Run `publish-npm.yml` from `main`
+with the exact GitHub Release tag and the correct bootstrap flag. Verify every
+package in `scripts/public-packages.json`, its `next` dist-tag, SHA-512
+integrity, and provenance. Report the exact GitHub Release, workflow, and
+package URLs.
 
 If a workflow fails, inspect existing tags, releases, and job logs before any
-retry. Never delete, move, or recreate a published tag as an ordinary recovery
-step; stop for an incident decision if immutable state conflicts.
+retry. Recover partial publication by rerunning the same failed workflow run.
+The publisher skips an existing package only after matching SHA-512, `next`,
+verified attestations, repository, workflow, builder, commit, and tarball. Stop
+on any conflict. Never delete, move, or recreate a published tag, replace a
+package version, or unpublish as an ordinary recovery step; deprecate a bad
+version and release a fix. Stop for an incident decision if immutable state
+conflicts.
+
+Read [RELEASING.md](../../../RELEASING.md) before the one-time bootstrap or any
+recovery operation.

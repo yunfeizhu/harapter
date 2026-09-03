@@ -1,13 +1,18 @@
 # `@harapter/adapter-hermes`
 
 `@harapter/adapter-hermes` maps the official Hermes Agent API Server HTTP and
-Server-Sent Events interface to the portable Harapter lifecycle. The package is
-private and versioned `0.0.0` during pre-alpha.
+Server-Sent Events interface to the portable Harapter lifecycle.
 
 The host installs, configures, authenticates, starts, and stops Hermes Agent.
 The Adapter connects only to a host-selected endpoint. It does not install the
 Hermes Agent Runtime or SDK, start a server, configure models or tools, or own
 the host security policy.
+
+## Installation
+
+```bash
+pnpm add @harapter/core@next @harapter/adapter-hermes@next
+```
 
 ## Runtime prerequisites and compatibility
 

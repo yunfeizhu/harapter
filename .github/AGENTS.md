@@ -23,8 +23,9 @@ under `.github/`.
 - CI checks pull requests and `main`; exhaustive runtime or credential-backed
   tests use separately scoped workflows and environments.
 - Release Please owns version PRs, changelog updates, tags, and GitHub Releases.
-  Registry publication remains a separate trusted-publishing job with provenance
-  and environment protection.
+  Registry publication remains a separately authorized trusted-publishing job
+  for an immutable GitHub Release at the dispatch run's current `main` commit,
+  with provenance and environment protection.
 - Dependabot groups compatible updates, but automated merging is enabled only
   after required checks and update policy are enforced by branch protection.
 - Before push, the contributor flow completes risk-matched tests, an independent
