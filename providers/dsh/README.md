@@ -30,14 +30,14 @@ for this implementation. That revision and its package version do not pin the
 host Runtime. A future incompatible protocol change requires new fixtures,
 mapping tests, conformance, and compatibility documentation.
 
-The last repository-recorded live run passed on 2026-09-02 with
-`@deepseek-ai/dsh-sdk-app@0.1.2-alpha.4` from the source revision recorded by
-the fixture manifest. A production host may choose that exact version for a
-reproducible deployment, while Harapter continues to admit newer Runtime
-versions and validates their observed structures instead of using a version
-allowlist. The trusted scheduled live canary follows the current SDK Profile
-prerelease channel and records the installed CLI, minimal Profile, and SDK
-Runtime versions for every run. It composes `sdk-minimal`, disables every
+The last repository-recorded live run passed on 2026-09-03 with
+`@deepseek-ai/dsh@0.1.2-alpha.5`, `@deepseek-ai/dsh-sdk-minimal@0.1.2-alpha.5`,
+and `@deepseek-ai/dsh-sdk-app@0.1.2-alpha.5`. A production host may choose those
+exact versions for a reproducible deployment, while Harapter continues to admit
+newer Runtime versions and validates their observed structures instead of using
+a version allowlist. The trusted scheduled live canary follows the current SDK
+Profile prerelease channel and records the installed CLI, minimal Profile, and
+SDK Runtime versions for every run. It composes `sdk-minimal`, disables every
 model-facing tool in that composition, and verifies the complete effective
 configuration before receiving the real model credential. Any composition drift
 or observed tool or interaction event fails the lifecycle.

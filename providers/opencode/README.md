@@ -134,6 +134,12 @@ Evidence includes:
   plugins, denied permissions, and disabled tools, records the installed package
   version, and executes a lifecycle that rejects any tool or interaction event.
 
+The last repository-recorded live run passed on 2026-09-03 with
+`opencode-ai@1.18.27`. A production host may pin that release for a reproducible
+deployment. Harapter continues to admit newer stable releases and validates
+their observed health, Session, Event, and terminal structures instead of using
+the recorded version as an executable allowlist.
+
 The package does not claim support for experimental routes, automatic SSE
 reconnection, OpenCode process management, remote Session deletion through
 portable close, or commands and plugins as portable Core capabilities.
