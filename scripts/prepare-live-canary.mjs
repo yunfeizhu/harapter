@@ -142,6 +142,10 @@ function main(args) {
       requireCount(rest, 1, 'write-opencode-config');
       writePrivateFile(rest[0], openCodeConfig(liveSettings()));
       return;
+    case 'write-hermes-config':
+      requireCount(rest, 1, 'write-hermes-config');
+      writePrivateFile(rest[0], hermesConfig(modelSettings()));
+      return;
     case 'write-openclaw-config':
       requireCount(rest, 3, 'write-openclaw-config');
       writePrivateFile(rest[0], openClawConfig(rest[1], rest[2]));
@@ -154,6 +158,14 @@ function main(args) {
       requireCount(rest, 1, 'validate-dsh-config');
       validateDshConfig(rest[0]);
       return;
+    case 'validate-hermes-toolsets':
+      requireCount(rest, 1, 'validate-hermes-toolsets');
+      validateHermesToolsets(rest[0]);
+      return;
+    case 'validate-hermes-enabled-toolsets':
+      requireCount(rest, 1, 'validate-hermes-enabled-toolsets');
+      validateHermesEnabledToolsets(rest[0]);
+      return;
     case 'record-global-package':
       if (rest.length < 2 || rest.length > 3) {
         throw new SafeFailure(
@@ -161,6 +173,10 @@ function main(args) {
         );
       }
       recordGlobalPackage(rest[0], rest[1], rest[2]);
+      return;
+    case 'record-container-package':
+      requireCount(rest, 4, 'record-container-package');
+      recordContainerPackage(rest[0], rest[1], rest[2], rest[3]);
       return;
     default:
       throw new SafeFailure('Unknown live-canary preparation command.');
@@ -175,6 +191,10 @@ function requireCount(args, expected, command) {
 
 function liveSettings() {
   const apiKey = requiredEnvironment(API_KEY_SETTING, 4096);
+  return { apiKey, ...modelSettings() };
+}
+
+function modelSettings() {
   const modelId = requiredEnvironment(MODEL_ID_SETTING, 512);
   const modelUrl = requiredEnvironment(MODEL_URL_SETTING, 2048);
   if (/\p{Cc}/u.test(modelId)) {
@@ -197,7 +217,7 @@ function liveSettings() {
       `${MODEL_URL_SETTING} must be an absolute HTTPS URL without embedded credentials.`,
     );
   }
-  return { apiKey, modelId, modelUrl: parsedUrl.toString() };
+  return { modelId, modelUrl: parsedUrl.toString() };
 }
 
 function requiredEnvironment(name, maximumLength) {
@@ -364,6 +384,65 @@ function validateDshConfig(path) {
   }
 }
 
+function validateHermesToolsets(path) {
+  const failureMessage =
+    'The Hermes Agent toolset surface is not safe for the live canary.';
+  const content = readBoundedTextFile(path, failureMessage);
+  let document;
+  try {
+    document = JSON.parse(content);
+  } catch {
+    throw new SafeFailure(failureMessage);
+  }
+  if (
+    !isRecord(document) ||
+    document['object'] !== 'list' ||
+    document['platform'] !== 'api_server' ||
+    !Array.isArray(document['data']) ||
+    document['data'].length === 0 ||
+    document['data'].length > 512
+  ) {
+    throw new SafeFailure(failureMessage);
+  }
+  const observed = new Set();
+  for (const row of document['data']) {
+    if (!isRecord(row)) throw new SafeFailure(failureMessage);
+    const name = row['name'];
+    const tools = row['tools'];
+    if (
+      typeof name !== 'string' ||
+      !/^[a-z0-9][a-z0-9_-]{0,127}$/u.test(name) ||
+      observed.has(name) ||
+      row['enabled'] !== false ||
+      !Array.isArray(tools) ||
+      tools.length > 512 ||
+      !tools.every(
+        (tool) =>
+          typeof tool === 'string' &&
+          /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/u.test(tool),
+      )
+    ) {
+      throw new SafeFailure(failureMessage);
+    }
+    observed.add(name);
+  }
+}
+
+function validateHermesEnabledToolsets(path) {
+  const failureMessage =
+    'The Hermes Agent effective toolset surface is not safe for the live canary.';
+  const content = readBoundedTextFile(path, failureMessage);
+  let document;
+  try {
+    document = JSON.parse(content);
+  } catch {
+    throw new SafeFailure(failureMessage);
+  }
+  if (!Array.isArray(document) || document.length !== 0) {
+    throw new SafeFailure(failureMessage);
+  }
+}
+
 function readBoundedTextFile(path, failureMessage) {
   if (path === undefined || path.length === 0 || path.includes('\0')) {
     throw new SafeFailure(failureMessage);
@@ -419,6 +498,54 @@ function openCodeConfig({ modelId }) {
         websearch: false,
         write: false,
       },
+    },
+    undefined,
+    2,
+  )}\n`;
+}
+
+function hermesConfig({ modelId, modelUrl }) {
+  return `${JSON.stringify(
+    {
+      agent: { max_turns: 2 },
+      auxiliary: {
+        background_review: { enabled: false },
+        title_generation: { enabled: false },
+      },
+      checkpoints: { enabled: false },
+      compression: { enabled: false },
+      hooks: {},
+      mcp_servers: {},
+      memory: {
+        memory_enabled: false,
+        user_profile_enabled: false,
+      },
+      model: {
+        api_mode: 'chat_completions',
+        base_url: modelUrl,
+        context_length: 131_072,
+        default: modelId,
+        provider: 'custom:harapter-live',
+      },
+      platform_toolsets: { api_server: [] },
+      plugins: { enabled: [] },
+      providers: {
+        'harapter-live': {
+          api: modelUrl,
+          context_length: 131_072,
+          default_model: modelId,
+          discover_models: false,
+          key_env: API_KEY_SETTING,
+          models: [modelId],
+          transport: 'chat_completions',
+        },
+      },
+      security: {
+        allow_lazy_installs: false,
+        redact_secrets: true,
+      },
+      session_reset: { mode: 'none' },
+      smart_model_routing: { enabled: false },
     },
     undefined,
     2,
@@ -580,6 +707,37 @@ function recordGlobalPackage(label, packageName, anchorPackage = packageName) {
     throw new SafeFailure('The runtime identity summary could not be written.');
   }
   console.log(`${label}: ${identity}`);
+}
+
+function recordContainerPackage(label, packageName, version, imageDigest) {
+  if (!/^[A-Za-z0-9][A-Za-z0-9 ._-]{0,63}$/u.test(label ?? '')) {
+    throw new SafeFailure('The runtime label is invalid.');
+  }
+  if (
+    !validPackageName(packageName) ||
+    typeof version !== 'string' ||
+    !/^[0-9A-Za-z][0-9A-Za-z.+_-]{0,127}$/u.test(version) ||
+    typeof imageDigest !== 'string' ||
+    !/^[a-z0-9][a-z0-9._/-]{0,127}@sha256:[a-f0-9]{64}$/u.test(imageDigest)
+  ) {
+    throw new SafeFailure('The container runtime identity is invalid.');
+  }
+  const summaryPath = process.env['GITHUB_STEP_SUMMARY'];
+  if (summaryPath === undefined || summaryPath.length === 0) {
+    throw new SafeFailure('GITHUB_STEP_SUMMARY is not available.');
+  }
+  const identity = `${packageName}@${version}`;
+  try {
+    appendFileSync(
+      summaryPath,
+      `- ${label}: \`${identity}\`\n- Image: \`${imageDigest}\`\n`,
+      'utf8',
+    );
+  } catch {
+    throw new SafeFailure('The runtime identity summary could not be written.');
+  }
+  console.log(`${label}: ${identity}`);
+  console.log(`Image: ${imageDigest}`);
 }
 
 function validPackageName(value) {

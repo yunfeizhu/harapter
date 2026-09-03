@@ -162,6 +162,7 @@ const liveJobs = liveCanary['jobs'];
 assert.deepEqual(Object.keys(liveJobs).sort(), [
   'codex',
   'dsh',
+  'hermes',
   'openclaw',
   'opencode',
   'pi',
@@ -193,6 +194,17 @@ const providerJobExpectations = {
     safetyStep: 'Verify DSH model-facing surface',
     secretSteps: new Set([
       'Run DSH live lifecycle',
+      'Validate live configuration',
+    ]),
+  },
+  hermes: {
+    install: 'docker pull nousresearch/hermes-agent:latest',
+    liveStep: 'Run Hermes Agent live lifecycle',
+    liveTest: 'providers/hermes/test/live.test.ts',
+    processTimeoutSeconds: 300,
+    secretSteps: new Set([
+      'Prepare isolated Hermes Agent configuration',
+      'Run Hermes Agent live lifecycle',
       'Validate live configuration',
     ]),
   },
@@ -336,6 +348,48 @@ assert.doesNotMatch(
 assert.match(liveCanaryWorkflow, /DSH_TELEMETRY_DISABLED: '1'/u);
 assert.doesNotMatch(liveCanaryWorkflow, /continue-on-error/u);
 
+const hermesJob = requiredJob(liveJobs, 'hermes');
+const hermesLiveStep = requiredStep(
+  hermesJob,
+  'Run Hermes Agent live lifecycle',
+);
+const hermesIdentityStep = requiredStep(
+  hermesJob,
+  'Record Hermes Agent runtime identity',
+);
+assert.match(
+  hermesIdentityStep['run'],
+  /timeout --signal=TERM --kill-after=5s 30s docker run --rm --name "\$hermes_probe_container"/u,
+);
+assert.match(hermesIdentityStep['run'], /trap cleanup_hermes_probe EXIT/u);
+assert.match(hermesIdentityStep['run'], /docker rm --force/u);
+assert.match(hermesLiveStep['run'], /--publish 127\.0\.0\.1:8642:8642/u);
+assert.match(
+  hermesLiveStep['run'],
+  /--mount type=bind,src="\$HERMES_DATA_DIR",dst=\/opt\/data/u,
+);
+assert.match(hermesLiveStep['run'], /gateway run --no-supervise/u);
+assert.match(hermesLiveStep['run'], /trap cleanup_hermes EXIT/u);
+assert.match(hermesLiveStep['run'], /docker stop --time 5/u);
+assert.match(hermesLiveStep['run'], /docker rm --force/u);
+assert.match(hermesLiveStep['run'], /validate-hermes-toolsets/u);
+assert.match(hermesLiveStep['run'], /validate-hermes-enabled-toolsets/u);
+assert.match(
+  hermesLiveStep['run'],
+  /timeout --signal=TERM --kill-after=5s 30s docker exec/u,
+);
+assert.match(
+  hermesLiveStep['run'],
+  /docker run[\s\S]+unset HARAPTER_LIVE_MODEL_API_KEY[\s\S]+validate-hermes-toolsets[\s\S]+validate-hermes-enabled-toolsets[\s\S]+pnpm vitest/u,
+);
+assert.doesNotMatch(JSON.stringify(hermesJob), /github\.workspace/u);
+assert.doesNotMatch(JSON.stringify(hermesJob), /docker logs/u);
+assert.doesNotMatch(JSON.stringify(hermesJob), /actions\/upload-artifact/u);
+assert.match(
+  liveCanaryWorkflow,
+  /docker pull nousresearch\/hermes-agent:latest/u,
+);
+
 const piLiveTest = readFileSync(
   resolve(repositoryRoot, 'providers/pi/test/live.test.ts'),
   'utf8',
@@ -358,6 +412,14 @@ assert.throws(
   () => assertOpenClawSessionOnly(`${openClawLiveTest}\nsession.start({});`),
   /session\.start/u,
 );
+
+const hermesLiveTest = readFileSync(
+  resolve(repositoryRoot, 'providers/hermes/test/live.test.ts'),
+  'utf8',
+);
+assert.match(hermesLiveTest, /describe\.runIf\(liveEnabled\)/u);
+assert.match(hermesLiveTest, /await session\.close\(\)/u);
+assert.match(hermesLiveTest, /assertToolFreeLiveEvent\(event\)/u);
 
 const prepareLiveCanary = resolve(
   repositoryRoot,
@@ -588,6 +650,122 @@ requireFailure(
   'OpenClaw relative canary workspace',
 );
 
+const hermesConfigPath = join(fixtureRoot, 'live-config', 'hermes.json');
+requireSuccess(
+  run(
+    prepareLiveCanary,
+    ['write-hermes-config', hermesConfigPath],
+    liveEnvironment,
+  ),
+  'Hermes Agent live-canary config',
+);
+const hermesConfig = JSON.parse(readFileSync(hermesConfigPath, 'utf8'));
+assert.deepEqual(hermesConfig.platform_toolsets.api_server, []);
+assert.equal(hermesConfig.agent.max_turns, 2);
+assert.equal(hermesConfig.auxiliary.background_review.enabled, false);
+assert.equal(hermesConfig.auxiliary.title_generation.enabled, false);
+assert.equal(hermesConfig.checkpoints.enabled, false);
+assert.equal(hermesConfig.compression.enabled, false);
+assert.equal(hermesConfig.memory.memory_enabled, false);
+assert.equal(hermesConfig.memory.user_profile_enabled, false);
+assert.deepEqual(hermesConfig.mcp_servers, {});
+assert.deepEqual(hermesConfig.plugins.enabled, []);
+assert.equal(hermesConfig.security.allow_lazy_installs, false);
+assert.equal(hermesConfig.session_reset.mode, 'none');
+assert.equal(hermesConfig.smart_model_routing.enabled, false);
+assert.equal(hermesConfig.model.provider, 'custom:harapter-live');
+assert.equal(hermesConfig.model.default, 'test-model');
+assert.equal(
+  hermesConfig.providers['harapter-live'].key_env,
+  'HARAPTER_LIVE_MODEL_API_KEY',
+);
+assert.equal(
+  hermesConfig.providers['harapter-live'].transport,
+  'chat_completions',
+);
+assert.doesNotMatch(
+  readFileSync(hermesConfigPath, 'utf8'),
+  /test-key-that-must-not-be-written/u,
+);
+
+const hermesToolsetsPath = join(
+  fixtureRoot,
+  'live-config',
+  'hermes-toolsets.json',
+);
+writeFileSync(
+  hermesToolsetsPath,
+  JSON.stringify({
+    object: 'list',
+    platform: 'api_server',
+    data: [
+      {
+        name: 'terminal',
+        enabled: false,
+        configured: true,
+        tools: ['terminal'],
+      },
+    ],
+  }),
+  'utf8',
+);
+requireSuccess(
+  run(prepareLiveCanary, ['validate-hermes-toolsets', hermesToolsetsPath]),
+  'Hermes Agent disabled toolset surface',
+);
+const unsafeHermesToolsetsPath = join(
+  fixtureRoot,
+  'live-config',
+  'hermes-toolsets-unsafe.json',
+);
+writeFileSync(
+  unsafeHermesToolsetsPath,
+  JSON.stringify({
+    object: 'list',
+    platform: 'api_server',
+    data: [
+      {
+        name: 'terminal',
+        enabled: true,
+        configured: true,
+        tools: ['terminal'],
+      },
+    ],
+  }),
+  'utf8',
+);
+requireFailure(
+  run(prepareLiveCanary, [
+    'validate-hermes-toolsets',
+    unsafeHermesToolsetsPath,
+  ]),
+  'The Hermes Agent toolset surface is not safe for the live canary.',
+  'Hermes Agent enabled toolset surface',
+);
+
+const hermesEnabledToolsetsPath = join(
+  fixtureRoot,
+  'live-config',
+  'hermes-enabled-toolsets.json',
+);
+writeFileSync(hermesEnabledToolsetsPath, '[]', 'utf8');
+requireSuccess(
+  run(prepareLiveCanary, [
+    'validate-hermes-enabled-toolsets',
+    hermesEnabledToolsetsPath,
+  ]),
+  'Hermes Agent empty effective toolset surface',
+);
+writeFileSync(hermesEnabledToolsetsPath, '["hidden-toolset"]', 'utf8');
+requireFailure(
+  run(prepareLiveCanary, [
+    'validate-hermes-enabled-toolsets',
+    hermesEnabledToolsetsPath,
+  ]),
+  'The Hermes Agent effective toolset surface is not safe for the live canary.',
+  'Hermes Agent hidden effective toolset surface',
+);
+
 const safeDshRows = [
   ['agent', '@deepseek-ai/dsh-agent', false],
   ['agent-invariant', '@deepseek-ai/dsh-agent/invariant', false],
@@ -682,6 +860,47 @@ requireSuccess(
 assert.equal(
   readFileSync(packageSummaryPath, 'utf8'),
   '- Runtime: `@example/runtime@1.2.3`\n',
+);
+const containerSummaryPath = join(fixtureRoot, 'container-summary.md');
+const containerDigest = `example/runtime@sha256:${'a'.repeat(64)}`;
+requireSuccess(
+  run(
+    prepareLiveCanary,
+    [
+      'record-container-package',
+      'Runtime',
+      'hermes-agent',
+      '0.21.0',
+      containerDigest,
+    ],
+    {
+      ...process.env,
+      GITHUB_STEP_SUMMARY: containerSummaryPath,
+    },
+  ),
+  'live-canary container identity',
+);
+assert.equal(
+  readFileSync(containerSummaryPath, 'utf8'),
+  `- Runtime: \`hermes-agent@0.21.0\`\n- Image: \`${containerDigest}\`\n`,
+);
+requireFailure(
+  run(
+    prepareLiveCanary,
+    [
+      'record-container-package',
+      'Runtime',
+      'hermes-agent',
+      '0.21.0',
+      'example/runtime@sha256:not-a-digest',
+    ],
+    {
+      ...process.env,
+      GITHUB_STEP_SUMMARY: containerSummaryPath,
+    },
+  ),
+  'The container runtime identity is invalid.',
+  'live-canary malformed container identity',
 );
 
 function write(path, content) {
