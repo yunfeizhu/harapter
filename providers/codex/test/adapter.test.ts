@@ -254,6 +254,59 @@ describe('Codex App Server adapter', () => {
     await session.close();
   });
 
+  it('waits for native Turn start before requesting cancellation', async () => {
+    const client = await connectProfile(
+      createTestProfile(
+        profileId('codex-delayed-turn-start'),
+        'delayed-turn-start',
+      ),
+    );
+    const session = await client.createSession();
+    const run = await session.start({
+      parts: [{ type: 'text', text: 'cancel conformance input' }],
+    });
+    await expect(run.cancel()).resolves.toEqual({ mode: 'native' });
+    await expect(run.result()).resolves.toEqual({ status: 'cancelled' });
+    await session.close();
+  });
+
+  it('aborts the connection when native Turn start is never observed', async () => {
+    const client = await connectProfile({
+      ...createTestProfile(
+        profileId('codex-missing-turn-start'),
+        'missing-turn-start',
+      ),
+      providerOptions: { cancelSettlementTimeoutMs: 20 },
+    });
+    const session = await client.createSession();
+    const run = await session.start({
+      parts: [{ type: 'text', text: 'cancel conformance input' }],
+    });
+    await expect(run.cancel()).resolves.toEqual({ mode: 'connection_aborted' });
+    await expect(run.result()).resolves.toEqual({
+      status: 'connection_aborted',
+    });
+    await expect(client.createSession()).rejects.toMatchObject({
+      code: 'connection_aborted',
+    });
+  });
+
+  it('does not claim native cancellation without an interrupt acknowledgement', async () => {
+    const client = await connectProfile(
+      createTestProfile(
+        profileId('codex-terminal-before-turn-start'),
+        'terminal-before-turn-start',
+      ),
+    );
+    const session = await client.createSession();
+    const run = await session.start({
+      parts: [{ type: 'text', text: 'cancel conformance input' }],
+    });
+    await expect(run.cancel()).resolves.toEqual({ mode: 'already_terminal' });
+    await expect(run.result()).resolves.toEqual({ status: 'cancelled' });
+    await session.close();
+  });
+
   it('aborts the owning connection when interrupt has no terminal result', async () => {
     const client = await connectProfile({
       ...createTestProfile(profileId('codex-interrupt-watchdog')),
@@ -271,6 +324,23 @@ describe('Codex App Server adapter', () => {
     });
     await expect(client.createSession()).rejects.toMatchObject({
       code: 'connection_aborted',
+    });
+  });
+
+  it('reports connection abort when the interrupt request does not settle', async () => {
+    const client = await connectProfile({
+      ...createTestProfile(profileId('codex-interrupt-request-watchdog')),
+      providerOptions: { cancelSettlementTimeoutMs: 20 },
+    });
+    const session = await client.createSession();
+    const run = await session.start({
+      parts: [{ type: 'text', text: 'interrupt request without response' }],
+    });
+    await expect(run.cancel()).resolves.toEqual({
+      mode: 'connection_aborted',
+    });
+    await expect(run.result()).resolves.toEqual({
+      status: 'connection_aborted',
     });
   });
 

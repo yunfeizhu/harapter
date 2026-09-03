@@ -5,6 +5,7 @@ let lastCompletedTurnId;
 let threadSerial = 0;
 let turnSerial = 0;
 const turns = new Map();
+const startedTurns = new Set();
 const approvals = new Map();
 const mode = process.argv[2] ?? 'normal';
 
@@ -70,6 +71,15 @@ function complete(threadId, turnId, text) {
   });
   lastCompletedTurnId = turnId;
   turns.delete(turnId);
+  startedTurns.delete(turnId);
+}
+
+function announceTurnStarted(threadId, turnId) {
+  startedTurns.add(turnId);
+  send({
+    method: 'turn/started',
+    params: { threadId, turn: turn(turnId, 'inProgress') },
+  });
 }
 
 lines.on('line', (line) => {
@@ -195,19 +205,25 @@ lines.on('line', (line) => {
     }
     turns.set(turnId, { threadId, text });
     if (mode === 'notifications-before-response') {
-      send({
-        method: 'turn/started',
-        params: { threadId, turn: turn(turnId, 'inProgress') },
-      });
+      announceTurnStarted(threadId, turnId);
       complete(threadId, turnId, text || 'pre-response');
       send({ id: message.id, result: { turn: turn(turnId, 'inProgress') } });
       return;
     }
     send({ id: message.id, result: { turn: turn(turnId, 'inProgress') } });
-    send({
-      method: 'turn/started',
-      params: { threadId, turn: turn(turnId, 'inProgress') },
-    });
+    if (mode === 'delayed-turn-start') {
+      setTimeout(() => announceTurnStarted(threadId, turnId), 25);
+    } else if (mode === 'terminal-before-turn-start') {
+      setTimeout(() => {
+        send({
+          method: 'turn/completed',
+          params: { threadId, turn: turn(turnId, 'interrupted') },
+        });
+        turns.delete(turnId);
+      }, 10);
+    } else if (mode !== 'missing-turn-start') {
+      announceTurnStarted(threadId, turnId);
+    }
 
     if (mode === 'exit-during-turn') {
       process.nextTick(() => process.exit(4));
@@ -219,6 +235,7 @@ lines.on('line', (line) => {
       text.includes('interrupt error') ||
       text.includes('interrupt race') ||
       text.includes('interrupt terminal then error') ||
+      text.includes('interrupt request without response') ||
       text.includes('interrupt without terminal')
     ) {
       return;
@@ -360,6 +377,7 @@ lines.on('line', (line) => {
         },
       });
       turns.delete(turnId);
+      startedTurns.delete(turnId);
       return;
     }
     if (text.includes('rich events')) {
@@ -446,6 +464,14 @@ lines.on('line', (line) => {
 
   if (message.method === 'turn/interrupt') {
     const active = turns.get(message.params.turnId);
+    if (!startedTurns.has(message.params.turnId)) {
+      send({
+        id: message.id,
+        error: { code: -32600, message: 'Turn is not active.' },
+      });
+      return;
+    }
+    if (active?.text.includes('interrupt request without response')) return;
     if (active?.text.includes('interrupt terminal then error')) {
       send({
         method: 'turn/completed',
@@ -455,6 +481,7 @@ lines.on('line', (line) => {
         },
       });
       turns.delete(message.params.turnId);
+      startedTurns.delete(message.params.turnId);
       setImmediate(() => {
         send({
           id: message.id,
@@ -486,6 +513,7 @@ lines.on('line', (line) => {
         },
       });
       turns.delete(message.params.turnId);
+      startedTurns.delete(message.params.turnId);
     }
     return;
   }
