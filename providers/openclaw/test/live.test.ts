@@ -52,7 +52,7 @@ describe.runIf(liveEnabled)('OpenClaw live ACP bridge', () => {
     });
     try {
       await expect(client.descriptor()).resolves.toMatchObject({
-        compatibility: 'experimental',
+        compatibility: 'supported',
         providerId: OPENCLAW_PROVIDER_ID,
         runtime: { name: 'openclaw-acp', protocolVersion: '1' },
       });

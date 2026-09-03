@@ -263,14 +263,7 @@ class OpenClawClient implements HarnessClient {
         protocol: 'ACP over stdio JSON-RPC 2.0',
         protocolVersion: '1',
       },
-      compatibility: 'experimental',
-      warnings: [
-        {
-          code: 'live_gateway_evidence_optional',
-          message:
-            'Compatibility is established by official interface review and synthetic conformance; live Gateway evidence is host opt-in.',
-        },
-      ],
+      compatibility: 'supported',
     });
   }
 

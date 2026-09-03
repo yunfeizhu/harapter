@@ -156,7 +156,7 @@ portable lifecycle, capability, redaction, and compatibility guarantees.
 
 ## Evidence and limitations
 
-Evidence for this experimental Adapter includes:
+Evidence for this supported ACP v1 Adapter includes:
 
 - deterministic synthetic handshake, completion, permission, and unknown-event
   fixtures in
@@ -165,20 +165,21 @@ Evidence for this experimental Adapter includes:
   malformed-terminal, event-bound, process cleanup, native-access, and Provider
   negative tests;
 - the shared portable Provider conformance suite;
-- an opt-in live connection test for a host-installed authenticated bridge; and
+- an opt-in live lifecycle test for a host-installed authenticated bridge; and
 - a trusted live canary that installs the current OpenClaw release on an
   ephemeral runner and is configured to exercise runtime probing, the ACP
   handshake, isolated Session and Run lifecycles, streamed Events, the
   authoritative terminal result, Session close, and Client disposal.
 
-The last repository-recorded live Session run passed on 2026-09-03 with
-`openclaw@2026.8.2`. It verified current-package installation, version probing,
-generated configuration validation, Gateway health, the ACP handshake, isolated
-Session creation and close, and Client disposal. It did not submit a Prompt or
-prove Run, Event, terminal, cancellation, resume, approval, or workspace
-behavior. A production host may pin that release for reproducibility. Harapter
-continues to admit newer releases and validates their observed structures
-instead of using the recorded version as an executable allowlist.
+The [repository-recorded live lifecycle run][openclaw-live-2026-09-03] passed on
+2026-09-03 with `openclaw@2026.8.2`. It verified current-package installation,
+version probing, generated configuration validation, Gateway health, the ACP
+handshake, isolated Session creation, one synthetic text Prompt, streamed
+Events, exact final content, the authoritative completed terminal, Session
+close, and Client disposal. A production host may pin that release for
+reproducibility. Harapter continues to admit newer releases and validates their
+ACP identity and observed structures instead of using the recorded version as an
+executable allowlist.
 
 Run live verification only when submitting one synthetic text Prompt through a
 host-operated Gateway is acceptable to the host:
@@ -192,22 +193,26 @@ pnpm vitest run providers/openclaw/test/live.test.ts
 The live test sends one synthetic text Prompt and logs no Provider traffic. It
 requires the expected reply content, a completed message Event, and the
 authoritative completed Run Event while rejecting every tool or approval Event.
-A skipped or unrecorded live test is not support evidence. The scheduled canary
-uses a generated, text-only model route with OpenClaw's model tool support
-disabled, disables model catalog refresh, plugins, browser automation, MCP,
-channels, cron, heartbeat, telemetry, auditing, and shell environment loading,
-and retains no Runtime state or logs after its ephemeral job ends. The model
-credential is an environment-backed SecretRef resolved by the isolated Gateway
-and is removed before the Harapter test process starts the ACP bridge. The
-bridge also omits the temporary working-directory prefix from the Prompt.
+A skipped or failed live test is not support evidence. The scheduled canary uses
+a generated, text-only model route with OpenClaw's model tool support disabled,
+disables model catalog refresh, plugins, browser automation, MCP, channels,
+cron, heartbeat, telemetry, auditing, and shell environment loading, and retains
+no Runtime state or logs after its ephemeral job ends. The model credential is
+an environment-backed SecretRef resolved by the isolated Gateway and is removed
+before the Harapter test process starts the ACP bridge. The bridge also omits
+the temporary working-directory prefix from the Prompt.
 
-The configured Run canary does not become recorded evidence until a trusted
-manual or scheduled run passes. Until then, the last repository-recorded
-evidence remains the Session-only 2026-09-03 run above. Even after the Run path
-passes, it does not prove cancellation, resume, approval, or workspace behavior,
-so the Adapter remains experimental in source.
+The live lifecycle proves the supported ACP v1 text Run path. It does not prove
+native cancellation, resume, approval, image input, or effective workspace
+execution. Those capabilities retain their documented `native`, `unknown`, or
+unsupported status according to deterministic protocol evidence; hosts that
+depend on an unverified capability should run focused live evidence before
+production use.
 
 Shared Gateway session routing, history replay, per-Session MCP configuration,
 audio input, generic file input, filesystem or terminal client services,
 verified Gateway workspace execution, automatic process restart, and direct
 Gateway WebSocket access are outside the current compatibility boundary.
+
+[openclaw-live-2026-09-03]:
+  https://github.com/yunfeizhu/harapter/actions/runs/33727680680
