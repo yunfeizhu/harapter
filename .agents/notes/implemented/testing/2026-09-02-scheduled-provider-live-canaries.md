@@ -41,7 +41,12 @@ disabled states. An unknown enabled Codex feature or any DSH composition drift
 stops that job before the credential-bearing step. OpenCode combines an empty
 plugin list, explicit tool disabling, and a wildcard permission denial. Every
 model-facing minimal Run test also fails if it observes a tool or interaction
-event.
+event. Hermes Agent runs from its official container without a repository mount,
+publishes its API Server only on host loopback, and receives a generated API
+Server credential. Its authenticated inventory must report every configurable
+toolset disabled, and the Runtime's full Agent-side resolver must return no
+enabled toolsets before the synthetic Prompt is submitted. The Harapter test
+process does not inherit the model credential.
 
 The credential must be dedicated, revocable, and limited to the smallest useful
 test budget. Jobs that do not require a model call do not receive it. The
@@ -51,15 +56,16 @@ deadlines. Each live-test process has a hard deadline shorter than its job
 timeout, and the job timeout remains the final containment boundary.
 
 A passing canary is current live evidence only for its exercised path. Codex,
-OpenCode, and DSH exercise Session, Run, Event, and terminal behavior. Pi
-exercises package installation, version probing, RPC handshake, non-persistent
-Session open and close, and the absence of persisted Session content. OpenClaw
-exercises installation, version probing, an isolated loopback-only Gateway, the
-ACP handshake, Session open and close, and Client disposal without submitting a
-Prompt. A passing result does not promote every capability or convert an
-unnegotiated Runtime protocol into a negotiated compatibility range. A newly
-published Runtime failure means that release needs investigation or Adapter
-work; it does not make an older recorded live result false.
+OpenCode, DSH, and Hermes Agent exercise Session, Run, Event, and terminal
+behavior. Pi exercises package installation, version probing, RPC handshake,
+non-persistent Session open and close, and the absence of persisted Session
+content. OpenClaw exercises installation, version probing, an isolated
+loopback-only Gateway, the ACP handshake, Session open and close, and Client
+disposal without submitting a Prompt. A passing result does not promote every
+capability or convert an unnegotiated Runtime protocol into a negotiated
+compatibility range. A newly published Runtime failure means that release needs
+investigation or Adapter work; it does not make an older recorded live result
+false.
 
 DSH follows the current SDK Profile prerelease channel without an exact version
 allowlist. Each run records the DSH CLI, `@deepseek-ai/dsh-sdk-minimal`, and
@@ -75,6 +81,16 @@ skills, and prompt templates disabled. Neither OpenClaw nor Pi submits a Prompt,
 performs a model call, or receives a model credential. A Provider that needs a
 different model interface or cannot safely isolate its Runtime stays disabled
 until its own canary configuration is reviewed.
+
+Hermes Agent follows its current official container channel. A run records the
+resolved package version, immutable image digest, and Harapter revision. Its
+temporary data mount contains only canary configuration and Runtime-created
+state; bundled skills, plugins, MCP servers, memory, compression, checkpoints,
+automatic title generation, and background review are disabled. The API Server
+is reachable only through a host-loopback published port. The job submits one
+synthetic text Prompt only after both the public inventory and the complete
+Agent-side tool resolver pass their fail-closed checks. It retains no container,
+data volume, logs, Prompt, response, or Provider traffic artifact.
 
 ## Alternatives considered
 

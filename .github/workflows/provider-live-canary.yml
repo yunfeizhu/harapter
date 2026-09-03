@@ -15,6 +15,7 @@ on:
           - codex
           - opencode
           - dsh
+          - hermes
           - openclaw
           - pi
 
@@ -33,6 +34,7 @@ jobs:
     outputs:
       codex: ${{ steps.providers.outputs.codex }}
       dsh: ${{ steps.providers.outputs.dsh }}
+      hermes: ${{ steps.providers.outputs.hermes }}
       openclaw: ${{ steps.providers.outputs.openclaw }}
       opencode: ${{ steps.providers.outputs.opencode }}
       pi: ${{ steps.providers.outputs.pi }}
@@ -47,6 +49,7 @@ jobs:
         env:
           CODEX_ENABLED: ${{ vars.HARAPTER_LIVE_CODEX_ENABLED }}
           DSH_ENABLED: ${{ vars.HARAPTER_LIVE_DSH_ENABLED }}
+          HERMES_ENABLED: ${{ vars.HARAPTER_LIVE_HERMES_ENABLED }}
           OPENCLAW_ENABLED: ${{ vars.HARAPTER_LIVE_OPENCLAW_ENABLED }}
           OPENCODE_ENABLED: ${{ vars.HARAPTER_LIVE_OPENCODE_ENABLED }}
           PI_ENABLED: ${{ vars.HARAPTER_LIVE_PI_ENABLED }}
@@ -66,26 +69,30 @@ jobs:
 
           validate_flag HARAPTER_LIVE_CODEX_ENABLED "$CODEX_ENABLED"
           validate_flag HARAPTER_LIVE_DSH_ENABLED "$DSH_ENABLED"
+          validate_flag HARAPTER_LIVE_HERMES_ENABLED "$HERMES_ENABLED"
           validate_flag HARAPTER_LIVE_OPENCLAW_ENABLED "$OPENCLAW_ENABLED"
           validate_flag HARAPTER_LIVE_OPENCODE_ENABLED "$OPENCODE_ENABLED"
           validate_flag HARAPTER_LIVE_PI_ENABLED "$PI_ENABLED"
 
           codex=false
           dsh=false
+          hermes=false
           openclaw=false
           opencode=false
           pi=false
           if [ "$GITHUB_EVENT_NAME" = schedule ]; then
             [ "$CODEX_ENABLED" = true ] && codex=true
             [ "$DSH_ENABLED" = true ] && dsh=true
+            [ "$HERMES_ENABLED" = true ] && hermes=true
             [ "$OPENCLAW_ENABLED" = true ] && openclaw=true
             [ "$OPENCODE_ENABLED" = true ] && opencode=true
             [ "$PI_ENABLED" = true ] && pi=true
           else
             case "$REQUESTED_PROVIDER" in
-              all) codex=true; dsh=true; openclaw=true; opencode=true; pi=true ;;
+              all) codex=true; dsh=true; hermes=true; openclaw=true; opencode=true; pi=true ;;
               codex) codex=true ;;
               dsh) dsh=true ;;
+              hermes) hermes=true ;;
               openclaw) openclaw=true ;;
               opencode) opencode=true ;;
               pi) pi=true ;;
@@ -96,13 +103,14 @@ jobs:
             esac
           fi
 
-          if [ "$codex" = false ] && [ "$dsh" = false ] && [ "$openclaw" = false ] && [ "$opencode" = false ] && [ "$pi" = false ]; then
+          if [ "$codex" = false ] && [ "$dsh" = false ] && [ "$hermes" = false ] && [ "$openclaw" = false ] && [ "$opencode" = false ] && [ "$pi" = false ]; then
             echo "::error title=No scheduled live canary enabled::Enable at least one Provider repository variable."
             exit 1
           fi
 
           echo "codex=$codex" >> "$GITHUB_OUTPUT"
           echo "dsh=$dsh" >> "$GITHUB_OUTPUT"
+          echo "hermes=$hermes" >> "$GITHUB_OUTPUT"
           echo "openclaw=$openclaw" >> "$GITHUB_OUTPUT"
           echo "opencode=$opencode" >> "$GITHUB_OUTPUT"
           echo "pi=$pi" >> "$GITHUB_OUTPUT"
@@ -352,6 +360,134 @@ jobs:
       - name: Record passing DSH evidence
         run: |
           printf '%s\n' '- Lifecycle: passed' >> "$GITHUB_STEP_SUMMARY"
+
+  hermes:
+    name: Hermes Agent latest live lifecycle
+    needs: selection
+    if: needs.selection.outputs.hermes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Harapter dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install current Hermes Agent release
+        run: docker pull nousresearch/hermes-agent:latest
+
+      - name: Record Hermes Agent runtime identity
+        run: |
+          set -eu
+          hermes_image_id=$(docker image inspect --format '{{.Id}}' nousresearch/hermes-agent:latest)
+          hermes_image_digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$hermes_image_id")
+          hermes_probe_container="harapter-hermes-version-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          cleanup_hermes_probe() {
+            docker rm --force "$hermes_probe_container" >/dev/null 2>&1 || true
+          }
+          trap cleanup_hermes_probe EXIT
+          hermes_version=$(timeout --signal=TERM --kill-after=5s 30s docker run --rm --name "$hermes_probe_container" --entrypoint /opt/hermes/.venv/bin/python "$hermes_image_id" -c "from importlib.metadata import version; print(version('hermes-agent'))")
+          cleanup_hermes_probe
+          trap - EXIT
+          printf '%s\n' '### Hermes Agent live canary' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "- Harapter revision: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          node scripts/prepare-live-canary.mjs record-container-package Runtime hermes-agent "$hermes_version" "$hermes_image_digest"
+
+      - name: Validate live configuration
+        env:
+          HARAPTER_LIVE_MODEL_API_KEY:
+            ${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}
+          HARAPTER_LIVE_MODEL_ID: ${{ secrets.HARAPTER_LIVE_MODEL_ID }}
+          HARAPTER_LIVE_MODEL_URL: ${{ secrets.HARAPTER_LIVE_MODEL_URL }}
+        run: node scripts/prepare-live-canary.mjs validate
+
+      - name: Prepare isolated Hermes Agent configuration
+        env:
+          HARAPTER_LIVE_MODEL_ID: ${{ secrets.HARAPTER_LIVE_MODEL_ID }}
+          HARAPTER_LIVE_MODEL_URL: ${{ secrets.HARAPTER_LIVE_MODEL_URL }}
+        run: |
+          set -eu
+          HERMES_DATA_DIR="$RUNNER_TEMP/harapter-hermes-data"
+          node scripts/prepare-live-canary.mjs write-hermes-config "$HERMES_DATA_DIR/config.yaml"
+          touch "$HERMES_DATA_DIR/.no-bundled-skills"
+          chmod 600 "$HERMES_DATA_DIR/.no-bundled-skills"
+
+      - name: Run Hermes Agent live lifecycle
+        env:
+          HARAPTER_LIVE_MODEL_API_KEY:
+            ${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}
+        run: |
+          set -eu
+          HERMES_CONTAINER="harapter-hermes-live-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          HERMES_DATA_DIR="$RUNNER_TEMP/harapter-hermes-data"
+          HERMES_IMAGE_ID=$(docker image inspect --format '{{.Id}}' nousresearch/hermes-agent:latest)
+          hermes_api_key=$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")
+          cleanup_hermes() {
+            docker stop --time 5 "$HERMES_CONTAINER" >/dev/null 2>&1 || true
+            docker rm --force "$HERMES_CONTAINER" >/dev/null 2>&1 || true
+          }
+          trap cleanup_hermes EXIT
+
+          docker run --detach \
+            --name "$HERMES_CONTAINER" \
+            --publish 127.0.0.1:8642:8642 \
+            --mount type=bind,src="$HERMES_DATA_DIR",dst=/opt/data \
+            --workdir /opt/data \
+            --env API_SERVER_ENABLED=true \
+            --env API_SERVER_HOST=0.0.0.0 \
+            --env API_SERVER_PORT=8642 \
+            --env API_SERVER_KEY="$hermes_api_key" \
+            --env HARAPTER_LIVE_MODEL_API_KEY \
+            --env HERMES_GATEWAY_NO_SUPERVISE=1 \
+            --env HERMES_UID="$(id -u)" \
+            --env HERMES_GID="$(id -g)" \
+            "$HERMES_IMAGE_ID" gateway run --no-supervise >/dev/null
+          unset HARAPTER_LIVE_MODEL_API_KEY
+
+          ready=false
+          for _attempt in $(seq 1 60); do
+            if curl --connect-timeout 1 --max-time 3 --fail --silent --output "$RUNNER_TEMP/hermes-capabilities.json" --header "Authorization: Bearer $hermes_api_key" http://127.0.0.1:8642/v1/capabilities; then
+              ready=true
+              break
+            fi
+            if [ "$(docker inspect --format '{{.State.Running}}' "$HERMES_CONTAINER" 2>/dev/null || true)" != true ]; then
+              echo '::error title=Hermes Agent startup failed::The isolated container exited before readiness.'
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            echo '::error title=Hermes Agent startup timed out::The isolated API Server did not become ready.'
+            exit 1
+          fi
+
+          curl --connect-timeout 1 --max-time 5 --fail --silent --output "$RUNNER_TEMP/hermes-toolsets.json" --header "Authorization: Bearer $hermes_api_key" http://127.0.0.1:8642/v1/toolsets
+          node scripts/prepare-live-canary.mjs validate-hermes-toolsets "$RUNNER_TEMP/hermes-toolsets.json"
+          timeout --signal=TERM --kill-after=5s 30s docker exec "$HERMES_CONTAINER" /opt/hermes/.venv/bin/python -c "import json; from gateway.run import _load_gateway_config; from hermes_cli.tools_config import _get_platform_tools; print(json.dumps(sorted(_get_platform_tools(_load_gateway_config(), 'api_server'))))" > "$RUNNER_TEMP/hermes-enabled-toolsets.json"
+          node scripts/prepare-live-canary.mjs validate-hermes-enabled-toolsets "$RUNNER_TEMP/hermes-enabled-toolsets.json"
+
+          HARAPTER_HERMES_API_KEY="$hermes_api_key" \
+            HARAPTER_HERMES_ENDPOINT=http://127.0.0.1:8642/ \
+            HARAPTER_HERMES_LIVE=1 \
+            timeout --signal=TERM --kill-after=10s 300s pnpm vitest run providers/hermes/test/live.test.ts
+
+      - name: Record passing Hermes Agent evidence
+        run: |
+          printf '%s\n' '- Lifecycle: passed' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Model toolsets enabled: 0' >> "$GITHUB_STEP_SUMMARY"
 
   pi:
     name: Pi Agent latest live Session lifecycle

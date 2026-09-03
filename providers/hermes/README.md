@@ -168,7 +168,10 @@ Evidence for this experimental Adapter includes:
   disconnect, terminal reconciliation, event-bound, approval, observer, and
   native-access tests;
 - the shared portable Provider conformance suite;
-- an opt-in live-runtime test for a host-operated endpoint.
+- an opt-in live-runtime test for a host-operated endpoint;
+- a trusted live-canary path that pulls the current official container, records
+  its package version and immutable image digest, and exercises Session, Run,
+  SSE, terminal-result, and disposal behavior.
 
 Run live verification only against an isolated endpoint whose work and cost are
 acceptable to the host:
@@ -182,6 +185,15 @@ pnpm vitest run providers/hermes/test/live.test.ts
 Set `HARAPTER_HERMES_API_KEY` when the endpoint requires bearer authentication.
 The live test logs no Provider traffic. A skipped or unrecorded live test is not
 support evidence.
+
+The repository live canary mounts only an isolated temporary data directory and
+publishes the API Server on host loopback. It disables bundled skills, plugins,
+MCP servers, memory, compression, checkpoints, title generation, background
+review, and every API Server toolset. An authenticated toolset inventory must
+confirm that every configurable toolset is disabled, and the Runtime's full
+Agent-side resolver must return no enabled toolsets, before the canary submits
+its one synthetic Prompt. The schedule flag remains disabled until a trusted
+manual run passes.
 
 Portable workspace selection, file and image input, Server lifecycle, Session
 deletion, automatic SSE reconnection, and strict child-Session capability claims

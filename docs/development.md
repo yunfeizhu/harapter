@@ -199,44 +199,41 @@ three deterministic checks or unresolved conversations.
 ## Trusted Provider live canaries
 
 [`provider-live-canary.yml`](../.github/workflows/provider-live-canary.yml) runs
-weekly from the trusted default branch and can also be dispatched manually. It
-is separate from pull request CI: no pull request or ordinary push event can
-execute repository code with model credentials.
+weekly or by manual dispatch from the trusted default branch. Pull requests and
+ordinary pushes cannot execute it with model credentials.
 
-Scheduled coverage is enabled per Provider with repository variables named
-`HARAPTER_LIVE_CODEX_ENABLED`, `HARAPTER_LIVE_OPENCODE_ENABLED`, and
-`HARAPTER_LIVE_DSH_ENABLED`, plus `HARAPTER_LIVE_OPENCLAW_ENABLED` and
-`HARAPTER_LIVE_PI_ENABLED`. Enable one only after review. Manual dispatch does
-not change schedule flags.
+Schedule flags are `HARAPTER_LIVE_<PROVIDER>_ENABLED` for Codex, OpenCode, DSH,
+Hermes, OpenClaw, and Pi. Enable one only after review and a passing manual run;
+manual dispatch does not change these flags.
 
-The model-facing Codex, OpenCode, and DSH jobs require these repository Secrets:
+The model-facing Codex, OpenCode, DSH, and Hermes Agent jobs require these
+repository Secrets:
 
 - `HARAPTER_LIVE_MODEL_API_KEY` — a dedicated, revocable, low-budget key;
 - `HARAPTER_LIVE_MODEL_URL` — the HTTPS URL used by the configured model;
 - `HARAPTER_LIVE_MODEL_ID` — the model identifier passed to the Runtime.
 
 A selected model-facing job with missing configuration fails at a named
-validation step; it is never counted as live evidence. Codex additionally
-requires the model service to expose the Responses interface used by its current
-App Server. Jobs check out the immutable workflow trigger commit. Before real
-credentials are available, Codex must pass a fail-closed feature-inventory check
-and DSH must pass an exact effective-composition check. OpenCode denies every
-permission, disables its configured tools, and loads no plugins. Their minimal
-Run tests reject any tool or interaction event.
+validation step. Codex requires the Responses interface and passes a fail-closed
+feature-inventory check before credentials are available. DSH similarly checks
+its exact effective composition. OpenCode denies every permission, disables
+tools, and loads no plugins. Their Run tests reject tool or interaction events.
 
 Pi receives no model Secret or Prompt. It opens and closes an isolated,
 non-persistent RPC Session and verifies that its Session directory stays empty.
 
-OpenClaw receives no model Secret or Prompt. Its loopback Gateway uses generated
-per-job authentication and isolated paths. Config disables model catalog
-refresh, plugins, browser, MCP, channels, scheduling, telemetry, audit, and
-shell loading. No job artifacts are retained.
+OpenClaw receives no model Secret or Prompt. Its isolated loopback Gateway uses
+generated authentication and disables external subsystems.
 
-Each job installs its current Runtime release only on the ephemeral runner,
-records the installed package identity and Harapter revision in the workflow
-summary, and runs its scoped lifecycle with bounded readiness requests, a
-process deadline, and a final job timeout. It retains no Runtime home, local
-server log, Prompt, response, credential, or Provider traffic artifact.
+Hermes Agent runs its current official container by resolved image identity,
+mounts only isolated temporary data, and publishes only on host loopback. It
+submits one synthetic Prompt only after its authenticated inventory reports
+every configurable toolset disabled and its full Agent-side resolver reports no
+enabled toolsets. The Harapter test process does not inherit the model Secret.
+
+Each ephemeral job records its Runtime identity and Harapter revision, applies
+bounded readiness and execution deadlines, and uploads no Runtime data, Provider
+traffic, credentials, Prompt, or response.
 
 ## Release flow
 
