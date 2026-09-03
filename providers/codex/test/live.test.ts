@@ -43,6 +43,7 @@ describe.runIf(liveEnabled)('Codex App Server live runtime', () => {
         ownership: 'adapter',
       },
     });
+    let primaryFailure: unknown;
     try {
       assertSupportedDescriptor(await client.descriptor());
       const session = await client.createSession({
@@ -55,53 +56,54 @@ describe.runIf(liveEnabled)('Codex App Server live runtime', () => {
       });
       const sessionRef = session.ref();
       assertOwnedSessionRef(sessionRef);
-      try {
-        const run = await session.start({
-          parts: [
-            {
-              type: 'text',
-              text: 'Reply with exactly HARAPTER_CODEX_LIVE_OK and do not use tools.',
-            },
-          ],
-        });
-        const [eventTypes, result] = await Promise.all([
-          collectEventTypes(run),
-          run.result(),
-        ]);
-        assertCompletedTextRun(result, 'HARAPTER_CODEX_LIVE_OK');
-        expect(eventTypes).toContain('run.started');
-        expect(eventTypes).toContain('message.completed');
-        expect(eventTypes.at(-1)).toBe('run.completed');
-      } finally {
-        await session.close();
-      }
+      const run = await session.start({
+        parts: [
+          {
+            type: 'text',
+            text: 'Reply with exactly HARAPTER_CODEX_LIVE_OK and do not use tools.',
+          },
+        ],
+      });
+      const [eventTypes, result] = await Promise.all([
+        collectEventTypes(run),
+        run.result(),
+      ]);
+      assertCompletedTextRun(result, 'HARAPTER_CODEX_LIVE_OK');
+      expect(eventTypes).toContain('run.started');
+      expect(eventTypes).toContain('message.completed');
+      expect(eventTypes.at(-1)).toBe('run.completed');
+      await session.close();
 
       const resumed = await client.resumeSession(sessionRef);
-      try {
-        assertResumedSession(sessionRef, resumed.ref());
-        const cancelledRun = await resumed.start({
-          parts: [
-            {
-              type: 'text',
-              text: 'Write at least 4000 words and begin immediately. Do not use tools.',
-            },
-          ],
-        });
-        const cancelledEventTypesPromise = collectEventTypes(cancelledRun);
-        const cancelledResultPromise = cancelledRun.result();
-        assertNativeCancellation(await cancelledRun.cancel());
-        const [cancelledEventTypes, cancelledResult] = await Promise.all([
-          cancelledEventTypesPromise,
-          cancelledResultPromise,
-        ]);
-        assertCancelledRun(cancelledResult);
-        expect(cancelledEventTypes).toContain('run.started');
-        expect(cancelledEventTypes.at(-1)).toBe('run.cancelled');
-      } finally {
-        await resumed.close();
-      }
+      assertResumedSession(sessionRef, resumed.ref());
+      const cancelledRun = await resumed.start({
+        parts: [
+          {
+            type: 'text',
+            text: 'Write at least 4000 words and begin immediately. Do not use tools.',
+          },
+        ],
+      });
+      const cancelledEventTypesPromise = collectEventTypes(cancelledRun);
+      const cancelledResultPromise = cancelledRun.result();
+      assertNativeCancellation(await cancelledRun.cancel());
+      const [cancelledEventTypes, cancelledResult] = await Promise.all([
+        cancelledEventTypesPromise,
+        cancelledResultPromise,
+      ]);
+      assertCancelledRun(cancelledResult);
+      expect(cancelledEventTypes).toContain('run.started');
+      expect(cancelledEventTypes.at(-1)).toBe('run.cancelled');
+      await resumed.close();
+    } catch (error) {
+      primaryFailure = error;
+      throw error;
     } finally {
-      await client.close();
+      if (primaryFailure === undefined) {
+        await client.close();
+      } else {
+        await client.close().catch(() => undefined);
+      }
     }
   }, 240_000);
 });
