@@ -175,12 +175,15 @@ Evidence for this supported ACP v1 Adapter includes:
 The [repository-recorded live lifecycle run][openclaw-live-2026-09-03] passed on
 2026-09-03 with `openclaw@2026.8.2`. It verified current-package installation,
 version probing, generated configuration validation, Gateway health, the ACP
-handshake, isolated Session creation, one synthetic text Prompt, streamed
-Events, exact final content, the authoritative completed terminal, Session
-close, and Client disposal. A production host may pin that release for
-reproducibility. Harapter continues to admit newer releases and validates their
-ACP identity and observed structures instead of using the recorded version as an
-executable allowlist.
+handshake, isolated Session creation, exact completed text content,
+`run.started`, `message.completed`, and authoritative `run.completed` Events. It
+then closed the first ACP Client, opened a new bridge connection, resumed the
+same isolated Gateway Session, and verified native cancellation with an
+authoritative `run.cancelled` terminal. The resumed Session and both Clients
+were disposed, and no model-facing tools or approval interactions were observed.
+A production host may pin that release for reproducibility. Harapter continues
+to admit newer releases and validates their ACP identity and observed structures
+instead of using the recorded version as an executable allowlist.
 
 Run live verification only when submitting two synthetic text Prompts through a
 host-operated Gateway is acceptable to the host:
@@ -205,14 +208,12 @@ SecretRef resolved by the isolated Gateway and is removed before the Harapter
 test process starts the ACP bridge. The bridge also omits the temporary
 working-directory prefix from the Prompt.
 
-The recorded live lifecycle above proves the supported ACP v1 completed text Run
-path. It does not yet record native cancellation or resume evidence. The current
-canary additionally requires those paths; they become repository live evidence
-only after a trusted run passes. Approval, image input, and effective workspace
-execution remain live-unverified. Those capabilities retain their documented
-`native`, `unknown`, or unsupported status according to deterministic protocol
-evidence; hosts that depend on an unverified capability should run focused live
-evidence before production use.
+The recorded live lifecycle above proves the supported ACP v1 completed text
+Run, isolated Session resume, and native cancellation paths. Approval, image
+input, and effective workspace execution remain live-unverified. Those
+capabilities retain their documented `native`, `unknown`, or unsupported status
+according to deterministic protocol evidence; hosts that depend on an unverified
+capability should run focused live evidence before production use.
 
 Shared Gateway session routing, history replay, per-Session MCP configuration,
 audio input, generic file input, filesystem or terminal client services,
@@ -220,4 +221,4 @@ verified Gateway workspace execution, automatic process restart, and direct
 Gateway WebSocket access are outside the current compatibility boundary.
 
 [openclaw-live-2026-09-03]:
-  https://github.com/yunfeizhu/harapter/actions/runs/33727680680
+  https://github.com/yunfeizhu/harapter/actions/runs/33740322290
