@@ -245,7 +245,7 @@ evidence before Harapter describes the interface as supported in source.
 | [OpenCode](./providers/opencode/README.md)    | stable HTTP/OpenAPI + SSE | **Supported in source** — fixture, conformance, compatibility, and live evidence              |
 | [DeepSeek Harness](./providers/dsh/README.md) | SDK Runtime JSON-RPC      | **Experimental in source** — live evidence exists; Runtime compatibility is not negotiated    |
 | [Hermes Agent](./providers/hermes/README.md)  | API Server HTTP/SSE       | **Experimental in source** — deterministic evidence exists; live evidence is pending          |
-| [OpenClaw](./providers/openclaw/README.md)    | ACP v1 bridge             | **Experimental in source** — deterministic evidence exists; live evidence is pending          |
+| [OpenClaw](./providers/openclaw/README.md)    | ACP v1 bridge             | **Experimental in source** — live Session evidence exists; Run evidence is pending            |
 | [Pi Agent](./providers/pi/README.md)          | strict JSONL RPC mode     | **Experimental in source** — live Session evidence exists; authenticated Run evidence pending |
 
 “Supported in source” describes evidence held by the source Adapter, not a

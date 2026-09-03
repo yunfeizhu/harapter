@@ -170,6 +170,15 @@ Evidence for this experimental Adapter includes:
   ephemeral runner and exercises only runtime probing, the ACP handshake,
   isolated Session creation, Session close, and Client disposal.
 
+The last repository-recorded live Session run passed on 2026-09-03 with
+`openclaw@2026.8.2`. It verified current-package installation, version probing,
+generated configuration validation, Gateway health, the ACP handshake, isolated
+Session creation and close, and Client disposal. It did not submit a Prompt or
+prove Run, Event, terminal, cancellation, resume, approval, or workspace
+behavior. A production host may pin that release for reproducibility. Harapter
+continues to admit newer releases and validates their observed structures
+instead of using the recorded version as an executable allowlist.
+
 Run live verification only when starting and closing an isolated bridge Session
 is acceptable to the host:
 
@@ -184,7 +193,7 @@ unrecorded live test is not support evidence. The scheduled canary likewise
 receives no model credential, disables model catalog refresh, plugins, browser
 automation, MCP, channels, cron, heartbeat, telemetry, auditing, and shell
 environment loading, and retains no Runtime state or logs after its ephemeral
-job ends. Its schedule flag remains disabled until a trusted manual run passes.
+job ends. The scheduled canary is enabled after its trusted manual run passed.
 These Session-only checks do not prove Run, Event, terminal, cancellation,
 resume, approval, or workspace behavior, so the Adapter remains experimental in
 source.
