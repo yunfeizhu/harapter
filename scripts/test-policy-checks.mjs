@@ -486,6 +486,18 @@ const leakingCodexFailure = codexLiveTest.replace(
 );
 assert.notEqual(leakingCodexFailure, codexLiveTest);
 assert.throws(() => assertCodexLiveEvidence(leakingCodexFailure));
+const maskingCodexFailure = codexLiveTest.replace(
+  'await resumed.close();',
+  'try {} finally { await resumed.close(); }',
+);
+assert.notEqual(maskingCodexFailure, codexLiveTest);
+assert.throws(() => assertCodexLiveEvidence(maskingCodexFailure));
+const maskingCodexClientFailure = codexLiveTest.replace(
+  'await client.close().catch(() => undefined);',
+  'await client.close();',
+);
+assert.notEqual(maskingCodexClientFailure, codexLiveTest);
+assert.throws(() => assertCodexLiveEvidence(maskingCodexClientFailure));
 
 const dshLiveTest = readFileSync(
   resolve(repositoryRoot, 'providers/dsh/test/live.test.ts'),
@@ -1209,6 +1221,9 @@ function assertCodexLiveEvidence(source) {
   assert.match(source, /await session\.close\(\)/u);
   assert.match(source, /await resumed\.close\(\)/u);
   assert.match(source, /await client\.close\(\)/u);
+  assert.match(source, /let primaryFailure: unknown/u);
+  assert.match(source, /primaryFailure = error/u);
+  assert.match(source, /await client\.close\(\)\.catch\(\(\) => undefined\)/u);
   assert.match(
     source,
     /assertSupportedDescriptor\(await client\.descriptor\(\)\)/u,
@@ -1224,6 +1239,10 @@ function assertCodexLiveEvidence(source) {
   assert.doesNotMatch(source, /expect\(sessionRef/u);
   assert.doesNotMatch(source, /expect\(resumed\.ref/u);
   assert.doesNotMatch(source, /expect\(client\.descriptor/u);
+  assert.doesNotMatch(
+    source,
+    /finally\s*\{\s*await (?:session|resumed)\.close\(\)/u,
+  );
 }
 
 function assertCodexWorkflowEvidence(job) {
