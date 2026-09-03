@@ -134,11 +134,20 @@ Evidence includes:
   plugins, denied permissions, and disabled tools, records the installed package
   version, and executes a lifecycle that rejects any tool or interaction event.
 
-The last repository-recorded live run passed on 2026-09-03 with
-`opencode-ai@1.18.27`. A production host may pin that release for a reproducible
-deployment. Harapter continues to admit newer stable releases and validates
-their observed health, Session, Event, and terminal structures instead of using
-the recorded version as an executable allowlist.
+The last repository-recorded
+[trusted live canary](https://github.com/yunfeizhu/harapter/actions/runs/33747923398)
+passed on 2026-09-03 with `opencode-ai@1.18.27`. It proved the stable health
+interface, an exact completed text response with `run.completed`, resume of the
+same directory-bound native Session through a fresh Client connection, native
+abort with `run.cancelled`, and orderly Session, Client, and Server cleanup. The
+canary submitted two synthetic Prompts with no Tool or interaction Event.
+
+A production host may pin the recorded release for a reproducible deployment.
+Harapter continues to admit newer stable releases and validates their observed
+health, Session, Event, and terminal structures instead of using the recorded
+version as an executable allowlist. The run does not establish automatic SSE
+reconnection, experimental routes, permission interactions, Tool execution,
+commands, plugins, process management, or remote Session deletion.
 
 The package does not claim support for experimental routes, automatic SSE
 reconnection, OpenCode process management, remote Session deletion through
