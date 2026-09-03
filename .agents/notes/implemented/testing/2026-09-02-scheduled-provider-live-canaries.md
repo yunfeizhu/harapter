@@ -46,7 +46,14 @@ publishes its API Server only on host loopback, and receives a generated API
 Server credential. Its authenticated inventory must report every configurable
 toolset disabled, and the Runtime's full Agent-side resolver must return no
 enabled toolsets before the synthetic Prompt is submitted. The Harapter test
-process does not inherit the model credential.
+process does not inherit the model credential. OpenClaw replaces its model
+catalog with one generated text-only entry, marks that model as unable to use
+tools through the Runtime's official model-compatibility control, and starts an
+isolated loopback Gateway with an environment-backed SecretRef. The key is
+removed from the Harapter test process before it starts the ACP bridge; only the
+already-running Gateway retains the credential required for the model request.
+The ACP bridge is also told not to prefix the synthetic Prompt with the
+ephemeral runner path.
 
 The credential must be dedicated, revocable, and limited to the smallest useful
 test budget. Jobs that do not require a model call do not receive it. The
@@ -56,16 +63,16 @@ deadlines. Each live-test process has a hard deadline shorter than its job
 timeout, and the job timeout remains the final containment boundary.
 
 A passing canary is current live evidence only for its exercised path. Codex,
-OpenCode, DSH, and Hermes Agent exercise Session, Run, Event, and terminal
-behavior. Pi exercises package installation, version probing, RPC handshake,
-non-persistent Session open and close, and the absence of persisted Session
-content. OpenClaw exercises installation, version probing, an isolated
-loopback-only Gateway, the ACP handshake, Session open and close, and Client
-disposal without submitting a Prompt. A passing result does not promote every
-capability or convert an unnegotiated Runtime protocol into a negotiated
-compatibility range. A newly published Runtime failure means that release needs
-investigation or Adapter work; it does not make an older recorded live result
-false.
+OpenCode, DSH, Hermes Agent, and OpenClaw exercise Session, Run, Event, and
+terminal behavior. Pi exercises package installation, version probing, RPC
+handshake, non-persistent Session open and close, and the absence of persisted
+Session content. OpenClaw additionally exercises an isolated loopback-only
+Gateway and the ACP bridge, requires the expected synthetic response content,
+and rejects any observed tool or approval event. A passing result does not
+promote every capability or convert an unnegotiated Runtime protocol into a
+negotiated compatibility range. A newly published Runtime failure means that
+release needs investigation or Adapter work; it does not make an older recorded
+live result false.
 
 DSH follows the current SDK Profile prerelease channel without an exact version
 allowlist. Each run records the DSH CLI, `@deepseek-ai/dsh-sdk-minimal`, and
@@ -73,14 +80,14 @@ allowlist. Each run records the DSH CLI, `@deepseek-ai/dsh-sdk-minimal`, and
 stable package channels. OpenClaw follows its current official package channel,
 uses isolated per-job state, and disables model catalog refresh, plugins,
 browser automation, MCP, channels, cron, heartbeat, telemetry, auditing, and
-shell environment loading. The current Gateway may still read its public plugin
-catalog during startup; the job carries no Provider credential or user content,
-and none of its files or logs are retained. Pi follows the current official
+shell environment loading. It submits one synthetic text Prompt through the
+Gateway with Runtime-level tool support disabled and retains no state, logs,
+Prompt, response, or Provider traffic artifact. Pi follows the current official
 package channel and opens a non-persistent isolated RPC Session with extensions,
-skills, and prompt templates disabled. Neither OpenClaw nor Pi submits a Prompt,
-performs a model call, or receives a model credential. A Provider that needs a
-different model interface or cannot safely isolate its Runtime stays disabled
-until its own canary configuration is reviewed.
+skills, and prompt templates disabled. Pi does not yet submit a Prompt, perform
+a model call, or receive a model credential. A Provider that needs a different
+model interface or cannot safely isolate its Runtime stays disabled until its
+own canary configuration is reviewed.
 
 Hermes Agent follows its current official container channel. A run records the
 resolved package version, immutable image digest, and Harapter revision. Its

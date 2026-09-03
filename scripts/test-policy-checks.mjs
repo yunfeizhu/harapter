@@ -221,10 +221,14 @@ const providerJobExpectations = {
   },
   openclaw: {
     install: 'npm install --global --ignore-scripts openclaw@latest',
-    liveStep: 'Run OpenClaw live Session lifecycle',
+    liveStep: 'Run OpenClaw live lifecycle',
     liveTest: 'providers/openclaw/test/live.test.ts',
-    processTimeoutSeconds: 120,
-    secretSteps: new Set(),
+    processTimeoutSeconds: 240,
+    secretSteps: new Set([
+      'Prepare isolated OpenClaw configuration',
+      'Run OpenClaw live lifecycle',
+      'Validate live configuration',
+    ]),
   },
   pi: {
     install:
@@ -298,10 +302,11 @@ assert.deepEqual(piLiveStep['env'], {
 assert.match(JSON.stringify(piLiveStep), /HARAPTER_PI_COMMAND/u);
 const openClawLiveStep = requiredStep(
   requiredJob(liveJobs, 'openclaw'),
-  'Run OpenClaw live Session lifecycle',
+  'Run OpenClaw live lifecycle',
 );
 assert.deepEqual(openClawLiveStep['env'], {
   DO_NOT_TRACK: '1',
+  HARAPTER_LIVE_MODEL_API_KEY: '${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}',
   HARAPTER_OPENCLAW_LIVE: '1',
   OPENCLAW_CONFIG_PATH:
     '${{ runner.temp }}/harapter-openclaw-state/openclaw.json',
@@ -337,9 +342,13 @@ assert.match(
 );
 assert.match(openClawLiveStep['run'], /trap cleanup_gateway EXIT/u);
 assert.match(openClawLiveStep['run'], /kill -KILL "\$gateway_pid"/u);
-assert.doesNotMatch(
-  JSON.stringify(requiredJob(liveJobs, 'openclaw')),
-  /HARAPTER_LIVE_MODEL_/u,
+assert.match(
+  openClawLiveStep['run'],
+  /unset HARAPTER_LIVE_MODEL_API_KEY[\s\S]+pnpm vitest/u,
+);
+assert.match(
+  openClawLiveStep['run'],
+  /pnpm vitest run providers\/openclaw\/test\/live\.test\.ts/u,
 );
 assert.doesNotMatch(
   liveCanaryWorkflow,
@@ -407,11 +416,21 @@ assert.match(openClawLiveTest, /describe\.runIf\(liveEnabled\)/u);
 assert.match(openClawLiveTest, /isAbsolute\(liveCommand\)/u);
 assert.match(openClawLiveTest, /client\.createSession\(\)/u);
 assert.match(openClawLiveTest, /timeout: 10_000/u);
-assertOpenClawSessionOnly(openClawLiveTest);
-assert.throws(
-  () => assertOpenClawSessionOnly(`${openClawLiveTest}\nsession.start({});`),
-  /session\.start/u,
+assertOpenClawLiveEvidence(openClawLiveTest);
+const weakenedOpenClawMessageEvidence = openClawLiveTest.replace(
+  "expect(result.finalMessage?.trim()).toBe('HARAPTER_OPENCLAW_LIVE_OK');",
+  '',
 );
+assert.notEqual(weakenedOpenClawMessageEvidence, openClawLiveTest);
+assert.throws(() =>
+  assertOpenClawLiveEvidence(weakenedOpenClawMessageEvidence),
+);
+const weakenedOpenClawEventEvidence = openClawLiveTest.replace(
+  "expect(events.map(({ type }) => type)).toContain('message.completed');",
+  '',
+);
+assert.notEqual(weakenedOpenClawEventEvidence, openClawLiveTest);
+assert.throws(() => assertOpenClawLiveEvidence(weakenedOpenClawEventEvidence));
 
 const hermesLiveTest = readFileSync(
   resolve(repositoryRoot, 'providers/hermes/test/live.test.ts'),
@@ -616,6 +635,10 @@ requireSuccess(
 );
 const openClawConfig = JSON.parse(readFileSync(openClawConfigPath, 'utf8'));
 assert.equal(openClawConfig.agents.defaults.heartbeat.every, '0m');
+assert.equal(
+  openClawConfig.agents.defaults.model.primary,
+  'harapter-live/test-model',
+);
 assert.equal(openClawConfig.agents.defaults.workspace, openClawWorkspacePath);
 assert.equal(openClawConfig.browser.enabled, false);
 assert.equal(openClawConfig.cron.enabled, false);
@@ -627,6 +650,29 @@ assert.equal(openClawConfig.logging.audit.enabled, false);
 assert.equal(openClawConfig.logging.file, openClawLogPath);
 assert.deepEqual(openClawConfig.mcp.servers, {});
 assert.equal(openClawConfig.models.catalogRefresh.enabled, false);
+assert.equal(openClawConfig.models.mode, 'replace');
+assert.deepEqual(openClawConfig.models.providers['harapter-live'].apiKey, {
+  source: 'env',
+  provider: 'default',
+  id: 'HARAPTER_LIVE_MODEL_API_KEY',
+});
+assert.equal(
+  openClawConfig.models.providers['harapter-live'].baseUrl,
+  'https://model.example.test/v1',
+);
+assert.equal(
+  openClawConfig.models.providers['harapter-live'].api,
+  'openai-completions',
+);
+assert.equal(
+  openClawConfig.models.providers['harapter-live'].models[0].id,
+  'test-model',
+);
+assert.equal(
+  openClawConfig.models.providers['harapter-live'].models[0].compat
+    .supportsTools,
+  false,
+);
 assert.equal(openClawConfig.plugins.enabled, false);
 assert.deepEqual(openClawConfig.skills.allowBundled, []);
 assert.equal(openClawConfig.skills.workshop.autonomous.mode, 'off');
@@ -938,8 +984,17 @@ function isObject(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function assertOpenClawSessionOnly(source) {
-  assert.doesNotMatch(source, /session\.start\s*\(/u);
+function assertOpenClawLiveEvidence(source) {
+  assert.match(source, /args: \['acp', '--no-prefix-cwd'\]/u);
+  assert.match(source, /session\.start\s*\(/u);
+  assert.match(source, /assertToolFreeLiveEvent\(event\)/u);
+  assert.match(source, /result\.status\)\.toBe\('completed'\)/u);
+  assert.match(
+    source,
+    /result\.finalMessage\?\.trim\(\)\)\.toBe\('HARAPTER_OPENCLAW_LIVE_OK'\)/u,
+  );
+  assert.match(source, /toContain\('message\.completed'\)/u);
+  assert.match(source, /events\.at\(-1\)\?\.type\)\.toBe\('run\.completed'\)/u);
 }
 
 function requiredJob(jobs, id) {

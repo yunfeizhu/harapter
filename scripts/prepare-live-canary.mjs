@@ -148,7 +148,10 @@ function main(args) {
       return;
     case 'write-openclaw-config':
       requireCount(rest, 3, 'write-openclaw-config');
-      writePrivateFile(rest[0], openClawConfig(rest[1], rest[2]));
+      writePrivateFile(
+        rest[0],
+        openClawConfig(rest[1], rest[2], modelSettings()),
+      );
       return;
     case 'validate-codex-features':
       requireCount(rest, 1, 'validate-codex-features');
@@ -552,7 +555,7 @@ function hermesConfig({ modelId, modelUrl }) {
   )}\n`;
 }
 
-function openClawConfig(workspacePath, logPath) {
+function openClawConfig(workspacePath, logPath, { modelId, modelUrl }) {
   const workspace = requiredAbsolutePath(
     workspacePath,
     'The OpenClaw canary workspace must be absolute.',
@@ -566,6 +569,7 @@ function openClawConfig(workspacePath, logPath) {
       agents: {
         defaults: {
           heartbeat: { every: '0m' },
+          model: { primary: `harapter-live/${modelId}` },
           workspace,
         },
       },
@@ -609,7 +613,39 @@ function openClawConfig(workspacePath, logPath) {
         maxFileBytes: 1024 * 1024,
       },
       mcp: { servers: {} },
-      models: { catalogRefresh: { enabled: false } },
+      models: {
+        catalogRefresh: { enabled: false },
+        mode: 'replace',
+        providers: {
+          'harapter-live': {
+            api: 'openai-completions',
+            apiKey: {
+              source: 'env',
+              provider: 'default',
+              id: API_KEY_SETTING,
+            },
+            baseUrl: modelUrl,
+            models: [
+              {
+                compat: { supportsTools: false },
+                contextWindow: 131_072,
+                cost: {
+                  input: 0,
+                  output: 0,
+                  cacheRead: 0,
+                  cacheWrite: 0,
+                },
+                id: modelId,
+                input: ['text'],
+                maxTokens: 1_024,
+                name: 'Harapter Live Model',
+                reasoning: false,
+              },
+            ],
+            timeoutSeconds: 180,
+          },
+        },
+      },
       plugins: {
         allow: [],
         enabled: false,

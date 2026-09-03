@@ -552,7 +552,7 @@ jobs:
           printf '%s\n' '- Prompt submitted: no' >> "$GITHUB_STEP_SUMMARY"
 
   openclaw:
-    name: OpenClaw latest live Session lifecycle
+    name: OpenClaw latest live lifecycle
     needs: selection
     if: needs.selection.outputs.openclaw == 'true'
     runs-on: ubuntu-latest
@@ -585,8 +585,20 @@ jobs:
           printf '%s\n' "- Harapter revision: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
           node scripts/prepare-live-canary.mjs record-global-package Runtime openclaw
 
+      - name: Validate live configuration
+        env:
+          HARAPTER_LIVE_MODEL_API_KEY:
+            ${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}
+          HARAPTER_LIVE_MODEL_ID: ${{ secrets.HARAPTER_LIVE_MODEL_ID }}
+          HARAPTER_LIVE_MODEL_URL: ${{ secrets.HARAPTER_LIVE_MODEL_URL }}
+        run: node scripts/prepare-live-canary.mjs validate
+
       - name: Prepare isolated OpenClaw configuration
         env:
+          HARAPTER_LIVE_MODEL_API_KEY:
+            ${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}
+          HARAPTER_LIVE_MODEL_ID: ${{ secrets.HARAPTER_LIVE_MODEL_ID }}
+          HARAPTER_LIVE_MODEL_URL: ${{ secrets.HARAPTER_LIVE_MODEL_URL }}
           OPENCLAW_CONFIG_PATH:
             ${{ runner.temp }}/harapter-openclaw-state/openclaw.json
           OPENCLAW_STATE_DIR: ${{ runner.temp }}/harapter-openclaw-state
@@ -596,9 +608,11 @@ jobs:
           node scripts/prepare-live-canary.mjs write-openclaw-config "$OPENCLAW_CONFIG_PATH" "$RUNNER_TEMP/harapter-openclaw-workspace" "$RUNNER_TEMP/harapter-openclaw.log"
           openclaw config validate
 
-      - name: Run OpenClaw live Session lifecycle
+      - name: Run OpenClaw live lifecycle
         env:
           DO_NOT_TRACK: '1'
+          HARAPTER_LIVE_MODEL_API_KEY:
+            ${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}
           HARAPTER_OPENCLAW_LIVE: '1'
           OPENCLAW_CONFIG_PATH:
             ${{ runner.temp }}/harapter-openclaw-state/openclaw.json
@@ -664,9 +678,11 @@ jobs:
             exit 1
           fi
 
-          HARAPTER_OPENCLAW_COMMAND="$openclaw_command" timeout --signal=TERM --kill-after=10s 120s pnpm vitest run providers/openclaw/test/live.test.ts
+          unset HARAPTER_LIVE_MODEL_API_KEY
+          HARAPTER_OPENCLAW_COMMAND="$openclaw_command" timeout --signal=TERM --kill-after=10s 240s pnpm vitest run providers/openclaw/test/live.test.ts
 
       - name: Record passing OpenClaw evidence
         run: |
-          printf '%s\n' '- Session lifecycle: passed' >> "$GITHUB_STEP_SUMMARY"
-          printf '%s\n' '- Prompt submitted: no' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Lifecycle: passed' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Prompt submitted: yes' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Model tools enabled: no' >> "$GITHUB_STEP_SUMMARY"

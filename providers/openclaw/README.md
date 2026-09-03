@@ -167,8 +167,9 @@ Evidence for this experimental Adapter includes:
 - the shared portable Provider conformance suite;
 - an opt-in live connection test for a host-installed authenticated bridge; and
 - a trusted live canary that installs the current OpenClaw release on an
-  ephemeral runner and exercises only runtime probing, the ACP handshake,
-  isolated Session creation, Session close, and Client disposal.
+  ephemeral runner and is configured to exercise runtime probing, the ACP
+  handshake, isolated Session and Run lifecycles, streamed Events, the
+  authoritative terminal result, Session close, and Client disposal.
 
 The last repository-recorded live Session run passed on 2026-09-03 with
 `openclaw@2026.8.2`. It verified current-package installation, version probing,
@@ -179,8 +180,8 @@ behavior. A production host may pin that release for reproducibility. Harapter
 continues to admit newer releases and validates their observed structures
 instead of using the recorded version as an executable allowlist.
 
-Run live verification only when starting and closing an isolated bridge Session
-is acceptable to the host:
+Run live verification only when submitting one synthetic text Prompt through a
+host-operated Gateway is acceptable to the host:
 
 ```bash
 HARAPTER_OPENCLAW_LIVE=1 \
@@ -188,15 +189,23 @@ HARAPTER_OPENCLAW_COMMAND="$(command -v openclaw)" \
 pnpm vitest run providers/openclaw/test/live.test.ts
 ```
 
-The live test sends no prompt and logs no Provider traffic. A skipped or
-unrecorded live test is not support evidence. The scheduled canary likewise
-receives no model credential, disables model catalog refresh, plugins, browser
-automation, MCP, channels, cron, heartbeat, telemetry, auditing, and shell
-environment loading, and retains no Runtime state or logs after its ephemeral
-job ends. The scheduled canary is enabled after its trusted manual run passed.
-These Session-only checks do not prove Run, Event, terminal, cancellation,
-resume, approval, or workspace behavior, so the Adapter remains experimental in
-source.
+The live test sends one synthetic text Prompt and logs no Provider traffic. It
+requires the expected reply content, a completed message Event, and the
+authoritative completed Run Event while rejecting every tool or approval Event.
+A skipped or unrecorded live test is not support evidence. The scheduled canary
+uses a generated, text-only model route with OpenClaw's model tool support
+disabled, disables model catalog refresh, plugins, browser automation, MCP,
+channels, cron, heartbeat, telemetry, auditing, and shell environment loading,
+and retains no Runtime state or logs after its ephemeral job ends. The model
+credential is an environment-backed SecretRef resolved by the isolated Gateway
+and is removed before the Harapter test process starts the ACP bridge. The
+bridge also omits the temporary working-directory prefix from the Prompt.
+
+The configured Run canary does not become recorded evidence until a trusted
+manual or scheduled run passes. Until then, the last repository-recorded
+evidence remains the Session-only 2026-09-03 run above. Even after the Run path
+passes, it does not prove cancellation, resume, approval, or workspace behavior,
+so the Adapter remains experimental in source.
 
 Shared Gateway session routing, history replay, per-Session MCP configuration,
 audio input, generic file input, filesystem or terminal client services,
