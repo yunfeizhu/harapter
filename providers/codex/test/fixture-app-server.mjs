@@ -109,6 +109,7 @@ lines.on('line', (line) => {
       return;
     }
     initialized = true;
+    const originator = message.params?.clientInfo?.name ?? 'synthetic-client';
     send({
       id: message.id,
       result: {
@@ -116,8 +117,8 @@ lines.on('line', (line) => {
           mode === 'malformed-initialize'
             ? 'synthetic-runtime'
             : mode === 'alternate-runtime'
-              ? 'codex_cli_rs/0.0.1-synthetic (synthetic)'
-              : 'codex_cli_rs/0.0.0-synthetic (synthetic)',
+              ? `${originator}/0.0.1-synthetic (synthetic)`
+              : `${originator}/0.0.0-synthetic (synthetic)`,
         codexHome: '/synthetic/codex-home',
         platformFamily: 'unix',
         platformOs: 'synthetic',

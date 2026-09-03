@@ -150,9 +150,11 @@ export function parseCodexInitializeResponse(value: unknown): {
   const userAgent = response?.['userAgent'];
   if (typeof userAgent !== 'string') throw incompatible('initialize response');
   const match =
-    /(?:Codex Desktop|codex_cli_rs|codex-cli)\/(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)/u.exec(
-      userAgent,
-    );
+    userAgent.length <= 1024 && !/[\r\n]/u.test(userAgent)
+      ? /^[^/\r\n]{1,128}\/(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)(?=[ (]|$)/u.exec(
+          userAgent,
+        )
+      : null;
   const runtimeVersion = match?.[1];
   if (runtimeVersion === undefined) throw incompatible('runtime version');
   if (
