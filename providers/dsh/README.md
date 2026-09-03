@@ -30,6 +30,18 @@ for this implementation. That revision and its package version do not pin the
 host Runtime. A future incompatible protocol change requires new fixtures,
 mapping tests, conformance, and compatibility documentation.
 
+The last repository-recorded live run passed on 2026-09-02 with
+`@deepseek-ai/dsh-sdk-app@0.1.2-alpha.4` from the source revision recorded by
+the fixture manifest. A production host may choose that exact version for a
+reproducible deployment, while Harapter continues to admit newer Runtime
+versions and validates their observed structures instead of using a version
+allowlist. The trusted scheduled live canary follows the current SDK Profile
+prerelease channel and records the installed CLI, minimal Profile, and SDK
+Runtime versions for every run. It composes `sdk-minimal`, disables every
+model-facing tool in that composition, and verifies the complete effective
+configuration before receiving the real model credential. Any composition drift
+or observed tool or interaction event fails the lifecycle.
+
 DeepSeek Harness is MIT licensed. Harapter does not redistribute its Runtime or
 SDK packages; see the [license record](../../licenses/deepseek-harness.md).
 
@@ -214,7 +226,11 @@ Evidence for this experimental source Adapter includes:
 - an opt-in live-runtime test verified against the current official SDK Profile
   with an empty temporary working directory and isolated Runtime home. It logs
   and stores no Provider traffic, credentials, environment values, or host
-  paths.
+  paths;
+- a trusted scheduled live canary that installs the current SDK Profile
+  prerelease on an ephemeral runner, validates its tool-disabled effective
+  composition, records its actual package versions, and executes the same
+  minimal lifecycle when enabled.
 
 Run live verification only in a host environment with an installed and
 authenticated Runtime plus a Provider route and model:

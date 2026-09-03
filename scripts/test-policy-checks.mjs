@@ -11,6 +11,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { JSON_SCHEMA, load } from 'js-yaml';
 import {
   findForbiddenTextViolations,
   findProviderRuntimeLockfileViolations,
@@ -144,17 +145,383 @@ assert.doesNotMatch(releaseWorkflow, /^\s{2}push:/mu);
 assert.match(releaseWorkflow, /if: github\.ref == 'refs\/heads\/main'/u);
 assert.match(releaseWorkflow, /target-branch: main/u);
 
+const liveCanaryWorkflow = readFileSync(
+  resolve(repositoryRoot, '.github/workflows/provider-live-canary.yml'),
+  'utf8',
+);
+const liveCanary = load(liveCanaryWorkflow, { schema: JSON_SCHEMA });
+assert.ok(isObject(liveCanary));
+assert.ok(isObject(liveCanary['on']));
+assert.deepEqual(Object.keys(liveCanary['on']).sort(), [
+  'schedule',
+  'workflow_dispatch',
+]);
+assert.deepEqual(liveCanary['permissions'], { contents: 'read' });
+assert.ok(isObject(liveCanary['jobs']));
+const liveJobs = liveCanary['jobs'];
+assert.deepEqual(Object.keys(liveJobs).sort(), [
+  'codex',
+  'dsh',
+  'opencode',
+  'selection',
+]);
+const selection = requiredJob(liveJobs, 'selection');
+assert.match(
+  requiredStep(selection, 'Verify trusted default branch')['run'],
+  /test "\$GITHUB_REF" = "refs\/heads\/\$DEFAULT_BRANCH"/u,
+);
+const providerJobExpectations = {
+  codex: {
+    install: 'npm install --global @openai/codex@latest',
+    safetyStep: 'Verify Codex model-facing surface',
+    secretSteps: new Set([
+      'Prepare isolated Codex live configuration',
+      'Run Codex live lifecycle',
+      'Validate live configuration',
+    ]),
+  },
+  dsh: {
+    install: 'npm install --global @deepseek-ai/dsh@alpha',
+    safetyStep: 'Verify DSH model-facing surface',
+    secretSteps: new Set([
+      'Run DSH live lifecycle',
+      'Validate live configuration',
+    ]),
+  },
+  opencode: {
+    install: 'npm install --global opencode-ai@latest',
+    secretSteps: new Set([
+      'Prepare isolated OpenCode configuration',
+      'Run OpenCode live lifecycle',
+      'Validate live configuration',
+    ]),
+  },
+};
+for (const [provider, expectation] of Object.entries(providerJobExpectations)) {
+  const job = requiredJob(liveJobs, provider);
+  const checkout = requiredStep(job, 'Check out trusted default branch');
+  assert.ok(isObject(checkout['with']));
+  assert.equal(checkout['with']['persist-credentials'], false);
+  assert.equal(checkout['with']['ref'], '${{ github.sha }}');
+  assert.equal(job['if'], `needs.selection.outputs.${provider} == 'true'`);
+  assert.ok(job['steps'].some((step) => step['run'] === expectation.install));
+  assert.match(JSON.stringify(job), /Harapter revision: \$GITHUB_SHA/u);
+  for (const step of job['steps']) {
+    const hasSecret = JSON.stringify(step).includes('${{ secrets.');
+    assert.equal(hasSecret, expectation.secretSteps.has(step['name']));
+  }
+  if (expectation.safetyStep !== undefined) {
+    const safetyIndex = stepIndex(job, expectation.safetyStep);
+    const firstSecretIndex = job['steps'].findIndex((step) =>
+      JSON.stringify(step).includes('${{ secrets.'),
+    );
+    assert.ok(safetyIndex >= 0 && safetyIndex < firstSecretIndex);
+  }
+}
+assert.match(
+  requiredStep(
+    requiredJob(liveJobs, 'codex'),
+    'Verify Codex model-facing surface',
+  )['run'],
+  /validate-codex-features/u,
+);
+assert.match(
+  requiredStep(requiredJob(liveJobs, 'dsh'), 'Verify DSH model-facing surface')[
+    'run'
+  ],
+  /--profile sdk-minimal.*validate-dsh-config/su,
+);
+assert.doesNotMatch(
+  liveCanaryWorkflow,
+  /npm install --global (?:@openai\/codex|opencode-ai|@deepseek-ai\/dsh)@\d/u,
+);
+assert.match(liveCanaryWorkflow, /DSH_TELEMETRY_DISABLED: '1'/u);
+assert.doesNotMatch(liveCanaryWorkflow, /continue-on-error/u);
+
+const prepareLiveCanary = resolve(
+  repositoryRoot,
+  'scripts/prepare-live-canary.mjs',
+);
+const liveEnvironment = {
+  ...process.env,
+  HARAPTER_LIVE_MODEL_API_KEY: 'test-key-that-must-not-be-written',
+  HARAPTER_LIVE_MODEL_ID: 'test-model',
+  HARAPTER_LIVE_MODEL_URL: 'https://model.example.test/v1',
+};
+const missingLiveEnvironment = { ...liveEnvironment };
+delete missingLiveEnvironment.HARAPTER_LIVE_MODEL_API_KEY;
+const missingLiveResult = run(
+  prepareLiveCanary,
+  ['validate'],
+  missingLiveEnvironment,
+);
+requireFailure(
+  missingLiveResult,
+  'HARAPTER_LIVE_MODEL_API_KEY is not configured.',
+  'live-canary missing configuration',
+);
+assert.doesNotMatch(
+  `${missingLiveResult.stderr}${missingLiveResult.stdout}`,
+  /test-key-that-must-not-be-written/u,
+);
+
+const codexConfigPath = join(fixtureRoot, 'live-config', 'codex.toml');
+requireSuccess(
+  run(
+    prepareLiveCanary,
+    ['write-codex-config', codexConfigPath],
+    liveEnvironment,
+  ),
+  'Codex live-canary config',
+);
+const codexConfig = readFileSync(codexConfigPath, 'utf8');
+assert.match(codexConfig, /model_provider = "harapter_live"/u);
+assert.match(codexConfig, /wire_api = "responses"/u);
+assert.match(codexConfig, /shell_tool = false/u);
+for (const feature of [
+  'apps',
+  'browser_use',
+  'computer_use',
+  'image_generation',
+  'multi_agent',
+  'plugins',
+  'remote_plugin',
+  'workspace_dependencies',
+]) {
+  assert.match(codexConfig, new RegExp(`^${feature} = false$`, 'mu'));
+}
+assert.match(codexConfig, /inherit = "none"/u);
+assert.doesNotMatch(codexConfig, /test-key-that-must-not-be-written/u);
+
+const codexFeaturesPath = join(
+  fixtureRoot,
+  'live-config',
+  'codex-features.txt',
+);
+writeFileSync(
+  codexFeaturesPath,
+  [
+    'apps stable false',
+    'auth_elicitation stable false',
+    'browser_use stable false',
+    'browser_use_external stable false',
+    'browser_use_full_cdp_access stable false',
+    'code_mode_host stable false',
+    'collaboration_modes removed true',
+    'compaction_image_budget stable true',
+    'computer_use stable false',
+    'content_item_kinds stable true',
+    'enable_request_compression stable true',
+    'fast_mode stable false',
+    'goals stable false',
+    'guardian_approval stable false',
+    'hooks stable false',
+    'image_generation stable false',
+    'in_app_browser stable false',
+    'in_app_chat stable false',
+    'in_app_dictation stable false',
+    'in_app_local_automation stable false',
+    'in_app_updates stable false',
+    'item_ids removed true',
+    'mentions_v2 stable true',
+    'multi_agent stable false',
+    'personality stable true',
+    'plugin_sharing stable false',
+    'plugins stable false',
+    'remote_compaction_v2 stable false',
+    'remote_plugin stable false',
+    'resize_all_images removed true',
+    'shell_snapshot stable false',
+    'shell_tool stable false',
+    'skill_mcp_dependency_install stable false',
+    'skill_search stable false',
+    'sleep_tool stable false',
+    'sqlite removed true',
+    'steer removed true',
+    'terminal_resize_reflow removed true',
+    'tool_call_mcp_elicitation stable false',
+    'tool_search_always_defer_mcp_tools removed true',
+    'tool_suggest stable false',
+    'tui_app_server removed true',
+    'unbounded_connection_retries stable false',
+    'unified_exec stable true',
+    'unified_exec_zsh_fork removed true',
+    'view_image stable false',
+    'workspace_dependencies stable false',
+  ].join('\n') + '\n',
+  'utf8',
+);
+requireSuccess(
+  run(prepareLiveCanary, ['validate-codex-features', codexFeaturesPath]),
+  'Codex safe feature surface',
+);
+const unsafeCodexFeaturesPath = join(
+  fixtureRoot,
+  'live-config',
+  'codex-features-unsafe.txt',
+);
+writeFileSync(
+  unsafeCodexFeaturesPath,
+  readFileSync(codexFeaturesPath, 'utf8') + 'future_tool stable true\n',
+  'utf8',
+);
+requireFailure(
+  run(prepareLiveCanary, ['validate-codex-features', unsafeCodexFeaturesPath]),
+  'The Codex feature surface is not safe for the live canary.',
+  'Codex unknown enabled feature',
+);
+const unsafeCodexShellPath = join(
+  fixtureRoot,
+  'live-config',
+  'codex-features-shell-enabled.txt',
+);
+writeFileSync(
+  unsafeCodexShellPath,
+  readFileSync(codexFeaturesPath, 'utf8').replace(
+    'shell_tool stable false',
+    'shell_tool stable true',
+  ),
+  'utf8',
+);
+requireFailure(
+  run(prepareLiveCanary, ['validate-codex-features', unsafeCodexShellPath]),
+  'The Codex feature surface is not safe for the live canary.',
+  'Codex shell feature',
+);
+
+const openCodeConfigPath = join(fixtureRoot, 'live-config', 'opencode.json');
+requireSuccess(
+  run(
+    prepareLiveCanary,
+    ['write-opencode-config', openCodeConfigPath],
+    liveEnvironment,
+  ),
+  'OpenCode live-canary config',
+);
+const openCodeConfig = JSON.parse(readFileSync(openCodeConfigPath, 'utf8'));
+assert.equal(openCodeConfig.permission['*'], 'deny');
+assert.equal(openCodeConfig.share, 'disabled');
+assert.equal(openCodeConfig.tools.bash, false);
+assert.equal(
+  openCodeConfig.provider['harapter-live'].options.apiKey,
+  '{env:HARAPTER_LIVE_MODEL_API_KEY}',
+);
+assert.equal(
+  openCodeConfig.provider['harapter-live'].options.baseURL,
+  '{env:HARAPTER_LIVE_MODEL_URL}',
+);
+assert.doesNotMatch(
+  readFileSync(openCodeConfigPath, 'utf8'),
+  /test-key-that-must-not-be-written/u,
+);
+
+const safeDshRows = [
+  ['agent', '@deepseek-ai/dsh-agent', false],
+  ['agent-invariant', '@deepseek-ai/dsh-agent/invariant', false],
+  ['agent-loop', '@deepseek-ai/dsh-agent-loop', false],
+  ['agent-loop-invariant', '@deepseek-ai/dsh-agent-loop/invariant', false],
+  [
+    'deepseek-llm-api-extensions',
+    '@deepseek-ai/dsh-deepseek-llm-api-extensions',
+    false,
+  ],
+  ['fs-local', '@deepseek-ai/dsh-fs-local', false],
+  ['invariants', '@deepseek-ai/dsh-invariants', false],
+  ['jobs', '@deepseek-ai/dsh-jobs-local', false],
+  ['llm', '@deepseek-ai/dsh-llm', false],
+  ['llm-deepseek', '@deepseek-ai/dsh-llm-deepseek', true],
+  ['llm-pi-ai', '@deepseek-ai/dsh-llm-pi-ai', false],
+  ['llm-retry', '@deepseek-ai/dsh-llm-retry', false],
+  ['persistent-bash', '@deepseek-ai/dsh-tool-bash-persistent', true],
+  ['persistent-pwsh', '@deepseek-ai/dsh-tool-pwsh-persistent', true],
+  [
+    'plugin-package-inventory-deepseek',
+    '@deepseek-ai/dsh-plugin-package-inventory-deepseek',
+    false,
+  ],
+  ['pty', '@deepseek-ai/dsh-terminal', false],
+  ['sandbox', '@deepseek-ai/dsh-sandbox-local', false],
+  ['sandbox-policy', '@deepseek-ai/dsh-sandbox-policy', false],
+  ['scope-invariant', '@deepseek-ai/dsh-scope/invariant', false],
+  ['sdk-app-startup', '@deepseek-ai/dsh-sdk-app', false],
+  ['sdk-jsonrpc-server', '@deepseek-ai/dsh-sdk-jsonrpc-server', false],
+  ['session', '@deepseek-ai/dsh-session', false],
+  ['session-invariant', '@deepseek-ai/dsh-session/invariant', false],
+  ['session-log-deepseek', '@deepseek-ai/dsh-session-log-deepseek', false],
+  ['session-projection', '@deepseek-ai/dsh-session-projection', false],
+  ['session-title', '@deepseek-ai/dsh-session-title', false],
+  ['sessions', '@deepseek-ai/dsh-session-persistence-jsonl', false],
+  ['str-replace-editor', '@deepseek-ai/dsh-tool-str-replace-editor', true],
+  ['subprocess', '@deepseek-ai/dsh-subprocess-local', false],
+  ['system-prompt', '@deepseek-ai/dsh-system-prompt', false],
+  ['terminal-bash', '@deepseek-ai/dsh-terminal-bash', true],
+  ['terminal-pwsh', '@deepseek-ai/dsh-terminal-bash', true],
+  ['timer', '@deepseek-ai/cordis-plugin-timer', false],
+  ['tools', '@deepseek-ai/dsh-tools', false],
+].map(([id, name, disabled]) => ({
+  id,
+  name,
+  ...(disabled ? { disabled: true } : {}),
+}));
+const dshConfigPath = join(fixtureRoot, 'live-config', 'dsh-effective.json');
+writeFileSync(dshConfigPath, JSON.stringify(safeDshRows), 'utf8');
+requireSuccess(
+  run(prepareLiveCanary, ['validate-dsh-config', dshConfigPath]),
+  'DSH safe effective config',
+);
+const unsafeDshConfigPath = join(
+  fixtureRoot,
+  'live-config',
+  'dsh-effective-unsafe.json',
+);
+writeFileSync(
+  unsafeDshConfigPath,
+  JSON.stringify([
+    ...safeDshRows,
+    { id: 'future-tool', name: '@deepseek-ai/dsh-tool-future' },
+  ]),
+  'utf8',
+);
+requireFailure(
+  run(prepareLiveCanary, ['validate-dsh-config', unsafeDshConfigPath]),
+  'The DSH effective config does not match the reviewed canary surface.',
+  'DSH unexpected effective row',
+);
+
+const npmPrefix = join(fixtureRoot, 'npm-prefix');
+write(
+  'npm-prefix/lib/node_modules/@example/runtime/package.json',
+  '{"name":"@example/runtime","version":"1.2.3"}\n',
+);
+const packageSummaryPath = join(fixtureRoot, 'package-summary.md');
+requireSuccess(
+  run(
+    prepareLiveCanary,
+    ['record-global-package', 'Runtime', '@example/runtime'],
+    {
+      ...process.env,
+      GITHUB_STEP_SUMMARY: packageSummaryPath,
+      NPM_CONFIG_PREFIX: npmPrefix,
+    },
+  ),
+  'live-canary package identity',
+);
+assert.equal(
+  readFileSync(packageSummaryPath, 'utf8'),
+  '- Runtime: `@example/runtime@1.2.3`\n',
+);
+
 function write(path, content) {
   const absolutePath = resolve(fixtureRoot, path);
   mkdirSync(dirname(absolutePath), { recursive: true });
   writeFileSync(absolutePath, content, 'utf8');
 }
 
-function run(script, argumentsList = []) {
+function run(script, argumentsList = [], environment = process.env) {
   return spawnSync(process.execPath, [script, ...argumentsList], {
     cwd: fixtureRoot,
     encoding: 'utf8',
-    env: process.env,
+    env: environment,
   });
 }
 
@@ -173,6 +540,31 @@ function requireFailure(result, expected, label) {
       `${label} did not fail with ${JSON.stringify(expected)}:\n${output}`,
     );
   }
+}
+
+function isObject(value) {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function requiredJob(jobs, id) {
+  const job = jobs[id];
+  assert.ok(isObject(job), `Expected ${id} to be a workflow job.`);
+  assert.ok(Array.isArray(job['steps']), `Expected ${id} to define steps.`);
+  return job;
+}
+
+function requiredStep(job, name) {
+  const step = job['steps'].find(
+    (candidate) => isObject(candidate) && candidate['name'] === name,
+  );
+  assert.ok(isObject(step), `Expected workflow step ${name}.`);
+  return step;
+}
+
+function stepIndex(job, name) {
+  return job['steps'].findIndex(
+    (step) => isObject(step) && step['name'] === name,
+  );
 }
 
 assert.deepEqual(

@@ -207,6 +207,15 @@ The live test is opt-in and requires an authenticated Codex installation:
 HARAPTER_CODEX_LIVE=1 pnpm vitest run providers/codex/test/live.test.ts
 ```
 
+The trusted scheduled live-canary workflow can install the current stable Codex
+release on an ephemeral runner and execute the same lifecycle with an isolated
+configuration. It is enabled independently from pull request CI, records the
+installed package version, and requires a configured model service that supports
+the Responses interface used by Codex. Before the job receives the real model
+credential, the current Codex feature inventory must match the reviewed
+tool-disabled surface. The lifecycle fails if a tool or interaction event is
+observed.
+
 Experimental App Server APIs, Session fork, paginated history, direct account or
 authentication management, and host-owned process streams are not supported by
 this release.

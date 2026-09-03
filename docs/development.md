@@ -196,6 +196,39 @@ git branch -d feat/12-dsh-client
 Do not remove a required check or use an admin merge path that can bypass the
 three deterministic checks or unresolved conversations.
 
+## Trusted Provider live canaries
+
+[`provider-live-canary.yml`](../.github/workflows/provider-live-canary.yml) runs
+weekly from the trusted default branch and can also be dispatched manually. It
+is separate from pull request CI: no pull request or ordinary push event can
+execute repository code with model credentials.
+
+Scheduled coverage is enabled per Provider with repository variables named
+`HARAPTER_LIVE_CODEX_ENABLED`, `HARAPTER_LIVE_OPENCODE_ENABLED`, and
+`HARAPTER_LIVE_DSH_ENABLED`. Set a value to `true` only after its Runtime and
+model configuration have been reviewed. A manual dispatch may select one
+Provider or all three without changing those schedule flags.
+
+Enabled jobs require these repository Secrets:
+
+- `HARAPTER_LIVE_MODEL_API_KEY` — a dedicated, revocable, low-budget key;
+- `HARAPTER_LIVE_MODEL_URL` — the HTTPS URL used by the configured model;
+- `HARAPTER_LIVE_MODEL_ID` — the model identifier passed to the Runtime.
+
+An enabled job with missing configuration fails at a named validation step; it
+is never counted as live evidence. Codex additionally requires the model service
+to expose the Responses interface used by its current App Server. Jobs check out
+the immutable workflow trigger commit. Before real credentials are available,
+Codex must pass a fail-closed feature-inventory check and DSH must pass an exact
+effective-composition check. OpenCode denies every permission, disables its
+configured tools, and loads no plugins. The minimal live tests reject any tool
+or interaction event.
+
+Each job installs its current Runtime release only on the ephemeral runner,
+records the installed package identity and Harapter revision in the workflow
+summary, runs one bounded synthetic lifecycle, and retains no Runtime home,
+local server log, prompt, response, credential, or Provider traffic artifact.
+
 ## Release flow
 
 The squash pull request title determines eventual release impact. While Harapter

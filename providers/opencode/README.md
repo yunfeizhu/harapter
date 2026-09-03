@@ -128,7 +128,11 @@ Evidence includes:
   interaction, unknown-event, and error tests;
 - the shared portable Provider conformance suite;
 - an opt-in live-runtime test enabled with `HARAPTER_OPENCODE_LIVE=1` and a
-  host-operated endpoint in `HARAPTER_OPENCODE_ENDPOINT`.
+  host-operated server URL in `HARAPTER_OPENCODE_ENDPOINT`;
+- a trusted scheduled live canary that installs the current stable OpenCode
+  release on an ephemeral runner, starts an isolated local server with no
+  plugins, denied permissions, and disabled tools, records the installed package
+  version, and executes a lifecycle that rejects any tool or interaction event.
 
 The package does not claim support for experimental routes, automatic SSE
 reconnection, OpenCode process management, remote Session deletion through
