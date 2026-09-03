@@ -53,21 +53,28 @@ timeout, and the job timeout remains the final containment boundary.
 A passing canary is current live evidence only for its exercised path. Codex,
 OpenCode, and DSH exercise Session, Run, Event, and terminal behavior. Pi
 exercises package installation, version probing, RPC handshake, non-persistent
-Session open and close, and the absence of persisted Session content. A passing
-result does not promote every capability or convert an unnegotiated Runtime
-protocol into a negotiated compatibility range. A newly published Runtime
-failure means that release needs investigation or Adapter work; it does not make
-an older recorded live result false.
+Session open and close, and the absence of persisted Session content. OpenClaw
+exercises installation, version probing, an isolated loopback-only Gateway, the
+ACP handshake, Session open and close, and Client disposal without submitting a
+Prompt. A passing result does not promote every capability or convert an
+unnegotiated Runtime protocol into a negotiated compatibility range. A newly
+published Runtime failure means that release needs investigation or Adapter
+work; it does not make an older recorded live result false.
 
 DSH follows the current SDK Profile prerelease channel without an exact version
 allowlist. Each run records the DSH CLI, `@deepseek-ai/dsh-sdk-minimal`, and
 `@deepseek-ai/dsh-sdk-app` versions. Codex and OpenCode follow their current
-stable package channels. Pi follows the current official package channel and
-opens a non-persistent isolated RPC Session with extensions, skills, and prompt
-templates disabled. It submits no Prompt, performs no model call, and receives
-no model credential. A Provider that needs a different model interface or cannot
-safely isolate its Runtime stays disabled until its own canary configuration is
-reviewed.
+stable package channels. OpenClaw follows its current official package channel,
+uses isolated per-job state, and disables model catalog refresh, plugins,
+browser automation, MCP, channels, cron, heartbeat, telemetry, auditing, and
+shell environment loading. The current Gateway may still read its public plugin
+catalog during startup; the job carries no Provider credential or user content,
+and none of its files or logs are retained. Pi follows the current official
+package channel and opens a non-persistent isolated RPC Session with extensions,
+skills, and prompt templates disabled. Neither OpenClaw nor Pi submits a Prompt,
+performs a model call, or receives a model credential. A Provider that needs a
+different model interface or cannot safely isolate its Runtime stays disabled
+until its own canary configuration is reviewed.
 
 ## Alternatives considered
 

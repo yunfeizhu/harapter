@@ -7,7 +7,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join } from 'node:path';
 import { JSON_SCHEMA, defineScalarTag, load } from 'js-yaml';
 
 const API_KEY_SETTING = 'HARAPTER_LIVE_MODEL_API_KEY';
@@ -141,6 +141,10 @@ function main(args) {
     case 'write-opencode-config':
       requireCount(rest, 1, 'write-opencode-config');
       writePrivateFile(rest[0], openCodeConfig(liveSettings()));
+      return;
+    case 'write-openclaw-config':
+      requireCount(rest, 3, 'write-openclaw-config');
+      writePrivateFile(rest[0], openClawConfig(rest[1], rest[2]));
       return;
     case 'validate-codex-features':
       requireCount(rest, 1, 'validate-codex-features');
@@ -419,6 +423,92 @@ function openCodeConfig({ modelId }) {
     undefined,
     2,
   )}\n`;
+}
+
+function openClawConfig(workspacePath, logPath) {
+  const workspace = requiredAbsolutePath(
+    workspacePath,
+    'The OpenClaw canary workspace must be absolute.',
+  );
+  const log = requiredAbsolutePath(
+    logPath,
+    'The OpenClaw canary log path must be absolute.',
+  );
+  return `${JSON.stringify(
+    {
+      agents: {
+        defaults: {
+          heartbeat: { every: '0m' },
+          workspace,
+        },
+      },
+      browser: {
+        allowSystemProfileImport: false,
+        enabled: false,
+      },
+      cron: {
+        enabled: false,
+        triggers: { enabled: false },
+      },
+      discovery: { mdns: { mode: 'off' } },
+      gateway: {
+        auth: { mode: 'token' },
+        bind: 'loopback',
+        controlUi: {
+          automaticallyFetchFavicons: false,
+          enabled: false,
+          sessionObserver: false,
+        },
+        mode: 'local',
+        nodes: {
+          allowSkills: false,
+          browser: { mode: 'off' },
+          pairing: {
+            autoApproveLocal: true,
+            sshVerify: false,
+          },
+          pluginTools: { enabled: false },
+        },
+      },
+      hooks: { internal: { enabled: false } },
+      logging: {
+        audit: {
+          enabled: false,
+          messages: 'off',
+        },
+        consoleLevel: 'warn',
+        file: log,
+        level: 'warn',
+        maxFileBytes: 1024 * 1024,
+      },
+      mcp: { servers: {} },
+      models: { catalogRefresh: { enabled: false } },
+      plugins: {
+        allow: [],
+        enabled: false,
+      },
+      skills: {
+        allowBundled: [],
+        load: { watch: false },
+        workshop: { autonomous: { mode: 'off' } },
+      },
+      telemetry: { enabled: false },
+    },
+    undefined,
+    2,
+  )}\n`;
+}
+
+function requiredAbsolutePath(value, failureMessage) {
+  if (
+    value === undefined ||
+    !isAbsolute(value) ||
+    value.includes('\0') ||
+    /\p{Cc}/u.test(value)
+  ) {
+    throw new SafeFailure(failureMessage);
+  }
+  return value;
 }
 
 function writePrivateFile(path, content) {
