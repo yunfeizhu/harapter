@@ -30,17 +30,22 @@ for this implementation. That revision and its package version do not pin the
 host Runtime. A future incompatible protocol change requires new fixtures,
 mapping tests, conformance, and compatibility documentation.
 
-The last repository-recorded live run passed on 2026-09-03 with
-`@deepseek-ai/dsh@0.1.2-alpha.5`, `@deepseek-ai/dsh-sdk-minimal@0.1.2-alpha.5`,
-and `@deepseek-ai/dsh-sdk-app@0.1.2-alpha.5`. A production host may choose those
+The last repository-recorded
+[trusted lifecycle run](https://github.com/yunfeizhu/harapter/actions/runs/33735315426)
+passed on 2026-09-03 with `@deepseek-ai/dsh@0.1.2-alpha.5`,
+`@deepseek-ai/dsh-sdk-minimal@0.1.2-rc.1`, and
+`@deepseek-ai/dsh-sdk-app@0.1.2-rc.1`. It verified the exact synthetic response,
+`run.started`, `message.completed`, the final authoritative `run.completed`, and
+the absence of tool or interaction Events. A production host may choose those
 exact versions for a reproducible deployment, while Harapter continues to admit
 newer Runtime versions and validates their observed structures instead of using
 a version allowlist. The trusted scheduled live canary follows the current SDK
 Profile prerelease channel and records the installed CLI, minimal Profile, and
 SDK Runtime versions for every run. It composes `sdk-minimal`, disables every
 model-facing tool in that composition, and verifies the complete effective
-configuration before receiving the real model credential. Any composition drift
-or observed tool or interaction event fails the lifecycle.
+configuration before receiving the real model credential. Any composition drift,
+unexpected response, missing terminal Event, or observed tool or interaction
+Event fails the lifecycle.
 
 DeepSeek Harness is MIT licensed. Harapter does not redistribute its Runtime or
 SDK packages; see the [license record](../../licenses/deepseek-harness.md).
