@@ -157,6 +157,15 @@ assert.doesNotMatch(releaseWorkflow, /^\s{2}push:/mu);
 assert.match(releaseWorkflow, /if: github\.ref == 'refs\/heads\/main'/u);
 assert.match(releaseWorkflow, /target-branch: main/u);
 
+const pullRequestTemplate = readFileSync(
+  resolve(repositoryRoot, '.github/PULL_REQUEST_TEMPLATE.md'),
+  'utf8',
+);
+assert.match(
+  pullRequestTemplate,
+  /User-visible additions and removals use `feat`, `fix`, or a breaking-change marker; `refactor` is behavior-preserving/u,
+);
+
 const publishWorkflow = readFileSync(
   resolve(repositoryRoot, '.github/workflows/publish-npm.yml'),
   'utf8',

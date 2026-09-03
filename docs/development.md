@@ -53,7 +53,9 @@ branch segment must equal the pull request title type. This repository rule
 overrides tools or agents that normally prepend their own namespace: a
 `docs(design):` pull request uses `docs/provider-roadmap`, not
 `codex/docs-provider-roadmap`. Allowed types are `feat`, `fix`, `docs`,
-`refactor`, `test`, `perf`, `build`, `ci`, `chore`, and `revert`.
+`refactor`, `test`, `perf`, `build`, `ci`, `chore`, and `revert`. Public
+additions and removals use release-visible types; `refactor` stays
+behavior-preserving.
 
 Examples:
 
