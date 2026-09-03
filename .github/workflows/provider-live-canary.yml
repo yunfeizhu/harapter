@@ -736,5 +736,9 @@ jobs:
       - name: Record passing OpenClaw evidence
         run: |
           printf '%s\n' '- Lifecycle: passed' >> "$GITHUB_STEP_SUMMARY"
-          printf '%s\n' '- Prompt submitted: yes' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Synthetic Prompts submitted: 2' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Completed message Event: passed' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Session resume: passed' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Native cancellation: passed' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Authoritative terminals: run.completed, run.cancelled' >> "$GITHUB_STEP_SUMMARY"
           printf '%s\n' '- Model tools enabled: no' >> "$GITHUB_STEP_SUMMARY"

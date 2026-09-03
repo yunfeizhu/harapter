@@ -168,8 +168,9 @@ Evidence for this supported ACP v1 Adapter includes:
 - an opt-in live lifecycle test for a host-installed authenticated bridge; and
 - a trusted live canary that installs the current OpenClaw release on an
   ephemeral runner and is configured to exercise runtime probing, the ACP
-  handshake, isolated Session and Run lifecycles, streamed Events, the
-  authoritative terminal result, Session close, and Client disposal.
+  handshake, isolated Session creation, a completed Run, Client reconnection,
+  Session resume, native cancellation, authoritative terminal results, Session
+  close, and Client disposal.
 
 The [repository-recorded live lifecycle run][openclaw-live-2026-09-03] passed on
 2026-09-03 with `openclaw@2026.8.2`. It verified current-package installation,
@@ -181,7 +182,7 @@ reproducibility. Harapter continues to admit newer releases and validates their
 ACP identity and observed structures instead of using the recorded version as an
 executable allowlist.
 
-Run live verification only when submitting one synthetic text Prompt through a
+Run live verification only when submitting two synthetic text Prompts through a
 host-operated Gateway is acceptable to the host:
 
 ```bash
@@ -190,24 +191,28 @@ HARAPTER_OPENCLAW_COMMAND="$(command -v openclaw)" \
 pnpm vitest run providers/openclaw/test/live.test.ts
 ```
 
-The live test sends one synthetic text Prompt and logs no Provider traffic. It
-requires the expected reply content, a completed message Event, and the
-authoritative completed Run Event while rejecting every tool or approval Event.
-A skipped or failed live test is not support evidence. The scheduled canary uses
-a generated, text-only model route with OpenClaw's model tool support disabled,
-disables model catalog refresh, plugins, browser automation, MCP, channels,
-cron, heartbeat, telemetry, auditing, and shell environment loading, and retains
-no Runtime state or logs after its ephemeral job ends. The model credential is
-an environment-backed SecretRef resolved by the isolated Gateway and is removed
-before the Harapter test process starts the ACP bridge. The bridge also omits
-the temporary working-directory prefix from the Prompt.
+The live test sends one exact-response Prompt, closes its first ACP Client,
+opens a new bridge connection, resumes the same isolated Gateway Session, and
+submits a second long-response Prompt for immediate native cancellation. It logs
+no Provider traffic, requires authoritative `run.completed` and `run.cancelled`
+terminals, and rejects every tool or approval Event. A skipped or failed live
+test is not support evidence. The scheduled canary uses a generated, text-only
+model route with OpenClaw's model tool support disabled, disables model catalog
+refresh, plugins, browser automation, MCP, channels, cron, heartbeat, telemetry,
+auditing, and shell environment loading, and retains no Runtime state or logs
+after its ephemeral job ends. The model credential is an environment-backed
+SecretRef resolved by the isolated Gateway and is removed before the Harapter
+test process starts the ACP bridge. The bridge also omits the temporary
+working-directory prefix from the Prompt.
 
-The live lifecycle proves the supported ACP v1 text Run path. It does not prove
-native cancellation, resume, approval, image input, or effective workspace
-execution. Those capabilities retain their documented `native`, `unknown`, or
-unsupported status according to deterministic protocol evidence; hosts that
-depend on an unverified capability should run focused live evidence before
-production use.
+The recorded live lifecycle above proves the supported ACP v1 completed text Run
+path. It does not yet record native cancellation or resume evidence. The current
+canary additionally requires those paths; they become repository live evidence
+only after a trusted run passes. Approval, image input, and effective workspace
+execution remain live-unverified. Those capabilities retain their documented
+`native`, `unknown`, or unsupported status according to deterministic protocol
+evidence; hosts that depend on an unverified capability should run focused live
+evidence before production use.
 
 Shared Gateway session routing, history replay, per-Session MCP configuration,
 audio input, generic file input, filesystem or terminal client services,

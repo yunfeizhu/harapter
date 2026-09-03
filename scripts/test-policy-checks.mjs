@@ -328,8 +328,17 @@ assert.match(
   )['run'],
   /write-pi-config/u,
 );
+const openClawJob = requiredJob(liveJobs, 'openclaw');
+assertOpenClawWorkflowEvidence(openClawJob);
+const weakenedOpenClawJob = structuredClone(openClawJob);
+const weakenedOpenClawLiveStep = requiredStep(
+  weakenedOpenClawJob,
+  'Run OpenClaw live lifecycle',
+);
+weakenedOpenClawLiveStep['env']['HARAPTER_OPENCLAW_LIVE'] = '0';
+assert.throws(() => assertOpenClawWorkflowEvidence(weakenedOpenClawJob));
 const openClawLiveStep = requiredStep(
-  requiredJob(liveJobs, 'openclaw'),
+  openClawJob,
   'Run OpenClaw live lifecycle',
 );
 assert.deepEqual(openClawLiveStep['env'], {
@@ -499,7 +508,7 @@ assert.match(openClawLiveTest, /client\.createSession\(\)/u);
 assert.match(openClawLiveTest, /timeout: 10_000/u);
 assertOpenClawLiveEvidence(openClawLiveTest);
 const weakenedOpenClawMessageEvidence = openClawLiveTest.replace(
-  "expect(result.finalMessage?.trim()).toBe('HARAPTER_OPENCLAW_LIVE_OK');",
+  "assertCompletedTextRun(result, 'HARAPTER_OPENCLAW_LIVE_OK');",
   '',
 );
 assert.notEqual(weakenedOpenClawMessageEvidence, openClawLiveTest);
@@ -507,11 +516,31 @@ assert.throws(() =>
   assertOpenClawLiveEvidence(weakenedOpenClawMessageEvidence),
 );
 const weakenedOpenClawEventEvidence = openClawLiveTest.replace(
-  "expect(events.map(({ type }) => type)).toContain('message.completed');",
+  "expect(eventTypes).toContain('message.completed');",
   '',
 );
 assert.notEqual(weakenedOpenClawEventEvidence, openClawLiveTest);
 assert.throws(() => assertOpenClawLiveEvidence(weakenedOpenClawEventEvidence));
+const weakenedOpenClawResumeEvidence = openClawLiveTest.replace(
+  'assertResumedSession(sessionRef, resumed.ref());',
+  '',
+);
+assert.notEqual(weakenedOpenClawResumeEvidence, openClawLiveTest);
+assert.throws(() => assertOpenClawLiveEvidence(weakenedOpenClawResumeEvidence));
+const weakenedOpenClawCancellationEvidence = openClawLiveTest.replace(
+  'assertNativeCancellation(await cancelledRun.cancel());',
+  '',
+);
+assert.notEqual(weakenedOpenClawCancellationEvidence, openClawLiveTest);
+assert.throws(() =>
+  assertOpenClawLiveEvidence(weakenedOpenClawCancellationEvidence),
+);
+const leakingOpenClawFailure = openClawLiveTest.replace(
+  "throw new Error('OpenClaw did not return the expected synthetic response.');",
+  "throw new Error(`OpenClaw did not return the expected synthetic response. ${result.finalMessage ?? ''}`);",
+);
+assert.notEqual(leakingOpenClawFailure, openClawLiveTest);
+assert.throws(() => assertOpenClawLiveEvidence(leakingOpenClawFailure));
 
 const hermesLiveTest = readFileSync(
   resolve(repositoryRoot, 'providers/hermes/test/live.test.ts'),
@@ -1115,13 +1144,72 @@ function assertOpenClawLiveEvidence(source) {
   assert.match(source, /args: \['acp', '--no-prefix-cwd'\]/u);
   assert.match(source, /session\.start\s*\(/u);
   assert.match(source, /assertToolFreeLiveEvent\(event\)/u);
-  assert.match(source, /result\.status\)\.toBe\('completed'\)/u);
   assert.match(
     source,
-    /result\.finalMessage\?\.trim\(\)\)\.toBe\('HARAPTER_OPENCLAW_LIVE_OK'\)/u,
+    /assertCompletedTextRun\(result, 'HARAPTER_OPENCLAW_LIVE_OK'\)/u,
   );
-  assert.match(source, /toContain\('message\.completed'\)/u);
-  assert.match(source, /events\.at\(-1\)\?\.type\)\.toBe\('run\.completed'\)/u);
+  assert.match(source, /eventTypes\)\.toContain\('run\.started'\)/u);
+  assert.match(source, /eventTypes\)\.toContain\('message\.completed'\)/u);
+  assert.match(source, /eventTypes\.at\(-1\)\)\.toBe\('run\.completed'\)/u);
+  assert.match(
+    source,
+    /const resumedClient = await factory\.connect\(profile\)/u,
+  );
+  assert.match(source, /resumedClient\.resumeSession\(sessionRef\)/u);
+  assert.match(source, /assertResumedSession\(sessionRef, resumed\.ref\(\)\)/u);
+  assert.match(
+    source,
+    /assertNativeCancellation\(await cancelledRun\.cancel\(\)\)/u,
+  );
+  assert.match(source, /assertCancelledRun\(cancelledResult\)/u);
+  assert.match(
+    source,
+    /cancelledEventTypes\.at\(-1\)\)\.toBe\('run\.cancelled'\)/u,
+  );
+  assert.match(source, /await client\.close\(\)/u);
+  assert.match(source, /await resumed\.close\(\)/u);
+  assert.match(source, /await resumedClient\.close\(\)/u);
+  assert.match(source, /assertSuccessfulVersionProbe\(version\.status\)/u);
+  assert.match(
+    source,
+    /assertSupportedDescriptor\(await client\.descriptor\(\)\)/u,
+  );
+  assert.match(source, /assertOwnedSessionRef\(ref\)/u);
+  assert.match(source, /assertThrowsExactMessage\(\(\) => \{/u);
+  assert.doesNotMatch(
+    source,
+    /throw new Error\(`[^`]*\$\{result\.finalMessage/u,
+  );
+  assert.doesNotMatch(source, /events\.push\(event\)/u);
+  assert.doesNotMatch(source, /expect\(result/u);
+  assert.doesNotMatch(source, /expect\(sessionRef/u);
+  assert.doesNotMatch(source, /expect\(resumed\.ref/u);
+  assert.doesNotMatch(source, /expect\(version/u);
+  assert.doesNotMatch(source, /expect\(client\.descriptor/u);
+}
+
+function assertOpenClawWorkflowEvidence(job) {
+  const liveStep = requiredStep(job, 'Run OpenClaw live lifecycle');
+  assert.ok(isObject(liveStep['env']));
+  assert.equal(liveStep['env']['HARAPTER_OPENCLAW_LIVE'], '1');
+  assert.equal(liveStep['continue-on-error'], undefined);
+  const summaryStep = requiredStep(job, 'Record passing OpenClaw evidence');
+  assert.ok(
+    stepIndex(job, 'Record passing OpenClaw evidence') >
+      stepIndex(job, 'Run OpenClaw live lifecycle'),
+  );
+  assert.equal(summaryStep['if'], undefined);
+  assert.equal(summaryStep['continue-on-error'], undefined);
+  assert.match(summaryStep['run'], /- Lifecycle: passed/u);
+  assert.match(summaryStep['run'], /- Synthetic Prompts submitted: 2/u);
+  assert.match(summaryStep['run'], /- Completed message Event: passed/u);
+  assert.match(summaryStep['run'], /- Session resume: passed/u);
+  assert.match(summaryStep['run'], /- Native cancellation: passed/u);
+  assert.match(
+    summaryStep['run'],
+    /- Authoritative terminals: run\.completed, run\.cancelled/u,
+  );
+  assert.match(summaryStep['run'], /- Model tools enabled: no/u);
 }
 
 function assertDshLiveEvidence(source) {
