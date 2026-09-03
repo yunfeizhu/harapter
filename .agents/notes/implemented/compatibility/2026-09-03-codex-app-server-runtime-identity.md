@@ -68,5 +68,10 @@ make an executable version substitute for Schema and lifecycle evidence.
   or `codexHome` path.
 - A Runtime that removes the leading semantic version, exceeds the bounds, or
   changes a required field fails closed until its interface is reviewed.
+- A trusted current-release
+  [live canary](https://github.com/yunfeizhu/harapter/actions/runs/33745075649)
+  passed on 2026-09-03 with `@openai/codex@0.153.0`. It established the stable
+  handshake and completed, same-connection resume, native cancellation, and
+  cleanup paths for that Runtime without turning its version into an allowlist.
 - Fixture, protocol, Adapter, conformance, and current-release live evidence are
   required when this handshake contract changes.

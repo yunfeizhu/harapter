@@ -214,14 +214,20 @@ HARAPTER_CODEX_COMMAND="$(command -v codex)" \
 pnpm vitest run providers/codex/test/live.test.ts
 ```
 
-The last repository-recorded live run passed on 2026-09-03 with
-`@openai/codex@0.153.0`. A production host may pin that release for a
-reproducible deployment. Harapter continues to admit newer stable releases and
-validates the observed handshake, response, Event, and terminal structures
-instead of using the recorded version as an executable allowlist. That recorded
-run proves the completed text Turn path; the strengthened current canary adds
-Thread resume and native cancellation, which become repository live evidence
-only after a trusted run passes.
+The last repository-recorded
+[trusted live canary](https://github.com/yunfeizhu/harapter/actions/runs/33745075649)
+passed on 2026-09-03 with `@openai/codex@0.153.0`. It proved the stable
+handshake, an exact completed text response with `run.completed`,
+same-connection resume of the native non-ephemeral Thread, immediate native
+cancellation with `run.cancelled`, and orderly Session and Client cleanup. The
+canary submitted two synthetic Prompts with no Tool or interaction Event.
+
+A production host may pin the recorded release for a reproducible deployment.
+Harapter continues to admit newer stable releases and validates the observed
+handshake, response, Event, and terminal structures instead of using the
+recorded version as an executable allowlist. The run does not establish
+cross-process Thread resume, experimental App Server APIs, image input, approval
+interactions, or Tool execution.
 
 The trusted scheduled live-canary workflow can install the current stable Codex
 release on an ephemeral runner and execute the same lifecycle with an isolated
