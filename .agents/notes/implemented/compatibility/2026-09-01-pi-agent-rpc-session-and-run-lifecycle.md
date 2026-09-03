@@ -90,8 +90,13 @@ provides a stable terminal rule.
 - The Adapter follows the current documented RPC family instead of pinning one
   Pi release; breaking upstream structures require synchronized mappings,
   fixtures, tests, documentation, and review.
-- Synthetic fixtures and shared conformance establish source evidence. The
-  Adapter remains experimental until opt-in live Runtime evidence is recorded.
+- Synthetic fixtures and shared conformance establish deterministic source
+  evidence. A trusted live canary passed on 2026-09-03 with
+  `@earendil-works/pi-coding-agent@0.84.4`, proving the configured text Run,
+  Event, terminal, persisted resume, native cancellation, and cleanup path. The
+  Adapter remains experimental because the RPC family does not negotiate a
+  protocol version that can bind any connected Runtime to that evidence before
+  use.
 - Text input, typed extension UI interactions, and read-only native access are
   supported within the documented boundary. Images, files, per-Session Workspace
   selection, system-context overrides, portable model selection, generic

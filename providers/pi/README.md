@@ -159,18 +159,25 @@ Evidence for this experimental Adapter includes:
 - the shared portable Provider conformance suite;
 - an opt-in live lifecycle test for a host-installed Pi Runtime;
 - a trusted live-canary path that installs the current official release on an
-  ephemeral runner and is configured to exercise a completed text Run, streamed
-  Events, the authoritative terminal, persisted Session resume, native
-  cancellation, Session close, and Client disposal.
+  ephemeral runner and exercises a completed text Run, streamed Events, the
+  authoritative terminal, persisted Session resume, native cancellation, Session
+  close, and Client disposal.
 
-The last repository-recorded live Session run passed on 2026-09-03 with
-`@earendil-works/pi-coding-agent@0.84.4`. It verified current-package
-installation, version probing, RPC handshake, non-persistent Session open and
-close, and an empty isolated Session directory after shutdown. It did not submit
-a Prompt or prove Run, Event, terminal, cancellation, resume, or interaction
-behavior. A production host may pin that release for reproducibility. Harapter
-continues to admit newer releases and validates their observed structures
-instead of using the recorded version as an executable allowlist.
+The last repository-recorded live lifecycle run passed on 2026-09-03 with
+`@earendil-works/pi-coding-agent@0.84.4` in
+[Provider live canary run 33732602596](https://github.com/yunfeizhu/harapter/actions/runs/33732602596).
+It verified current-package installation, version probing, the model-facing CLI
+safety surface, RPC handshake, an exact completed text response, streamed
+`message.completed` and authoritative `run.completed` Events, persisted Session
+resume, correlated native cancellation with authoritative `run.cancelled`,
+Session close, Client disposal, isolated-state cleanup, and the absence of tool
+or interaction Events. It did not prove image or file input, extension UI
+interactions, or other capabilities outside that path. A production host may pin
+that release for reproducibility. Harapter continues to admit newer releases and
+validates their observed structures instead of using the recorded version as an
+executable allowlist. The Adapter remains experimental because the current RPC
+family does not negotiate a protocol version that can bind an arbitrary
+connected Runtime to this evidence before use.
 
 Run live verification only when two synthetic text Prompts, one completed model
 request, and one native cancellation attempt are acceptable to the host. The
@@ -205,13 +212,12 @@ then requires a correlated native cancellation and authoritative cancelled Run.
 The Pi Runtime starts with tools, extensions, skills, prompt templates, and
 context-file discovery disabled; any tool or interaction Event fails the test.
 The test logs no Provider traffic and deletes its isolated Session state. A
-skipped or unrecorded live test is not support evidence. The configured Run,
-resume, and cancellation path does not become recorded evidence until a trusted
-manual or scheduled run passes, and the Adapter remains experimental while the
-current RPC family has no protocol-version negotiation.
+skipped or failed live test is not support evidence. Passing trusted manual and
+scheduled runs refresh evidence for the installed release without creating a
+version allowlist or changing the unnegotiated compatibility boundary.
 
 Image and file input, portable model selection, system-context overrides,
 generic approvals, per-Session Workspace selection, Runtime extension loading,
 skills, prompt templates, shared-process Session multiplexing, automatic process
 restart, Session-file access, arbitrary native mutations, and live authenticated
-Run evidence are outside the current compatibility boundary.
+extension-interaction evidence are outside the current compatibility boundary.
