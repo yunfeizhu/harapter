@@ -163,6 +163,7 @@ assert.deepEqual(Object.keys(liveJobs).sort(), [
   'codex',
   'dsh',
   'opencode',
+  'pi',
   'selection',
 ]);
 const selection = requiredJob(liveJobs, 'selection');
@@ -204,6 +205,14 @@ const providerJobExpectations = {
       'Run OpenCode live lifecycle',
       'Validate live configuration',
     ]),
+  },
+  pi: {
+    install:
+      'npm install --global --ignore-scripts @earendil-works/pi-coding-agent@latest',
+    liveStep: 'Run Pi Agent live lifecycle',
+    liveTest: 'providers/pi/test/live.test.ts',
+    processTimeoutSeconds: 120,
+    secretSteps: new Set(),
   },
 };
 for (const [provider, expectation] of Object.entries(providerJobExpectations)) {
@@ -254,12 +263,34 @@ assert.match(
   )['run'],
   /curl --connect-timeout 1 --max-time 2 --fail/u,
 );
+const piLiveStep = requiredStep(
+  requiredJob(liveJobs, 'pi'),
+  'Run Pi Agent live lifecycle',
+);
+assert.deepEqual(piLiveStep['env'], {
+  HARAPTER_PI_LIVE: '1',
+  PI_CODING_AGENT_DIR: '${{ runner.temp }}/harapter-pi-home',
+  PI_CODING_AGENT_SESSION_DIR: '${{ runner.temp }}/harapter-pi-sessions',
+  PI_OFFLINE: '1',
+  PI_SKIP_VERSION_CHECK: '1',
+  PI_TELEMETRY: '0',
+});
+assert.match(JSON.stringify(piLiveStep), /HARAPTER_PI_COMMAND/u);
 assert.doesNotMatch(
   liveCanaryWorkflow,
-  /npm install --global (?:@openai\/codex|opencode-ai|@deepseek-ai\/dsh)@\d/u,
+  /npm install --global (?:@openai\/codex|opencode-ai|@deepseek-ai\/dsh|@earendil-works\/pi-coding-agent)@\d/u,
 );
 assert.match(liveCanaryWorkflow, /DSH_TELEMETRY_DISABLED: '1'/u);
 assert.doesNotMatch(liveCanaryWorkflow, /continue-on-error/u);
+
+const piLiveTest = readFileSync(
+  resolve(repositoryRoot, 'providers/pi/test/live.test.ts'),
+  'utf8',
+);
+assert.match(piLiveTest, /describe\.runIf\(liveEnabled\)/u);
+assert.match(piLiveTest, /providerOptions: \{ persistSessions: false \}/u);
+assert.match(piLiveTest, /PI_CODING_AGENT_SESSION_DIR/u);
+assert.match(piLiveTest, /readdir\(sessionDirectory, \{ recursive: true \}\)/u);
 
 const prepareLiveCanary = resolve(
   repositoryRoot,

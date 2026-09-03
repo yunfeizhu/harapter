@@ -205,30 +205,36 @@ execute repository code with model credentials.
 
 Scheduled coverage is enabled per Provider with repository variables named
 `HARAPTER_LIVE_CODEX_ENABLED`, `HARAPTER_LIVE_OPENCODE_ENABLED`, and
-`HARAPTER_LIVE_DSH_ENABLED`. Set a value to `true` only after its Runtime and
-model configuration have been reviewed. A manual dispatch may select one
-Provider or all three without changing those schedule flags.
+`HARAPTER_LIVE_DSH_ENABLED`, plus `HARAPTER_LIVE_PI_ENABLED`. Set a value to
+`true` only after its Runtime and canary configuration have been reviewed. A
+manual dispatch may select one Provider or all configured Providers without
+changing those schedule flags.
 
-Enabled jobs require these repository Secrets:
+The model-facing Codex, OpenCode, and DSH jobs require these repository Secrets:
 
 - `HARAPTER_LIVE_MODEL_API_KEY` — a dedicated, revocable, low-budget key;
 - `HARAPTER_LIVE_MODEL_URL` — the HTTPS URL used by the configured model;
 - `HARAPTER_LIVE_MODEL_ID` — the model identifier passed to the Runtime.
 
-An enabled job with missing configuration fails at a named validation step; it
-is never counted as live evidence. Codex additionally requires the model service
-to expose the Responses interface used by its current App Server. Jobs check out
-the immutable workflow trigger commit. Before real credentials are available,
-Codex must pass a fail-closed feature-inventory check and DSH must pass an exact
-effective-composition check. OpenCode denies every permission, disables its
-configured tools, and loads no plugins. The minimal live tests reject any tool
-or interaction event.
+A selected model-facing job with missing configuration fails at a named
+validation step; it is never counted as live evidence. Codex additionally
+requires the model service to expose the Responses interface used by its current
+App Server. Jobs check out the immutable workflow trigger commit. Before real
+credentials are available, Codex must pass a fail-closed feature-inventory check
+and DSH must pass an exact effective-composition check. OpenCode denies every
+permission, disables its configured tools, and loads no plugins. Their minimal
+Run tests reject any tool or interaction event.
+
+Pi receives no model Secret and sends no Prompt. Its canary disables Runtime
+resource discovery and network update checks, opens an isolated non-persistent
+RPC Session, closes it, and verifies that its isolated Session directory remains
+empty.
 
 Each job installs its current Runtime release only on the ephemeral runner,
 records the installed package identity and Harapter revision in the workflow
-summary, and runs one synthetic lifecycle with bounded readiness requests, a
+summary, and runs its scoped lifecycle with bounded readiness requests, a
 process deadline, and a final job timeout. It retains no Runtime home, local
-server log, prompt, response, credential, or Provider traffic artifact.
+server log, Prompt, response, credential, or Provider traffic artifact.
 
 ## Release flow
 
