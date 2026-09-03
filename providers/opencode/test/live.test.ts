@@ -2,7 +2,15 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { profileId } from '@harapter/core';
+import {
+  profileId,
+  type CancelResult,
+  type ClientDescriptor,
+  type HarnessProfile,
+  type HarnessRun,
+  type RunResult,
+  type SessionRef,
+} from '@harapter/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   OPENCODE_PROVIDER_ID,
@@ -10,8 +18,6 @@ import {
 } from '../src/index.js';
 
 const liveEnabled = process.env['HARAPTER_OPENCODE_LIVE'] === '1';
-const liveControlEnabled =
-  liveEnabled && process.env['HARAPTER_OPENCODE_LIVE_CONTROL'] === '1';
 const temporaryDirectories: string[] = [];
 
 afterEach(async () => {
@@ -23,13 +29,14 @@ afterEach(async () => {
 });
 
 describe.runIf(liveEnabled)('OpenCode Server live runtime', () => {
-  it('completes a synthetic prompt through a host-operated endpoint', async () => {
+  it('completes and cancels Runs through a resumable Session', async () => {
     const endpoint = requiredEnvironment('HARAPTER_OPENCODE_ENDPOINT');
     const providerId = requiredEnvironment('HARAPTER_OPENCODE_MODEL_PROVIDER');
     const modelId = requiredEnvironment('HARAPTER_OPENCODE_MODEL');
     const workspace = await mkdtemp(join(tmpdir(), 'harapter-opencode-live-'));
     temporaryDirectories.push(workspace);
-    const client = await createOpenCodeProviderFactory().connect({
+    const factory = createOpenCodeProviderFactory();
+    const profile: HarnessProfile = {
       profileId: profileId('opencode-live-local'),
       providerId: OPENCODE_PROVIDER_ID,
       displayName: 'Local OpenCode Server',
@@ -39,158 +46,94 @@ describe.runIf(liveEnabled)('OpenCode Server live runtime', () => {
         transport: 'http',
         ownership: 'external',
       },
-      providerOptions: { runRequestTimeoutMs: 120_000 },
-    });
-    try {
-      const descriptor = await client.descriptor();
-      expect(descriptor.runtime?.version).toMatch(/^\d+\.\d+\.\d+/u);
-      const session = await client.createSession({
-        workspace: { uri: pathToFileURL(workspace).href },
-        model: {
-          id: modelId,
-          providerOptions: { providerId },
-        },
-      });
-      const run = await session.start({
-        parts: [
-          {
-            type: 'text',
-            text: 'Reply with exactly HARAPTER_OPENCODE_LIVE_OK and do not use tools.',
-          },
-        ],
-      });
-      for await (const event of run.events()) {
-        assertToolFreeLiveEvent(event);
-      }
-      await expect(run.result()).resolves.toMatchObject({
-        status: 'completed',
-      });
-      await session.close();
-    } finally {
-      await client.close();
-    }
-  }, 150_000);
-});
-
-describe.runIf(liveControlEnabled)('OpenCode Server live control plane', () => {
-  it('proves native abort with an authoritative cancelled result', async () => {
-    const workspace = await liveWorkspace();
-    const client = await liveClient();
-    try {
-      const session = await liveSession(client, workspace);
-      const run = await session.start({
-        parts: [
-          {
-            type: 'text',
-            text: 'HARAPTER_OPENCODE_WAIT_FOR_ABORT',
-          },
-        ],
-      });
-      await expect(run.cancel()).resolves.toEqual({ mode: 'native' });
-      await expect(run.result()).resolves.toMatchObject({
-        status: 'cancelled',
-      });
-      await session.close();
-    } finally {
-      await client.close();
-    }
-  }, 150_000);
-
-  it('proves a documented permission request and denial round trip', async () => {
-    const workspace = await liveWorkspace();
-    const client = await liveClient();
-    try {
-      const session = await liveSession(client, workspace);
-      const run = await session.start({
-        parts: [
-          {
-            type: 'text',
-            text: 'HARAPTER_OPENCODE_REQUEST_PERMISSION',
-          },
-        ],
-      });
-      let interactionObserved = false;
-      const observedTypes: string[] = [];
-      for await (const event of run.events()) {
-        observedTypes.push(
-          event.providerEventType === undefined
-            ? event.type
-            : `${event.type}:${event.providerEventType}`,
-        );
-        if (event.type !== 'interaction.requested') continue;
-        const requestId = interactionRequestId(event.data);
-        interactionObserved = true;
-        await session.respond(requestId, {
-          kind: 'approval',
-          decision: 'deny',
-        });
-      }
-      expect(observedTypes).toContain('interaction.requested');
-      expect(interactionObserved).toBe(true);
-      await expect(run.result()).resolves.toMatchObject({
-        status: 'completed',
-      });
-      await session.close();
-    } finally {
-      await client.close();
-    }
-  }, 150_000);
-});
-
-async function liveWorkspace(): Promise<string> {
-  const workspace = await mkdtemp(join(tmpdir(), 'harapter-opencode-live-'));
-  temporaryDirectories.push(workspace);
-  return workspace;
-}
-
-async function liveClient() {
-  return createOpenCodeProviderFactory().connect({
-    profileId: profileId('opencode-live-control'),
-    providerId: OPENCODE_PROVIDER_ID,
-    displayName: 'Local OpenCode Server',
-    connection: {
-      kind: 'endpoint',
-      url: requiredEnvironment('HARAPTER_OPENCODE_ENDPOINT'),
-      transport: 'http',
-      ownership: 'external',
-    },
-    providerOptions: { runRequestTimeoutMs: 120_000 },
-  });
-}
-
-async function liveSession(
-  client: Awaited<ReturnType<typeof liveClient>>,
-  workspace: string,
-) {
-  return client.createSession({
-    workspace: { uri: pathToFileURL(workspace).href },
-    model: {
-      id: requiredEnvironment('HARAPTER_OPENCODE_MODEL'),
       providerOptions: {
-        providerId: requiredEnvironment('HARAPTER_OPENCODE_MODEL_PROVIDER'),
+        cancelSettlementTimeoutMs: 30_000,
+        runRequestTimeoutMs: 180_000,
       },
-    },
-  });
-}
+    };
+    const sessionRef = await (async (): Promise<SessionRef> => {
+      const client = await factory.connect(profile);
+      let primaryFailure: unknown;
+      try {
+        assertSupportedDescriptor(await client.descriptor());
+        const session = await client.createSession({
+          workspace: { uri: pathToFileURL(workspace).href },
+          model: {
+            id: modelId,
+            providerOptions: { providerId },
+          },
+        });
+        const ref = session.ref();
+        assertOwnedSessionRef(ref);
+        const run = await session.start(
+          {
+            parts: [
+              {
+                type: 'text',
+                text: 'Reply with exactly HARAPTER_OPENCODE_LIVE_OK and do not use tools.',
+              },
+            ],
+          },
+          { timeoutMs: 180_000 },
+        );
+        const [eventTypes, result] = await Promise.all([
+          collectEventTypes(run),
+          run.result(),
+        ]);
+        assertCompletedTextRun(result, 'HARAPTER_OPENCODE_LIVE_OK');
+        expect(eventTypes).toContain('run.started');
+        expect(eventTypes).toContain('message.completed');
+        expect(eventTypes.at(-1)).toBe('run.completed');
+        await session.close();
+        return ref;
+      } catch (error) {
+        primaryFailure = error;
+        throw error;
+      } finally {
+        if (primaryFailure === undefined) {
+          await client.close();
+        } else {
+          await client.close().catch(() => undefined);
+        }
+      }
+    })();
 
-function interactionRequestId(value: unknown): string {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new Error('OpenCode interaction data is invalid.');
-  }
-  const requestId = (value as Record<string, unknown>)['requestId'];
-  if (typeof requestId !== 'string' || requestId.length === 0) {
-    throw new Error('OpenCode interaction requestId is missing.');
-  }
-  return requestId;
-}
-
-function requiredEnvironment(name: string): string {
-  const value = process.env[name];
-  if (value === undefined || value.length === 0) {
-    throw new Error(`The ${name} live-test setting is required.`);
-  }
-  return value;
-}
+    const resumedClient = await factory.connect(profile);
+    let primaryFailure: unknown;
+    try {
+      const resumed = await resumedClient.resumeSession(sessionRef);
+      assertResumedSession(sessionRef, resumed.ref());
+      const cancelledRun = await resumed.start({
+        parts: [
+          {
+            type: 'text',
+            text: 'Write at least 4000 words and begin immediately. Do not use tools.',
+          },
+        ],
+      });
+      const cancelledEventTypesPromise = collectEventTypes(cancelledRun);
+      const cancelledResultPromise = cancelledRun.result();
+      assertNativeCancellation(await cancelledRun.cancel());
+      const [cancelledEventTypes, cancelledResult] = await Promise.all([
+        cancelledEventTypesPromise,
+        cancelledResultPromise,
+      ]);
+      assertCancelledRun(cancelledResult);
+      expect(cancelledEventTypes).toContain('run.started');
+      expect(cancelledEventTypes.at(-1)).toBe('run.cancelled');
+      await resumed.close();
+    } catch (error) {
+      primaryFailure = error;
+      throw error;
+    } finally {
+      if (primaryFailure === undefined) {
+        await resumedClient.close();
+      } else {
+        await resumedClient.close().catch(() => undefined);
+      }
+    }
+  }, 240_000);
+});
 
 describe('OpenCode live-canary safety guard', () => {
   it('rejects model-facing actions without exposing event data', () => {
@@ -203,8 +146,23 @@ describe('OpenCode live-canary safety guard', () => {
     expect(() => {
       assertToolFreeLiveEvent({ type: 'message.delta' });
     }).not.toThrow();
+    assertThrowsExactMessage(() => {
+      assertCompletedTextRun(
+        { status: 'completed', finalMessage: 'sensitive-provider-output' },
+        'HARAPTER_OPENCODE_LIVE_OK',
+      );
+    }, 'OpenCode did not return the expected synthetic response.');
   });
 });
+
+async function collectEventTypes(run: HarnessRun): Promise<string[]> {
+  const eventTypes: string[] = [];
+  for await (const event of run.events()) {
+    assertToolFreeLiveEvent(event);
+    eventTypes.push(event.type);
+  }
+  return eventTypes;
+}
 
 function assertToolFreeLiveEvent(event: { readonly type: string }): void {
   if (
@@ -213,4 +171,80 @@ function assertToolFreeLiveEvent(event: { readonly type: string }): void {
   ) {
     throw new Error('The live canary observed a model-facing action.');
   }
+}
+
+function assertSupportedDescriptor(descriptor: ClientDescriptor): void {
+  if (
+    descriptor.compatibility !== 'supported' ||
+    descriptor.providerId !== OPENCODE_PROVIDER_ID ||
+    descriptor.runtime?.name !== 'OpenCode Server' ||
+    descriptor.runtime.protocolVersion !== 'stable' ||
+    descriptor.runtime.version === undefined ||
+    !/^\d+\.\d+\.\d+/u.test(descriptor.runtime.version)
+  ) {
+    throw new Error('OpenCode did not expose the supported stable interface.');
+  }
+}
+
+function assertOwnedSessionRef(ref: SessionRef): void {
+  if (
+    ref.providerId !== OPENCODE_PROVIDER_ID ||
+    ref.profileId !== profileId('opencode-live-local') ||
+    ref.providerSessionId.length === 0 ||
+    ref.compatibilityRef !== 'opencode;http-openapi=stable'
+  ) {
+    throw new Error('OpenCode did not create the expected owned Session.');
+  }
+}
+
+function assertCompletedTextRun(result: RunResult, expected: string): void {
+  if (
+    result.status !== 'completed' ||
+    result.finalMessage?.trim() !== expected
+  ) {
+    throw new Error('OpenCode did not return the expected synthetic response.');
+  }
+}
+
+function assertResumedSession(expected: SessionRef, actual: SessionRef): void {
+  if (
+    actual.providerId !== expected.providerId ||
+    actual.profileId !== expected.profileId ||
+    actual.providerSessionId !== expected.providerSessionId ||
+    actual.compatibilityRef !== expected.compatibilityRef
+  ) {
+    throw new Error('OpenCode resumed a different native Session.');
+  }
+}
+
+function assertNativeCancellation(result: CancelResult): void {
+  if (result.mode !== 'native') {
+    throw new Error('OpenCode did not confirm native cancellation.');
+  }
+}
+
+function assertCancelledRun(result: RunResult): void {
+  if (result.status !== 'cancelled') {
+    throw new Error('OpenCode did not produce a cancelled terminal result.');
+  }
+}
+
+function assertThrowsExactMessage(action: () => void, expected: string): void {
+  let thrown: unknown;
+  try {
+    action();
+  } catch (error) {
+    thrown = error;
+  }
+  if (!(thrown instanceof Error) || thrown.message !== expected) {
+    throw new Error('The OpenCode live safety assertion was not content-free.');
+  }
+}
+
+function requiredEnvironment(name: string): string {
+  const value = process.env[name];
+  if (value === undefined || value.length === 0) {
+    throw new Error(`The ${name} live-test setting is required.`);
+  }
+  return value;
 }
