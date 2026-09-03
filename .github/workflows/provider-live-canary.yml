@@ -160,7 +160,9 @@ jobs:
           HARAPTER_CODEX_LIVE: '1'
           HARAPTER_LIVE_MODEL_API_KEY:
             ${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}
-        run: pnpm vitest run providers/codex/test/live.test.ts
+        run:
+          timeout --signal=TERM --kill-after=10s 150s pnpm vitest run
+          providers/codex/test/live.test.ts
 
       - name: Record passing Codex evidence
         run: |
@@ -237,7 +239,7 @@ jobs:
 
           ready=false
           for _attempt in $(seq 1 30); do
-            if curl --fail --silent --show-error --output /dev/null http://127.0.0.1:4096/global/health; then
+            if curl --connect-timeout 1 --max-time 2 --fail --silent --show-error --output /dev/null http://127.0.0.1:4096/global/health; then
               ready=true
               break
             fi
@@ -252,7 +254,7 @@ jobs:
             exit 1
           fi
 
-          pnpm vitest run providers/opencode/test/live.test.ts
+          timeout --signal=TERM --kill-after=10s 180s pnpm vitest run providers/opencode/test/live.test.ts
 
       - name: Record passing OpenCode evidence
         run: |
@@ -327,7 +329,9 @@ jobs:
             ${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}
           HARAPTER_LIVE_MODEL_ID: ${{ secrets.HARAPTER_LIVE_MODEL_ID }}
           HARAPTER_LIVE_MODEL_URL: ${{ secrets.HARAPTER_LIVE_MODEL_URL }}
-        run: pnpm vitest run providers/dsh/test/live.test.ts
+        run:
+          timeout --signal=TERM --kill-after=10s 180s pnpm vitest run
+          providers/dsh/test/live.test.ts
 
       - name: Record passing DSH evidence
         run: |

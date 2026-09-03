@@ -173,6 +173,9 @@ assert.match(
 const providerJobExpectations = {
   codex: {
     install: 'npm install --global @openai/codex@latest',
+    liveStep: 'Run Codex live lifecycle',
+    liveTest: 'providers/codex/test/live.test.ts',
+    processTimeoutSeconds: 150,
     safetyStep: 'Verify Codex model-facing surface',
     secretSteps: new Set([
       'Prepare isolated Codex live configuration',
@@ -182,6 +185,9 @@ const providerJobExpectations = {
   },
   dsh: {
     install: 'npm install --global @deepseek-ai/dsh@alpha',
+    liveStep: 'Run DSH live lifecycle',
+    liveTest: 'providers/dsh/test/live.test.ts',
+    processTimeoutSeconds: 180,
     safetyStep: 'Verify DSH model-facing surface',
     secretSteps: new Set([
       'Run DSH live lifecycle',
@@ -190,6 +196,9 @@ const providerJobExpectations = {
   },
   opencode: {
     install: 'npm install --global opencode-ai@latest',
+    liveStep: 'Run OpenCode live lifecycle',
+    liveTest: 'providers/opencode/test/live.test.ts',
+    processTimeoutSeconds: 180,
     secretSteps: new Set([
       'Prepare isolated OpenCode configuration',
       'Run OpenCode live lifecycle',
@@ -205,6 +214,13 @@ for (const [provider, expectation] of Object.entries(providerJobExpectations)) {
   assert.equal(checkout['with']['ref'], '${{ github.sha }}');
   assert.equal(job['if'], `needs.selection.outputs.${provider} == 'true'`);
   assert.ok(job['steps'].some((step) => step['run'] === expectation.install));
+  assert.match(
+    requiredStep(job, expectation.liveStep)['run'],
+    new RegExp(
+      `timeout --signal=TERM --kill-after=10s ${expectation.processTimeoutSeconds}s pnpm vitest run ${expectation.liveTest.replaceAll('.', '\\.')}`,
+      'u',
+    ),
+  );
   assert.match(JSON.stringify(job), /Harapter revision: \$GITHUB_SHA/u);
   for (const step of job['steps']) {
     const hasSecret = JSON.stringify(step).includes('${{ secrets.');
@@ -230,6 +246,13 @@ assert.match(
     'run'
   ],
   /--profile sdk-minimal.*validate-dsh-config/su,
+);
+assert.match(
+  requiredStep(
+    requiredJob(liveJobs, 'opencode'),
+    'Run OpenCode live lifecycle',
+  )['run'],
+  /curl --connect-timeout 1 --max-time 2 --fail/u,
 );
 assert.doesNotMatch(
   liveCanaryWorkflow,

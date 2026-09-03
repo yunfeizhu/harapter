@@ -226,8 +226,9 @@ or interaction event.
 
 Each job installs its current Runtime release only on the ephemeral runner,
 records the installed package identity and Harapter revision in the workflow
-summary, runs one bounded synthetic lifecycle, and retains no Runtime home,
-local server log, prompt, response, credential, or Provider traffic artifact.
+summary, and runs one synthetic lifecycle with bounded readiness requests, a
+process deadline, and a final job timeout. It retains no Runtime home, local
+server log, prompt, response, credential, or Provider traffic artifact.
 
 ## Release flow
 

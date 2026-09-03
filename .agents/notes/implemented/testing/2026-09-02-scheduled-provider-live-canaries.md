@@ -43,7 +43,9 @@ minimal live test also fails if it observes a tool or interaction event.
 
 The credential must be dedicated, revocable, and limited to the smallest useful
 test budget. The synthetic task uses an empty temporary workspace and produces
-no repository mutation.
+no repository mutation. Network readiness probes have per-request connection and
+total deadlines. Each live-test process has a hard deadline shorter than its job
+timeout, and the job timeout remains the final containment boundary.
 
 A passing canary is current live evidence for the exercised Session, Run, Event,
 and terminal path. It does not promote every capability or convert an
