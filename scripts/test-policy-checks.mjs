@@ -212,7 +212,7 @@ const providerJobExpectations = {
     install: 'npm install --global opencode-ai@latest',
     liveStep: 'Run OpenCode live lifecycle',
     liveTest: 'providers/opencode/test/live.test.ts',
-    processTimeoutSeconds: 180,
+    processTimeoutSeconds: 300,
     secretSteps: new Set([
       'Prepare isolated OpenCode configuration',
       'Run OpenCode live lifecycle',
@@ -296,11 +296,15 @@ delete requiredStep(weakenedDshJob, 'Run DSH live lifecycle')['env'][
   'HARAPTER_DSH_LIVE'
 ];
 assert.throws(() => assertDshWorkflowEvidence(weakenedDshJob));
+const openCodeJob = requiredJob(liveJobs, 'opencode');
+assertOpenCodeWorkflowEvidence(openCodeJob);
+const weakenedOpenCodeJob = structuredClone(openCodeJob);
+delete requiredStep(weakenedOpenCodeJob, 'Run OpenCode live lifecycle')['env'][
+  'HARAPTER_OPENCODE_LIVE'
+];
+assert.throws(() => assertOpenCodeWorkflowEvidence(weakenedOpenCodeJob));
 assert.match(
-  requiredStep(
-    requiredJob(liveJobs, 'opencode'),
-    'Run OpenCode live lifecycle',
-  )['run'],
+  requiredStep(openCodeJob, 'Run OpenCode live lifecycle')['run'],
   /curl --connect-timeout 1 --max-time 2 --fail/u,
 );
 const piLiveStep = requiredStep(
@@ -522,6 +526,64 @@ const leakingDshFailure = dshLiveTest.replace(
 );
 assert.notEqual(leakingDshFailure, dshLiveTest);
 assert.throws(() => assertDshLiveEvidence(leakingDshFailure));
+
+const openCodeLiveTest = readFileSync(
+  resolve(repositoryRoot, 'providers/opencode/test/live.test.ts'),
+  'utf8',
+);
+assertOpenCodeLiveEvidence(openCodeLiveTest);
+const skippedOpenCodeLiveSuite = openCodeLiveTest.replace(
+  'describe.runIf(liveEnabled)',
+  'describe.skip',
+);
+assert.notEqual(skippedOpenCodeLiveSuite, openCodeLiveTest);
+assert.throws(() => assertOpenCodeLiveEvidence(skippedOpenCodeLiveSuite));
+const disconnectedOpenCodeLiveFlag = openCodeLiveTest.replace(
+  "process.env['HARAPTER_OPENCODE_LIVE']",
+  "process.env['HARAPTER_OPENCODE_OTHER']",
+);
+assert.notEqual(disconnectedOpenCodeLiveFlag, openCodeLiveTest);
+assert.throws(() => assertOpenCodeLiveEvidence(disconnectedOpenCodeLiveFlag));
+const weakenedOpenCodeMessageEvidence = openCodeLiveTest.replace(
+  "assertCompletedTextRun(result, 'HARAPTER_OPENCODE_LIVE_OK');",
+  '',
+);
+assert.notEqual(weakenedOpenCodeMessageEvidence, openCodeLiveTest);
+assert.throws(() =>
+  assertOpenCodeLiveEvidence(weakenedOpenCodeMessageEvidence),
+);
+const weakenedOpenCodeEventEvidence = openCodeLiveTest.replace(
+  "expect(eventTypes).toContain('message.completed');",
+  '',
+);
+assert.notEqual(weakenedOpenCodeEventEvidence, openCodeLiveTest);
+assert.throws(() => assertOpenCodeLiveEvidence(weakenedOpenCodeEventEvidence));
+const weakenedOpenCodeResumeEvidence = openCodeLiveTest.replace(
+  'assertResumedSession(sessionRef, resumed.ref());',
+  '',
+);
+assert.notEqual(weakenedOpenCodeResumeEvidence, openCodeLiveTest);
+assert.throws(() => assertOpenCodeLiveEvidence(weakenedOpenCodeResumeEvidence));
+const weakenedOpenCodeCancellationEvidence = openCodeLiveTest.replace(
+  'assertNativeCancellation(await cancelledRun.cancel());',
+  '',
+);
+assert.notEqual(weakenedOpenCodeCancellationEvidence, openCodeLiveTest);
+assert.throws(() =>
+  assertOpenCodeLiveEvidence(weakenedOpenCodeCancellationEvidence),
+);
+const leakingOpenCodeFailure = openCodeLiveTest.replace(
+  "throw new Error('OpenCode did not return the expected synthetic response.');",
+  "throw new Error(`OpenCode did not return the expected synthetic response. ${result.finalMessage ?? ''}`);",
+);
+assert.notEqual(leakingOpenCodeFailure, openCodeLiveTest);
+assert.throws(() => assertOpenCodeLiveEvidence(leakingOpenCodeFailure));
+const maskingOpenCodeFailure = openCodeLiveTest.replace(
+  'await client.close().catch(() => undefined);',
+  'await client.close();',
+);
+assert.notEqual(maskingOpenCodeFailure, openCodeLiveTest);
+assert.throws(() => assertOpenCodeLiveEvidence(maskingOpenCodeFailure));
 
 const piLiveTest = readFileSync(
   resolve(repositoryRoot, 'providers/pi/test/live.test.ts'),
@@ -1256,6 +1318,96 @@ function assertCodexWorkflowEvidence(job) {
   assert.ok(
     stepIndex(job, 'Record passing Codex evidence') >
       stepIndex(job, 'Run Codex live lifecycle'),
+  );
+  assert.equal(summaryStep['if'], undefined);
+  assert.equal(summaryStep['continue-on-error'], undefined);
+  assert.match(summaryStep['run'], /- Lifecycle: passed/u);
+  assert.match(summaryStep['run'], /- Synthetic Prompts submitted: 2/u);
+  assert.match(summaryStep['run'], /- Completed message Event: passed/u);
+  assert.match(summaryStep['run'], /- Session resume: passed/u);
+  assert.match(summaryStep['run'], /- Native cancellation: passed/u);
+  assert.match(
+    summaryStep['run'],
+    /- Authoritative terminals: run\.completed, run\.cancelled/u,
+  );
+  assert.match(summaryStep['run'], /- Model tools enabled: 0/u);
+}
+
+function assertOpenCodeLiveEvidence(source) {
+  assert.match(
+    source,
+    /const liveEnabled = process\.env\['HARAPTER_OPENCODE_LIVE'\] === '1'/u,
+  );
+  assert.match(source, /describe\.runIf\(liveEnabled\)/u);
+  assert.match(source, /session\.start\s*\(/u);
+  assert.match(source, /assertToolFreeLiveEvent\(event\)/u);
+  assert.match(
+    source,
+    /assertCompletedTextRun\(result, 'HARAPTER_OPENCODE_LIVE_OK'\)/u,
+  );
+  assert.match(source, /eventTypes\)\.toContain\('run\.started'\)/u);
+  assert.match(source, /eventTypes\)\.toContain\('message\.completed'\)/u);
+  assert.match(source, /eventTypes\.at\(-1\)\)\.toBe\('run\.completed'\)/u);
+  assert.match(
+    source,
+    /const resumedClient = await factory\.connect\(profile\)/u,
+  );
+  assert.match(source, /resumedClient\.resumeSession\(sessionRef\)/u);
+  assert.match(source, /assertResumedSession\(sessionRef, resumed\.ref\(\)\)/u);
+  assert.match(
+    source,
+    /assertNativeCancellation\(await cancelledRun\.cancel\(\)\)/u,
+  );
+  assert.match(source, /assertCancelledRun\(cancelledResult\)/u);
+  assert.match(
+    source,
+    /cancelledEventTypes\.at\(-1\)\)\.toBe\('run\.cancelled'\)/u,
+  );
+  assert.match(source, /await session\.close\(\)/u);
+  assert.match(source, /await resumed\.close\(\)/u);
+  assert.match(source, /await client\.close\(\)/u);
+  assert.match(source, /await resumedClient\.close\(\)/u);
+  assert.match(source, /let primaryFailure: unknown/u);
+  assert.match(source, /primaryFailure = error/u);
+  assert.match(source, /await client\.close\(\)\.catch\(\(\) => undefined\)/u);
+  assert.match(
+    source,
+    /assertSupportedDescriptor\(await client\.descriptor\(\)\)/u,
+  );
+  assert.match(source, /assertOwnedSessionRef\(ref\)/u);
+  assert.match(source, /assertThrowsExactMessage\(\(\) => \{/u);
+  assert.doesNotMatch(
+    source,
+    /throw new Error\(`[^`]*\$\{result\.finalMessage/u,
+  );
+  assert.doesNotMatch(source, /events\.push\(event\)/u);
+  assert.doesNotMatch(source, /expect\(result/u);
+  assert.doesNotMatch(source, /expect\(sessionRef/u);
+  assert.doesNotMatch(source, /expect\(resumed\.ref/u);
+  assert.doesNotMatch(source, /expect\(client\.descriptor/u);
+  assert.doesNotMatch(source, /HARAPTER_OPENCODE_LIVE_CONTROL/u);
+}
+
+function assertOpenCodeWorkflowEvidence(job) {
+  const liveStep = requiredStep(job, 'Run OpenCode live lifecycle');
+  assert.ok(isObject(liveStep['env']));
+  assert.equal(liveStep['env']['HARAPTER_OPENCODE_LIVE'], '1');
+  assert.equal(liveStep['continue-on-error'], undefined);
+  assert.match(liveStep['run'], /opencode_command=\$\(command -v opencode\)/u);
+  assert.match(liveStep['run'], /"\$opencode_command" serve/u);
+  assert.match(liveStep['run'], /trap cleanup_opencode EXIT/u);
+  assert.match(liveStep['run'], /kill -TERM "\$server_pid"/u);
+  assert.match(liveStep['run'], /for _cleanup_attempt in \$\(seq 1 10\)/u);
+  assert.match(liveStep['run'], /kill -KILL "\$server_pid"/u);
+  assert.match(
+    liveStep['run'],
+    /unset HARAPTER_LIVE_MODEL_API_KEY[\s\S]+unset HARAPTER_LIVE_MODEL_ID[\s\S]+unset HARAPTER_LIVE_MODEL_URL[\s\S]+pnpm vitest/u,
+  );
+  assert.doesNotMatch(liveStep['run'], /cat .*opencode-server\.log/u);
+  const summaryStep = requiredStep(job, 'Record passing OpenCode evidence');
+  assert.ok(
+    stepIndex(job, 'Record passing OpenCode evidence') >
+      stepIndex(job, 'Run OpenCode live lifecycle'),
   );
   assert.equal(summaryStep['if'], undefined);
   assert.equal(summaryStep['continue-on-error'], undefined);

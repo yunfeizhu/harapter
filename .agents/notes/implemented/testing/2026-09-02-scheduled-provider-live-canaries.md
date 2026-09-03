@@ -92,6 +92,18 @@ Server connection, and requires a second Turn to settle only after native
 an absolute installed command, stores only Event type strings, and keeps failure
 diagnostics free of response and native Thread values.
 
+The OpenCode lifecycle requires an exact completed response with `run.started`,
+`message.completed`, and authoritative `run.completed` Events. It closes the
+first Client, opens a new connection to the host-operated Server, resumes the
+same directory-bound Session, and requires a second Run to settle only after the
+native abort route and an authoritative `run.cancelled` terminal. The canary
+starts the Server through its absolute installed command, removes the credential
+and model-service URL from the test process after Server readiness, stores only
+Event type strings, and keeps failure diagnostics free of response and native
+Session values. Permission translation remains covered by redacted fixtures and
+Conformance Tests; the live canary does not enable tools merely to induce a
+permission request.
+
 The Hermes Agent lifecycle applies the same exact completed-Run boundary, then
 closes the first local handle, resumes the same native Session, and requires a
 second Run to settle only after correlated native cancellation and an
