@@ -235,8 +235,13 @@ const providerJobExpectations = {
       'npm install --global --ignore-scripts @earendil-works/pi-coding-agent@latest',
     liveStep: 'Run Pi Agent live lifecycle',
     liveTest: 'providers/pi/test/live.test.ts',
-    processTimeoutSeconds: 120,
-    secretSteps: new Set(),
+    processTimeoutSeconds: 300,
+    safetyStep: 'Verify Pi Agent model-facing surface',
+    secretSteps: new Set([
+      'Prepare isolated Pi Agent configuration',
+      'Run Pi Agent live lifecycle',
+      'Validate live configuration',
+    ]),
   },
 };
 for (const [provider, expectation] of Object.entries(providerJobExpectations)) {
@@ -292,7 +297,9 @@ const piLiveStep = requiredStep(
   'Run Pi Agent live lifecycle',
 );
 assert.deepEqual(piLiveStep['env'], {
+  HARAPTER_LIVE_MODEL_API_KEY: '${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}',
   HARAPTER_PI_LIVE: '1',
+  HARAPTER_PI_MODEL: '${{ secrets.HARAPTER_LIVE_MODEL_ID }}',
   PI_CODING_AGENT_DIR: '${{ runner.temp }}/harapter-pi-home',
   PI_CODING_AGENT_SESSION_DIR: '${{ runner.temp }}/harapter-pi-sessions',
   PI_OFFLINE: '1',
@@ -300,6 +307,20 @@ assert.deepEqual(piLiveStep['env'], {
   PI_TELEMETRY: '0',
 });
 assert.match(JSON.stringify(piLiveStep), /HARAPTER_PI_COMMAND/u);
+assert.match(
+  requiredStep(
+    requiredJob(liveJobs, 'pi'),
+    'Verify Pi Agent model-facing surface',
+  )['run'],
+  /write-pi-config[\s\S]+timeout --signal=TERM --kill-after=5s 30s pi --no-tools --no-context-files --help[\s\S]+timeout --signal=TERM --kill-after=5s 30s pi --no-tools --no-context-files --list-models/u,
+);
+assert.match(
+  requiredStep(
+    requiredJob(liveJobs, 'pi'),
+    'Prepare isolated Pi Agent configuration',
+  )['run'],
+  /write-pi-config/u,
+);
 const openClawLiveStep = requiredStep(
   requiredJob(liveJobs, 'openclaw'),
   'Run OpenClaw live lifecycle',
@@ -404,9 +425,27 @@ const piLiveTest = readFileSync(
   'utf8',
 );
 assert.match(piLiveTest, /describe\.runIf\(liveEnabled\)/u);
-assert.match(piLiveTest, /providerOptions: \{ persistSessions: false \}/u);
 assert.match(piLiveTest, /PI_CODING_AGENT_SESSION_DIR/u);
-assert.match(piLiveTest, /readdir\(sessionDirectory, \{ recursive: true \}\)/u);
+assert.match(piLiveTest, /assertDirectoryEmpty\(sessionRoot\)/u);
+assertPiLiveEvidence(piLiveTest);
+const weakenedPiMessageEvidence = piLiveTest.replace(
+  "assertExactFinalMessage(result.finalMessage, 'HARAPTER_PI_LIVE_OK');",
+  '',
+);
+assert.notEqual(weakenedPiMessageEvidence, piLiveTest);
+assert.throws(() => assertPiLiveEvidence(weakenedPiMessageEvidence));
+const weakenedPiEventEvidence = piLiveTest.replace(
+  "expect(events.map(({ type }) => type)).toContain('message.completed');",
+  '',
+);
+assert.notEqual(weakenedPiEventEvidence, piLiveTest);
+assert.throws(() => assertPiLiveEvidence(weakenedPiEventEvidence));
+const weakenedPiCancellationEvidence = piLiveTest.replace(
+  "expect(cancelledResult.status).toBe('cancelled');",
+  '',
+);
+assert.notEqual(weakenedPiCancellationEvidence, piLiveTest);
+assert.throws(() => assertPiLiveEvidence(weakenedPiCancellationEvidence));
 
 const openClawLiveTest = readFileSync(
   resolve(repositoryRoot, 'providers/openclaw/test/live.test.ts'),
@@ -694,6 +733,28 @@ requireFailure(
   ),
   'The OpenClaw canary workspace must be absolute.',
   'OpenClaw relative canary workspace',
+);
+
+const piConfigPath = join(fixtureRoot, 'live-config', 'pi-models.json');
+requireSuccess(
+  run(prepareLiveCanary, ['write-pi-config', piConfigPath], liveEnvironment),
+  'Pi Agent live-canary config',
+);
+const piConfig = JSON.parse(readFileSync(piConfigPath, 'utf8'));
+assert.equal(
+  piConfig.providers['harapter-live'].baseUrl,
+  'https://model.example.test/v1',
+);
+assert.equal(
+  piConfig.providers['harapter-live'].apiKey,
+  '$HARAPTER_LIVE_MODEL_API_KEY',
+);
+assert.equal(piConfig.providers['harapter-live'].api, 'openai-completions');
+assert.equal(piConfig.providers['harapter-live'].models[0].id, 'test-model');
+assert.deepEqual(piConfig.providers['harapter-live'].models[0].input, ['text']);
+assert.doesNotMatch(
+  readFileSync(piConfigPath, 'utf8'),
+  /test-key-that-must-not-be-written/u,
 );
 
 const hermesConfigPath = join(fixtureRoot, 'live-config', 'hermes.json');
@@ -995,6 +1056,35 @@ function assertOpenClawLiveEvidence(source) {
   );
   assert.match(source, /toContain\('message\.completed'\)/u);
   assert.match(source, /events\.at\(-1\)\?\.type\)\.toBe\('run\.completed'\)/u);
+}
+
+function assertPiLiveEvidence(source) {
+  assert.match(source, /'--no-tools'/u);
+  assert.match(source, /'--no-context-files'/u);
+  assert.match(source, /session\.start\s*\(/u);
+  assert.match(source, /client\.resumeSession\(sessionRef\)/u);
+  assert.match(source, /assertToolFreeLiveEvent\(event\)/u);
+  assert.match(source, /result\.status\)\.toBe\('completed'\)/u);
+  assert.match(
+    source,
+    /assertExactFinalMessage\(result\.finalMessage, 'HARAPTER_PI_LIVE_OK'\)/u,
+  );
+  assert.match(source, /assertPersistentSessionRef\(sessionRef\)/u);
+  assert.match(source, /assertResumedSession\(sessionRef, resumed\.ref\(\)\)/u);
+  assert.match(source, /assertDirectoryEmpty\(sessionRoot\)/u);
+  assert.doesNotMatch(source, /expect\(result\.finalMessage/u);
+  assert.doesNotMatch(source, /expect\(sessionRef/u);
+  assert.doesNotMatch(source, /expect\(resumed\.ref\(\)\.providerSessionId/u);
+  assert.doesNotMatch(source, /expect\(readdir/u);
+  assert.match(source, /toContain\('message\.completed'\)/u);
+  assert.match(source, /events\.at\(-1\)\?\.type\)\.toBe\('run\.completed'\)/u);
+  assert.match(source, /cancelledRun\.cancel\(\)/u);
+  assert.match(source, /mode: 'native'/u);
+  assert.match(source, /cancelledResult\.status\)\.toBe\('cancelled'\)/u);
+  assert.match(
+    source,
+    /cancelledEvents\.at\(-1\)\?\.type\)\.toBe\('run\.cancelled'\)/u,
+  );
 }
 
 function requiredJob(jobs, id) {
