@@ -210,6 +210,12 @@ The live test is opt-in and requires an authenticated Codex installation:
 HARAPTER_CODEX_LIVE=1 pnpm vitest run providers/codex/test/live.test.ts
 ```
 
+The last repository-recorded live run passed on 2026-09-03 with
+`@openai/codex@0.153.0`. A production host may pin that release for a
+reproducible deployment. Harapter continues to admit newer stable releases and
+validates the observed handshake, response, Event, and terminal structures
+instead of using the recorded version as an executable allowlist.
+
 The trusted scheduled live-canary workflow can install the current stable Codex
 release on an ephemeral runner and execute the same lifecycle with an isolated
 configuration. It is enabled independently from pull request CI, records the
