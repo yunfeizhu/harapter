@@ -1,15 +1,19 @@
 # `@harapter/transport-jsonl-process`
 
 `@harapter/transport-jsonl-process` is a bounded strict-JSONL transport for
-Provider Adapters that communicate with a host-supplied harness process. It is
-private and versioned `0.0.0` while the first Provider integrations establish
-its compatibility surface.
+Provider Adapters that communicate with a host-supplied harness process.
 
 The package owns UTF-8 framing, ordered inbound delivery, serialized writes,
 backpressure, local write waits, connection disposal, and explicit resource
 limits. It does not spawn or discover executables, correlate protocol requests,
 interpret Provider messages, or assign Harapter Session, Run, Event, error, or
 cancellation semantics.
+
+## Installation
+
+```bash
+pnpm add @harapter/transport-jsonl-process@next
+```
 
 ## Public entrypoints
 

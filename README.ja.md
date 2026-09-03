@@ -42,13 +42,17 @@ Loop ではありません。各 Runtime の選択、インストール、認証
 
 ## クイックスタート
 
-> Harapter の Package は pre-alpha の間は Private です。まずソース Workspace から評価してください。最初の公開リリースまでは
-> `pnpm add @harapter/core` でインストールできません。
-
-### 1. Workspace と Provider Runtime を準備する
+### 1. 公開済みリリースをインストールするか、ソース Workspace を準備する
 
 Node.js 24 以降と Corepack を使用します。リポジトリは pnpm `11.23.0`
-を固定しています。
+を固定しています。公開済みの pre-alpha Package は、明示的に選択する `next`
+dist-tag を使用します。
+
+```bash
+pnpm add @harapter/core@next @harapter/adapter-codex@next
+```
+
+Registry で利用できるのは最初の公開リリース以降です。npm にまだリリースがない場合、または管理されているリファレンスアプリケーションを実行する場合は、ソース Workspace を使用します。
 
 ```bash
 git clone https://github.com/yunfeizhu/harapter.git
@@ -58,7 +62,7 @@ pnpm install --frozen-lockfile
 pnpm build
 ```
 
-[実装済み Adapter](./providers/README.md)を 1 つ選び、Provider のドキュメントに従って Runtime をインストールし、認証します。Harapter がホストの代わりに Runtime を検出、インストール、更新、ログインすることはありません。
+[実装済み Adapter](./providers/README.md)を 1 つ選び、Provider のドキュメントに従って Runtime を別途インストールし、認証します。Harapter がホストの代わりに Runtime を検出、インストール、更新、ログインすることはありません。
 
 ### 2. 管理されている Single-Provider リファレンスを実行する
 
@@ -264,9 +268,13 @@ Entry Point が実行されます。
 ## プロジェクトの状態
 
 Harapter は現在 **pre-alpha**
-です。TypeScript 実装はこの Workspace から評価できますが、すべての Package は private
-`0.0.0`
-のままで、npm、PyPI、CLI の配布物はまだ公開されていません。最初の公開リリースは、API、Packaging、Provenance、Publishing、Rollback のレビュー後に行います。
+です。TypeScript 実装はこの Workspace から利用でき、公開リリース候補にはレビュー済みの Manifest、Tarball
+Consumer Check、Provenance、Publishing、Rollback
+Control があります。公開済みの pre-alpha npm
+Package は、同期した 1 つの Version と明示的に選択する `next`
+dist-tag を使用します。現在の Registry Availability は npm または GitHub
+Releases で確認してください。Workspace
+Root と Example は Private のままで、PyPI または Standalone CLI は公開しません。
 
 現在は、利用者からのフィードバック、ホストが実行する Experimental
 Adapter の Live Evidence、リリース準備に集中しています。Portable Wire
@@ -308,11 +316,13 @@ Abort と Provider が確認した Cancellation は異なるライフサイク�
 いいえ。実装、リソース上限と機密情報除去を備えた Fixture、Mapping とライフサイクルテスト、Provider-negative
 Coverage、共通 Conformance、明示的な互換性境界が含まれます。Experimental ラベルは、決定論的な実装証拠の不足ではなく、live-runtime 証拠または Runtime 互換性 Probe の未解決境界を示します。
 
-### Package が Private のままなのはなぜですか？
+### Package の Versioning と Publishing はどのように行われますか？
 
-Public API がまだ pre-alpha だからです。Packaging、Provenance または Trusted
-Publishing、Consumer Smoke Test、Rollback
-Policy をまとめてレビューするまで Publishing は無効です。
+Public Core、Conformance、Transport、Adapter
+Package は 1.0 より前は同じ Version で進み、`next` に公開されます。Workspace
+Root と Example は Private のままです。Release Please が Version と GitHub
+Release を管理し、別途承認された Workflow が Provenance 付きで Immutable
+Release を npm に公開します。
 
 ## 対象外
 

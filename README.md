@@ -45,13 +45,18 @@ runtime it uses.
 
 ## Quick start
 
-> Harapter packages are still private during pre-alpha. Use the source workspace
-> for evaluation; do not expect `pnpm add @harapter/core` to work until the
-> first public release.
-
-### 1. Prepare the workspace and a Provider runtime
+### 1. Install a release or prepare the source Workspace
 
 Use Node.js 24 or newer with Corepack. The repository pins pnpm `11.23.0`.
+Published pre-alpha packages use the opt-in `next` dist-tag:
+
+```bash
+pnpm add @harapter/core@next @harapter/adapter-codex@next
+```
+
+Registry availability begins with the first public release. If npm does not yet
+report that release, or if you want to run the maintained reference
+applications, use the source Workspace:
 
 ```bash
 git clone https://github.com/yunfeizhu/harapter.git
@@ -61,9 +66,10 @@ pnpm install --frozen-lockfile
 pnpm build
 ```
 
-Choose one [implemented Adapter](./providers/README.md), then install and
-authenticate its runtime according to that Provider's documentation. Harapter
-does not discover, install, update, or sign in to a runtime for the host.
+Choose one [implemented Adapter](./providers/README.md), then separately install
+and authenticate its runtime according to that Provider's documentation.
+Harapter does not discover, install, update, or sign in to a runtime for the
+host.
 
 ### 2. Run the maintained single-Provider reference
 
@@ -275,9 +281,12 @@ points run only when the host supplies an explicit runtime configuration.
 ## Project status
 
 Harapter is **pre-alpha**. The TypeScript implementation is available from this
-workspace for evaluation, but every package remains private at `0.0.0`; no npm,
-PyPI, or CLI distribution has been released. The first public release will
-follow API, packaging, provenance, publishing, and rollback review.
+Workspace, and public-release candidates have reviewed manifests, tarball
+consumer checks, provenance, publishing, and rollback controls. Released
+pre-alpha npm packages use one synchronized version and the opt-in `next`
+dist-tag; check npm or the GitHub Releases page for current registry
+availability. The Workspace root and examples remain private, and Harapter does
+not publish a PyPI or standalone CLI distribution.
 
 Current stabilization work focuses on consumer feedback, host-operated live
 evidence for experimental Adapters, and release readiness. Portable wire
@@ -324,11 +333,12 @@ compatibility boundaries. The experimental label records an unresolved
 live-evidence or Runtime-compatibility probe boundary rather than missing
 deterministic implementation evidence.
 
-### Why are packages still private?
+### How are packages versioned and published?
 
-The public API is still pre-alpha. Publishing stays disabled until packaging,
-provenance or trusted publishing, consumer smoke tests, and rollback policy are
-reviewed together.
+Public Core, conformance, transport, and Adapter packages move together on one
+pre-1.0 version and publish under `next`. The Workspace root and examples stay
+private. Release Please owns versions and GitHub Releases; a separately
+authorized workflow publishes the immutable release to npm with provenance.
 
 ## Non-goals
 

@@ -1,10 +1,28 @@
 {
   "name": "@harapter/transport-jsonrpc-stdio",
   "version": "0.0.0",
-  "private": true,
   "description": "Bounded bidirectional JSONL RPC transport for Harapter providers.",
+  "keywords": [
+    "agent",
+    "json-rpc",
+    "jsonl",
+    "stdio"
+  ],
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yunfeizhu/harapter.git",
+    "directory": "packages/transport-jsonrpc-stdio"
+  },
+  "bugs": {
+    "url": "https://github.com/yunfeizhu/harapter/issues"
+  },
+  "homepage": "https://github.com/yunfeizhu/harapter#readme",
   "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -12,6 +30,15 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/",
+    "tag": "next"
   },
   "scripts": {
     "build": "tsc --project tsconfig.build.json"

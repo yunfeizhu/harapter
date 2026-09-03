@@ -237,12 +237,10 @@ traffic, credentials, Prompt, or response.
 
 ## Release flow
 
-The squash pull request title determines eventual release impact. While Harapter
-is establishing its first portable contracts and provider adapters, ordinary
-`main` pushes do not start Release Please. After approving the first usable
-pre-alpha milestone, a maintainer enables Actions-created pull requests and
-manually dispatches the Release Please workflow. Enabling an automatic `main`
-trigger requires a separate reviewed repository-policy change.
+The squash pull request title determines release impact. Ordinary `main` pushes
+do not start Release Please; a maintainer enables Actions-created pull requests
+and manually dispatches the workflow. An automatic `main` trigger requires a
+separate repository-policy change.
 
 Maintainers review and manually merge the generated release pull request when
 the accumulated changes are ready, then dispatch the workflow from `main` a
@@ -251,5 +249,13 @@ the version update and changelog; the second publishes them after the release
 pull request is merged. Do not create those artifacts manually. See
 [RELEASING.md](../RELEASING.md) for the activation and verification procedure.
 
-Package publication is enabled per package only after its build, conformance,
-trusted-publishing, provenance, and rollback requirements are implemented.
+Public packages use one synchronized pre-1.0 version and the npm `next`
+dist-tag. `pnpm check` validates their manifests, tarballs, dependency rewrites,
+and consumer imports. The Workspace root and examples remain private.
+
+npm publication is a separate manual workflow after Release Please creates an
+immutable GitHub Release at the dispatch run's current `main` commit. It checks
+SHA-512, the `next` tag, and verified provenance before recovery skips, then
+uses the protected `npm` environment and trusted publishing. The first `0.1.0`
+publication has a one-time short-lived token bootstrap. See
+[RELEASING.md](../RELEASING.md) for setup, verification, recovery, and rollback.

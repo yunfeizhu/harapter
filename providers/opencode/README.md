@@ -1,12 +1,17 @@
 # `@harapter/adapter-opencode`
 
 `@harapter/adapter-opencode` maps the current documented stable `opencode serve`
-HTTP/OpenAPI and Server-Sent Events interface to Harapter Core. The package is
-private and versioned `0.0.0` during pre-alpha.
+HTTP/OpenAPI and Server-Sent Events interface to Harapter Core.
 
 The host installs, configures, authenticates, starts, and stops OpenCode. The
 Adapter connects only to a host-selected HTTP endpoint and never invokes a
 runtime installation, server disposal, or Session deletion route implicitly.
+
+## Installation
+
+```bash
+pnpm add @harapter/core@next @harapter/adapter-opencode@next
+```
 
 ## Profile and authentication
 

@@ -42,12 +42,16 @@ Loop。每个 Runtime 仍由宿主选择、安装、认证并实施安全策略�
 
 ## 快速上手
 
-> Harapter 的 Package 在 pre-alpha 阶段仍为 Private。请先通过源码 Workspace 评估；首个公开版本发布前，不能使用
-> `pnpm add @harapter/core` 安装。
+### 1. 安装已发布版本或准备源码 Workspace
 
-### 1. 准备 Workspace 和 Provider Runtime
+使用 Node.js 24 或更高版本与 Corepack。仓库固定使用 pnpm
+`11.23.0`。已发布的 pre-alpha Package 使用需要显式选择的 `next` dist-tag：
 
-使用 Node.js 24 或更高版本与 Corepack。仓库固定使用 pnpm `11.23.0`。
+```bash
+pnpm add @harapter/core@next @harapter/adapter-codex@next
+```
+
+Registry 会从首个公开版本开始提供 Package。如果 npm 尚未显示该版本，或需要运行仓库维护的参考应用，请使用源码 Workspace：
 
 ```bash
 git clone https://github.com/yunfeizhu/harapter.git
@@ -57,7 +61,7 @@ pnpm install --frozen-lockfile
 pnpm build
 ```
 
-从[已实现 Adapter](./providers/README.md)中选择一个，并按照对应 Provider 文档安装和认证 Runtime。Harapter 不会替宿主发现、安装、更新 Runtime，也不会执行登录。
+从[已实现 Adapter](./providers/README.md)中选择一个，再按照对应 Provider 文档单独安装和认证 Runtime。Harapter 不会替宿主发现、安装、更新 Runtime，也不会执行登录。
 
 ### 2. 运行维护中的单 Provider 参考实现
 
@@ -255,8 +259,10 @@ README。
 ## 项目状态
 
 Harapter 当前处于
-**pre-alpha**。TypeScript 实现可以从本 Workspace 用于评估，但所有 Package 仍为 private
-`0.0.0`；尚未发布 npm、PyPI 或 CLI 发行物。首个公开版本会在 API、打包、来源证明、发布流程和回滚方案完成审查后发布。
+**pre-alpha**。TypeScript 实现可以从本 Workspace 使用；公开发布候选已具备经过审查的 Manifest、Tarball 消费测试、Provenance、发布与回滚控制。已发布的 pre-alpha
+npm Package 使用同一同步版本和需要显式选择的 `next`
+dist-tag；当前 Registry 可用性以 npm 或 GitHub
+Releases 页面为准。Workspace 根目录与示例仍保持 Private，Harapter 不发布 PyPI 或独立 CLI 发行物。
 
 当前稳定化工作聚焦于消费者反馈、由宿主运行的实验 Adapter Live
 Evidence 和发布准备。Portable Wire Schema、非 TypeScript SDK 和 Local-socket
@@ -295,10 +301,12 @@ Abort 与 Provider 确认的 Cancellation 是不同的生命周期结果。
 
 不是。它们具备实现、有界且脱敏的 Fixture、Mapping 与生命周期测试、Provider-negative 覆盖、公共 Conformance 和明确兼容边界。实验标签记录的是仍有真实运行证据或 Runtime 兼容探测边界未解决，而不是缺少确定性实现证据。
 
-### 为什么 Package 仍是 Private？
+### Package 如何进行版本管理和发布？
 
-公共 API 仍处于 pre-alpha。只有 Package、Provenance 或 Trusted
-Publishing、消费者 Smoke Test 和回滚策略完成联合审查后，才会启用发布。
+公开的 Core、Conformance、Transport 和 Adapter
+Package 在 1.0 前使用同一版本，并发布到
+`next`。Workspace 根目录和示例保持 Private。Release Please 管理版本和 GitHub
+Release；另一个需要单独授权的 Workflow 使用 Provenance 将该不可变 Release 发布到 npm。
 
 ## 明确不做什么
 

@@ -31,14 +31,57 @@ export function validateToolchain({ nodeVersion, packageJson }) {
 
 export function validateReleaseAutomation({
   prettierIgnore,
+  publicPackagePolicy,
   releasePleaseConfig,
 }) {
   const failures = [];
+  const rootRelease = releasePleaseConfig.packages?.['.'];
 
-  if (releasePleaseConfig.packages?.['.']?.['initial-version'] !== '0.1.0') {
+  if (rootRelease?.['initial-version'] !== '0.1.0') {
     failures.push(
       'release-please-config.json must set packages["."].initial-version to 0.1.0.',
     );
+  }
+  if (rootRelease?.['release-type'] !== 'simple') {
+    failures.push(
+      'release-please-config.json must keep one simple root release train.',
+    );
+  }
+  const expectedVersionFiles = new Set([
+    'package.json',
+    ...(Array.isArray(publicPackagePolicy?.packages)
+      ? publicPackagePolicy.packages
+          .filter(isMapping)
+          .filter(({ path }) => typeof path === 'string')
+          .map(({ path }) => `${path}/package.json`)
+      : []),
+  ]);
+  const actualVersionFiles = new Set();
+  if (Array.isArray(rootRelease?.['extra-files'])) {
+    for (const entry of rootRelease['extra-files']) {
+      if (
+        isMapping(entry) &&
+        entry.type === 'json' &&
+        entry.jsonpath === '$.version' &&
+        typeof entry.path === 'string'
+      ) {
+        actualVersionFiles.add(entry.path);
+      }
+    }
+  }
+  for (const path of expectedVersionFiles) {
+    if (!actualVersionFiles.has(path)) {
+      failures.push(
+        `release-please-config.json must update ${path} on every release.`,
+      );
+    }
+  }
+  for (const path of actualVersionFiles) {
+    if (!expectedVersionFiles.has(path)) {
+      failures.push(
+        `release-please-config.json contains unknown release version file ${path}.`,
+      );
+    }
   }
 
   const ignoredPaths = new Set(

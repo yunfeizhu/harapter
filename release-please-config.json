@@ -6,7 +6,74 @@
       "package-name": "harapter",
       "initial-version": "0.1.0",
       "changelog-path": "CHANGELOG.md",
-      "include-v-in-tag": true
+      "include-v-in-tag": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "packages/conformance/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "packages/core/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "packages/transport-acp/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "packages/transport-http-sse/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "packages/transport-jsonl-process/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "packages/transport-jsonrpc-stdio/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "providers/codex/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "providers/dsh/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "providers/hermes/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "providers/openclaw/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "providers/opencode/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "providers/pi/package.json",
+          "jsonpath": "$.version"
+        }
+      ]
     }
   }
 }

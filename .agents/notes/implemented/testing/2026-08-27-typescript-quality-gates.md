@@ -37,6 +37,14 @@ orchestrates every declared package build. Repository policy requires every
 workspace directory and a non-empty build script, preventing recursive builds
 from silently skipping a new package.
 
+The package gate owns a single public-package policy for Core, conformance,
+transports, and Provider Adapters. It validates publish metadata, synchronized
+versions, topological publication order, and the exact npm tarball file set.
+Every tarball is then installed into an isolated consumer with internal
+Workspace dependencies overridden by the just-built tarballs. Runtime imports
+and strict TypeScript imports must resolve without source-tree access. The gate
+stays offline for Harapter dependencies and does not install Provider runtimes.
+
 This baseline adopts the flat ESLint and explicit build/test/coverage split used
 by the
 [Codex TypeScript SDK](https://github.com/openai/codex/blob/main/sdk/typescript/package.json)
@@ -52,8 +60,9 @@ code detection, unused-file analysis, package publication checks, documentation
 builds, and multiple platform-specific lanes. Those gates are appropriate for
 its existing executable surface but would either do nothing or add maintenance
 cost before Harapter has publishable packages and process transports. Harapter
-will add package publication checks and cross-platform runtime lanes with the
-first surface that can provide real evidence for them.
+adopts package publication checks with its first public release surface and adds
+platform-specific evidence only where an implemented Runtime boundary requires
+it.
 
 ### Copy the Codex TypeScript SDK toolchain exactly
 
@@ -77,9 +86,9 @@ tests, per-file coverage, and a package build before review. Coverage exceptions
 must remain narrow and justified; aggregate coverage cannot hide an untested
 file. Tooling configuration itself remains part of repository policy.
 
-The initial baseline deliberately does not include Oxlint, Knip, duplicate-code
-checks, package publication validation, browser tests, live-provider tests, or a
-platform matrix. Those gates become mandatory only when their owning package or
-runtime boundary exists. The first publishable package must add export and
-consumer-smoke validation, and the first managed-process or socket transport
-must add relevant Windows and macOS evidence.
+The baseline deliberately does not include Oxlint, Knip, duplicate-code checks,
+browser tests, or a general platform matrix. Those gates become mandatory only
+when their owning package or Runtime boundary exists. Public-package export,
+tarball, and consumer-smoke validation is mandatory. Live Provider evidence and
+platform checks remain scoped to the Adapters and transports whose claims need
+them.

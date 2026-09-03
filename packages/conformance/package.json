@@ -1,10 +1,28 @@
 {
   "name": "@harapter/conformance",
   "version": "0.0.0",
-  "private": true,
   "description": "Reusable provider conformance tests and deterministic Fake Provider for Harapter.",
+  "keywords": [
+    "agent",
+    "harness",
+    "conformance",
+    "vitest"
+  ],
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yunfeizhu/harapter.git",
+    "directory": "packages/conformance"
+  },
+  "bugs": {
+    "url": "https://github.com/yunfeizhu/harapter/issues"
+  },
+  "homepage": "https://github.com/yunfeizhu/harapter#readme",
   "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -13,11 +31,25 @@
       "default": "./dist/index.js"
     }
   },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/",
+    "tag": "next"
+  },
   "scripts": {
     "build": "tsc --project tsconfig.build.json"
   },
   "dependencies": {
-    "@harapter/core": "workspace:*",
+    "@harapter/core": "workspace:*"
+  },
+  "devDependencies": {
     "vitest": "4.1.11"
+  },
+  "peerDependencies": {
+    "vitest": ">=4.1.11 <5"
   }
 }

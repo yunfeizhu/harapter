@@ -1,8 +1,9 @@
 # Providers
 
-Each provider adapter is independently testable and versioned. It maps one
-harness's documented machine interface to Harapter contracts and owns its
-compatibility probes, redacted fixtures, extensions, and native escape hatch.
+Each Provider Adapter is independently testable and maps one harness's
+documented machine interface to Harapter contracts. It owns its compatibility
+probes, redacted fixtures, extensions, and native escape hatch. Public Adapters
+share Harapter's synchronized pre-1.0 release version.
 
 ## Implemented adapters
 
@@ -17,8 +18,8 @@ compatibility probes, redacted fixtures, extensions, and native escape hatch.
 
 “Supported in source” means implementation, redacted fixtures, Provider
 negatives, shared conformance, a declared compatibility range, and recorded
-live-runtime evidence exist. Packages remain private during pre-alpha and are
-not published to a registry.
+live-runtime evidence exist. Published pre-alpha packages use the opt-in npm
+`next` dist-tag.
 
 “Experimental in source” has implementation, redacted fixtures, Provider
 negatives, shared conformance, and an explicit compatibility boundary, but

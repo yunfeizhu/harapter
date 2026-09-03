@@ -1,13 +1,18 @@
 # `@harapter/adapter-pi`
 
 `@harapter/adapter-pi` maps the official Pi Agent RPC mode to the portable
-Harapter lifecycle. The package is private and versioned `0.0.0` during
-pre-alpha.
+Harapter lifecycle.
 
 The host installs, configures, authenticates, and operates Pi Agent. Harapter
 starts only the exact adapter-owned command selected by the Profile. It does not
 install a Pi Runtime or SDK, select models, manage credentials, read Session
 files, or change host security policy.
+
+## Installation
+
+```bash
+pnpm add @harapter/core@next @harapter/adapter-pi@next
+```
 
 ## Runtime prerequisites and compatibility
 

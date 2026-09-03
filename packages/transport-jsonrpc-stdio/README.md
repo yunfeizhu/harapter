@@ -2,14 +2,18 @@
 
 `@harapter/transport-jsonrpc-stdio` is a bounded, bidirectional JSONL transport
 for Provider Adapters whose official machine interface exchanges JSON-RPC-shaped
-messages over Node readable and writable streams. It is private and versioned
-`0.0.0` while the first Provider integrations establish its compatibility
-surface.
+messages over Node readable and writable streams.
 
 The package owns framing, request correlation, ordered inbound delivery,
 backpressure, local wait controls, and connection disposal. It does not import
 Provider SDKs or assign portable Harapter meaning to Provider methods and
 payloads.
+
+## Installation
+
+```bash
+pnpm add @harapter/transport-jsonrpc-stdio@next
+```
 
 ## Public entrypoints
 

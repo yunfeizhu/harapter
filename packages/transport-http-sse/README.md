@@ -2,13 +2,17 @@
 
 `@harapter/transport-http-sse` is a bounded, Provider-neutral transport for
 Harness machine interfaces exposed through HTTP requests and Server-Sent Events.
-It is private and versioned `0.0.0` while Provider integrations establish its
-compatibility surface.
 
 The package owns endpoint-safe URL resolution, request and response byte limits,
 local wait controls, incremental SSE framing, operation capacity, and transport
 disposal. It does not import Provider SDKs or assign Session, Run, Event,
 interaction, error, or cancellation meaning to upstream routes and payloads.
+
+## Installation
+
+```bash
+pnpm add @harapter/transport-http-sse@next
+```
 
 ## Public entrypoints
 

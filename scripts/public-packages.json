@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "distTag": "next",
+  "packages": [
+    {
+      "path": "packages/core",
+      "name": "@harapter/core",
+      "smokeExport": "HarnessRegistry"
+    },
+    {
+      "path": "packages/transport-jsonrpc-stdio",
+      "name": "@harapter/transport-jsonrpc-stdio",
+      "smokeExport": "JsonRpcStdioTransport"
+    },
+    {
+      "path": "packages/transport-jsonl-process",
+      "name": "@harapter/transport-jsonl-process",
+      "smokeExport": "JsonlProcessTransport"
+    },
+    {
+      "path": "packages/transport-http-sse",
+      "name": "@harapter/transport-http-sse",
+      "smokeExport": "HttpSseTransport"
+    },
+    {
+      "path": "packages/transport-acp",
+      "name": "@harapter/transport-acp",
+      "smokeExport": "AcpClient"
+    },
+    {
+      "path": "packages/conformance",
+      "name": "@harapter/conformance",
+      "smokeExport": "validatePortableRunTrace"
+    },
+    {
+      "path": "providers/codex",
+      "name": "@harapter/adapter-codex",
+      "smokeExport": "createCodexProviderFactory"
+    },
+    {
+      "path": "providers/dsh",
+      "name": "@harapter/adapter-dsh",
+      "smokeExport": "createDshProviderFactory"
+    },
+    {
+      "path": "providers/hermes",
+      "name": "@harapter/adapter-hermes",
+      "smokeExport": "createHermesProviderFactory"
+    },
+    {
+      "path": "providers/openclaw",
+      "name": "@harapter/adapter-openclaw",
+      "smokeExport": "createOpenClawProviderFactory"
+    },
+    {
+      "path": "providers/opencode",
+      "name": "@harapter/adapter-opencode",
+      "smokeExport": "createOpenCodeProviderFactory"
+    },
+    {
+      "path": "providers/pi",
+      "name": "@harapter/adapter-pi",
+      "smokeExport": "createPiProviderFactory"
+    }
+  ]
+}

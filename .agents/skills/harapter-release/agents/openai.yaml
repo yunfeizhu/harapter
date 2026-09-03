@@ -2,4 +2,4 @@ interface:
   display_name: 'Harapter Release'
   short_description: 'Verify and complete a Harapter release safely'
   default_prompt:
-    'Use $harapter-release to verify this Harapter release pull request.'
+    'Use $harapter-release to verify and complete this Harapter release.'
