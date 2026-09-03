@@ -18,10 +18,11 @@ stderr is not captured or exposed.
 The Adapter targets the current stable App Server interface with
 `experimentalApi: false`. `connect()` completes the required `initialize` /
 `initialized` handshake, validates the required response structure, and keeps
-the returned runtime version only as non-sensitive diagnostic identity. There is
-no CLI version allowlist. Malformed required structures fail with
-`provider_api_incompatible`, while unknown events remain observable through the
-bounded raw channel.
+the returned runtime version only as non-sensitive diagnostic identity. The
+leading user-agent product name may reflect `clientInfo.name` or a process-level
+originator, so it is not treated as Provider identity. There is no CLI version
+allowlist. Malformed required structures fail with `provider_api_incompatible`,
+while unknown events remain observable through the bounded raw channel.
 
 The upstream runtime and generated Schema are Apache-2.0 licensed. Harapter does
 not redistribute either one; see the
@@ -194,6 +195,8 @@ Evidence for the supported interface includes:
 
 - the generated stable Schema fingerprint and synthetic JSONL traces in
   [`fixtures/codex/app-server-stable`](../../fixtures/codex/app-server-stable/manifest.json);
+- a synthetic initialize response with the client-selected originator used by
+  the official App Server;
 - mapping, malformed-input, redaction, interaction, timeout, cancellation,
   process-exit, ownership, and cleanup tests;
 - the shared portable Provider conformance suite;

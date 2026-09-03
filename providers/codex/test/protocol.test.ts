@@ -29,6 +29,12 @@ async function fixture(name: string): Promise<unknown[]> {
     .map((line) => JSON.parse(line) as unknown);
 }
 
+async function jsonFixture(name: string): Promise<unknown> {
+  return JSON.parse(
+    await readFile(new URL(name, fixtureRoot), 'utf8'),
+  ) as unknown;
+}
+
 function syntheticTurn(
   status: string,
   error: null | Record<string, unknown> = null,
@@ -46,7 +52,7 @@ function syntheticTurn(
 }
 
 describe('Codex stable protocol mapping', () => {
-  it('accepts the stable interface by shape and keeps runtime versions diagnostic', () => {
+  it('accepts the stable interface by shape and keeps runtime versions diagnostic', async () => {
     expect(
       parseCodexInitializeResponse({
         userAgent: 'Codex Desktop/0.0.0-synthetic (Synthetic OS; arm64)',
@@ -67,6 +73,27 @@ describe('Codex stable protocol mapping', () => {
         platformOs: 'synthetic',
       }),
     ).toEqual({ runtimeVersion: '0.0.1-synthetic' });
+    expect(
+      parseCodexInitializeResponse(
+        await jsonFixture('initialize-client-originator.json'),
+      ),
+    ).toEqual({ runtimeVersion: '0.153.0' });
+    expect(() =>
+      parseCodexInitializeResponse({
+        userAgent: 'harapter/not-a-version (synthetic)',
+        codexHome: '/synthetic/codex-home',
+        platformFamily: 'unix',
+        platformOs: 'synthetic',
+      }),
+    ).toThrow(expect.objectContaining({ code: 'provider_api_incompatible' }));
+    expect(() =>
+      parseCodexInitializeResponse({
+        userAgent: 'harapter/0.153.0\nsynthetic-injection',
+        codexHome: '/synthetic/codex-home',
+        platformFamily: 'unix',
+        platformOs: 'synthetic',
+      }),
+    ).toThrow(expect.objectContaining({ code: 'provider_api_incompatible' }));
     expect(() =>
       parseCodexInitializeResponse({
         userAgent: 'codex_cli_rs/0.0.1-synthetic',

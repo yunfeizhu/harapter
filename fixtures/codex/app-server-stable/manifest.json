@@ -6,6 +6,6 @@
     "command": "codex app-server generate-json-schema --out <temporary-directory>",
     "bundleSha256": "f3dec1e031d99a420b137b903f02196d4325eece57620c925bb7130b25f168d2"
   },
-  "captureMethod": "The current stable Schema is generated locally; JSONL traces are deterministic synthetic protocol examples authored from that Schema.",
+  "captureMethod": "The current stable Schema is generated locally; the initialize response and JSONL traces are deterministic synthetic protocol examples authored from that Schema and the documented client-originator behavior.",
   "redactionMethod": "All trace identifiers, text, paths, errors, and usage values are synthetic; no Provider traffic is stored."
 }
