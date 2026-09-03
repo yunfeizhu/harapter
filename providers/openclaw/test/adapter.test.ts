@@ -40,15 +40,17 @@ describe('OpenClaw Provider Adapter', () => {
     });
 
     const client = await connect();
-    await expect(client.descriptor()).resolves.toMatchObject({
+    const clientDescriptor = await client.descriptor();
+    expect(clientDescriptor).toMatchObject({
       providerId: OPENCLAW_PROVIDER_ID,
-      compatibility: 'experimental',
+      compatibility: 'supported',
       runtime: {
         name: 'openclaw-acp',
         protocol: 'ACP over stdio JSON-RPC 2.0',
         protocolVersion: '1',
       },
     });
+    expect(clientDescriptor.warnings).toBeUndefined();
     const capabilities = await client.capabilities({ refresh: true });
     expect(capabilities.capabilities).toMatchObject({
       'session.create': { mode: 'native' },

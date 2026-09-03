@@ -88,8 +88,12 @@ the boundary without depending on scheduling speed.
 - The Adapter follows the current compatible ACP surface instead of pinning one
   OpenClaw release; breaking upstream structures require synchronized mappings,
   fixtures, tests, documentation, and review.
-- Synthetic fixtures and shared conformance establish source evidence. The
-  Adapter remains experimental until opt-in live Gateway evidence is recorded.
+- Synthetic fixtures, shared conformance, and the trusted 2026-09-03 lifecycle
+  run with `openclaw@2026.8.2` establish supported evidence for the validated
+  ACP v1 text Run path.
+- Native cancellation, resume, approval, image input, and effective Gateway
+  workspace execution remain outside the recorded live evidence and retain
+  capability-specific limits.
 - Shared Gateway routing, history replay, per-Session MCP, direct Gateway
   controls, generic files, audio, verified Gateway workspace execution, and
   client filesystem or terminal services remain outside the compatibility
