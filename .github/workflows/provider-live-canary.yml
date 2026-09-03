@@ -184,13 +184,27 @@ jobs:
           HARAPTER_CODEX_LIVE: '1'
           HARAPTER_LIVE_MODEL_API_KEY:
             ${{ secrets.HARAPTER_LIVE_MODEL_API_KEY }}
-        run:
-          timeout --signal=TERM --kill-after=10s 150s pnpm vitest run
-          providers/codex/test/live.test.ts
+        run: |
+          set -eu
+          codex_command=$(command -v codex)
+          case "$codex_command" in
+            /*) ;;
+            *)
+              echo "::error title=Invalid Codex command::The installed CLI path must be absolute."
+              exit 1
+              ;;
+          esac
+          HARAPTER_CODEX_COMMAND="$codex_command" timeout --signal=TERM --kill-after=10s 300s pnpm vitest run providers/codex/test/live.test.ts
 
       - name: Record passing Codex evidence
         run: |
           printf '%s\n' '- Lifecycle: passed' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Synthetic Prompts submitted: 2' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Completed message Event: passed' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Session resume: passed' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Native cancellation: passed' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Authoritative terminals: run.completed, run.cancelled' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Model tools enabled: 0' >> "$GITHUB_STEP_SUMMARY"
 
   opencode:
     name: OpenCode latest live lifecycle

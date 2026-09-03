@@ -178,7 +178,7 @@ const providerJobExpectations = {
     install: 'npm install --global @openai/codex@latest',
     liveStep: 'Run Codex live lifecycle',
     liveTest: 'providers/codex/test/live.test.ts',
-    processTimeoutSeconds: 150,
+    processTimeoutSeconds: 300,
     safetyStep: 'Verify Codex model-facing surface',
     secretSteps: new Set([
       'Prepare isolated Codex live configuration',
@@ -272,11 +272,15 @@ for (const [provider, expectation] of Object.entries(providerJobExpectations)) {
     assert.ok(safetyIndex >= 0 && safetyIndex < firstSecretIndex);
   }
 }
+const codexJob = requiredJob(liveJobs, 'codex');
+assertCodexWorkflowEvidence(codexJob);
+const weakenedCodexJob = structuredClone(codexJob);
+delete requiredStep(weakenedCodexJob, 'Run Codex live lifecycle')['env'][
+  'HARAPTER_CODEX_LIVE'
+];
+assert.throws(() => assertCodexWorkflowEvidence(weakenedCodexJob));
 assert.match(
-  requiredStep(
-    requiredJob(liveJobs, 'codex'),
-    'Verify Codex model-facing surface',
-  )['run'],
+  requiredStep(codexJob, 'Verify Codex model-facing surface')['run'],
   /validate-codex-features/u,
 );
 assert.match(
@@ -446,6 +450,42 @@ assert.match(
   liveCanaryWorkflow,
   /docker pull nousresearch\/hermes-agent:latest/u,
 );
+
+const codexLiveTest = readFileSync(
+  resolve(repositoryRoot, 'providers/codex/test/live.test.ts'),
+  'utf8',
+);
+assertCodexLiveEvidence(codexLiveTest);
+const weakenedCodexMessageEvidence = codexLiveTest.replace(
+  "assertCompletedTextRun(result, 'HARAPTER_CODEX_LIVE_OK');",
+  '',
+);
+assert.notEqual(weakenedCodexMessageEvidence, codexLiveTest);
+assert.throws(() => assertCodexLiveEvidence(weakenedCodexMessageEvidence));
+const weakenedCodexEventEvidence = codexLiveTest.replace(
+  "expect(eventTypes).toContain('message.completed');",
+  '',
+);
+assert.notEqual(weakenedCodexEventEvidence, codexLiveTest);
+assert.throws(() => assertCodexLiveEvidence(weakenedCodexEventEvidence));
+const weakenedCodexResumeEvidence = codexLiveTest.replace(
+  'assertResumedSession(sessionRef, resumed.ref());',
+  '',
+);
+assert.notEqual(weakenedCodexResumeEvidence, codexLiveTest);
+assert.throws(() => assertCodexLiveEvidence(weakenedCodexResumeEvidence));
+const weakenedCodexCancellationEvidence = codexLiveTest.replace(
+  'assertNativeCancellation(await cancelledRun.cancel());',
+  '',
+);
+assert.notEqual(weakenedCodexCancellationEvidence, codexLiveTest);
+assert.throws(() => assertCodexLiveEvidence(weakenedCodexCancellationEvidence));
+const leakingCodexFailure = codexLiveTest.replace(
+  "throw new Error('Codex did not return the expected synthetic response.');",
+  "throw new Error(`Codex did not return the expected synthetic response. ${result.finalMessage ?? ''}`);",
+);
+assert.notEqual(leakingCodexFailure, codexLiveTest);
+assert.throws(() => assertCodexLiveEvidence(leakingCodexFailure));
 
 const dshLiveTest = readFileSync(
   resolve(repositoryRoot, 'providers/dsh/test/live.test.ts'),
@@ -1138,6 +1178,78 @@ function requireFailure(result, expected, label) {
 
 function isObject(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function assertCodexLiveEvidence(source) {
+  assert.match(source, /isAbsolute\(liveCommand\)/u);
+  assert.match(source, /command: liveCommand/u);
+  assert.match(source, /approvalPolicy: 'never'/u);
+  assert.match(source, /ephemeral: false/u);
+  assert.match(source, /sandbox: 'read-only'/u);
+  assert.match(source, /session\.start\s*\(/u);
+  assert.match(source, /assertToolFreeLiveEvent\(event\)/u);
+  assert.match(
+    source,
+    /assertCompletedTextRun\(result, 'HARAPTER_CODEX_LIVE_OK'\)/u,
+  );
+  assert.match(source, /eventTypes\)\.toContain\('run\.started'\)/u);
+  assert.match(source, /eventTypes\)\.toContain\('message\.completed'\)/u);
+  assert.match(source, /eventTypes\.at\(-1\)\)\.toBe\('run\.completed'\)/u);
+  assert.match(source, /client\.resumeSession\(sessionRef\)/u);
+  assert.match(source, /assertResumedSession\(sessionRef, resumed\.ref\(\)\)/u);
+  assert.match(
+    source,
+    /assertNativeCancellation\(await cancelledRun\.cancel\(\)\)/u,
+  );
+  assert.match(source, /assertCancelledRun\(cancelledResult\)/u);
+  assert.match(
+    source,
+    /cancelledEventTypes\.at\(-1\)\)\.toBe\('run\.cancelled'\)/u,
+  );
+  assert.match(source, /await session\.close\(\)/u);
+  assert.match(source, /await resumed\.close\(\)/u);
+  assert.match(source, /await client\.close\(\)/u);
+  assert.match(
+    source,
+    /assertSupportedDescriptor\(await client\.descriptor\(\)\)/u,
+  );
+  assert.match(source, /assertOwnedSessionRef\(sessionRef\)/u);
+  assert.match(source, /assertThrowsExactMessage\(\(\) => \{/u);
+  assert.doesNotMatch(
+    source,
+    /throw new Error\(`[^`]*\$\{result\.finalMessage/u,
+  );
+  assert.doesNotMatch(source, /events\.push\(event\)/u);
+  assert.doesNotMatch(source, /expect\(result/u);
+  assert.doesNotMatch(source, /expect\(sessionRef/u);
+  assert.doesNotMatch(source, /expect\(resumed\.ref/u);
+  assert.doesNotMatch(source, /expect\(client\.descriptor/u);
+}
+
+function assertCodexWorkflowEvidence(job) {
+  const liveStep = requiredStep(job, 'Run Codex live lifecycle');
+  assert.ok(isObject(liveStep['env']));
+  assert.equal(liveStep['env']['HARAPTER_CODEX_LIVE'], '1');
+  assert.equal(liveStep['continue-on-error'], undefined);
+  assert.match(liveStep['run'], /codex_command=\$\(command -v codex\)/u);
+  assert.match(liveStep['run'], /HARAPTER_CODEX_COMMAND="\$codex_command"/u);
+  const summaryStep = requiredStep(job, 'Record passing Codex evidence');
+  assert.ok(
+    stepIndex(job, 'Record passing Codex evidence') >
+      stepIndex(job, 'Run Codex live lifecycle'),
+  );
+  assert.equal(summaryStep['if'], undefined);
+  assert.equal(summaryStep['continue-on-error'], undefined);
+  assert.match(summaryStep['run'], /- Lifecycle: passed/u);
+  assert.match(summaryStep['run'], /- Synthetic Prompts submitted: 2/u);
+  assert.match(summaryStep['run'], /- Completed message Event: passed/u);
+  assert.match(summaryStep['run'], /- Session resume: passed/u);
+  assert.match(summaryStep['run'], /- Native cancellation: passed/u);
+  assert.match(
+    summaryStep['run'],
+    /- Authoritative terminals: run\.completed, run\.cancelled/u,
+  );
+  assert.match(summaryStep['run'], /- Model tools enabled: 0/u);
 }
 
 function assertOpenClawLiveEvidence(source) {

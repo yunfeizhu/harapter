@@ -84,6 +84,14 @@ The DSH lifecycle requires the exact synthetic response, `run.started`,
 every observed tool or interaction Event. Failure diagnostics remain
 content-free so the credential-backed job cannot expose Provider output.
 
+The Codex lifecycle requires an exact completed response with `run.started`,
+`message.completed`, and authoritative `run.completed` Events. It closes the
+first local Session handle, resumes the same non-ephemeral Thread on the App
+Server connection, and requires a second Turn to settle only after native
+`turn/interrupt` and an authoritative `run.cancelled` terminal. The canary uses
+an absolute installed command, stores only Event type strings, and keeps failure
+diagnostics free of response and native Thread values.
+
 The Hermes Agent lifecycle applies the same exact completed-Run boundary, then
 closes the first local handle, resumes the same native Session, and requires a
 second Run to settle only after correlated native cancellation and an
