@@ -84,6 +84,13 @@ The DSH lifecycle requires the exact synthetic response, `run.started`,
 every observed tool or interaction Event. Failure diagnostics remain
 content-free so the credential-backed job cannot expose Provider output.
 
+The Hermes Agent lifecycle applies the same exact completed-Run boundary, then
+closes the first local handle, resumes the same native Session, and requires a
+second Run to settle only after correlated native cancellation and an
+authoritative `run.cancelled` terminal. Tool and interaction Events remain
+forbidden, and failure diagnostics do not include response or native identity
+values.
+
 DSH follows the current SDK Profile prerelease channel without an exact version
 allowlist. Each run records the DSH CLI, `@deepseek-ai/dsh-sdk-minimal`, and
 `@deepseek-ai/dsh-sdk-app` versions. Codex and OpenCode follow their current

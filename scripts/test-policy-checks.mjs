@@ -386,6 +386,17 @@ assert.match(liveCanaryWorkflow, /DSH_TELEMETRY_DISABLED: '1'/u);
 assert.doesNotMatch(liveCanaryWorkflow, /continue-on-error/u);
 
 const hermesJob = requiredJob(liveJobs, 'hermes');
+assertHermesWorkflowEvidence(hermesJob);
+const weakenedHermesJob = structuredClone(hermesJob);
+const weakenedHermesLiveStep = requiredStep(
+  weakenedHermesJob,
+  'Run Hermes Agent live lifecycle',
+);
+weakenedHermesLiveStep['run'] = weakenedHermesLiveStep['run'].replace(
+  'HARAPTER_HERMES_LIVE=1',
+  '',
+);
+assert.throws(() => assertHermesWorkflowEvidence(weakenedHermesJob));
 const hermesLiveStep = requiredStep(
   hermesJob,
   'Run Hermes Agent live lifecycle',
@@ -506,9 +517,33 @@ const hermesLiveTest = readFileSync(
   resolve(repositoryRoot, 'providers/hermes/test/live.test.ts'),
   'utf8',
 );
-assert.match(hermesLiveTest, /describe\.runIf\(liveEnabled\)/u);
-assert.match(hermesLiveTest, /await session\.close\(\)/u);
-assert.match(hermesLiveTest, /assertToolFreeLiveEvent\(event\)/u);
+assertHermesLiveEvidence(hermesLiveTest);
+const weakenedHermesMessageEvidence = hermesLiveTest.replace(
+  "assertCompletedTextRun(result, 'HARAPTER_HERMES_LIVE_OK');",
+  '',
+);
+assert.notEqual(weakenedHermesMessageEvidence, hermesLiveTest);
+assert.throws(() => assertHermesLiveEvidence(weakenedHermesMessageEvidence));
+const weakenedHermesResumeEvidence = hermesLiveTest.replace(
+  'assertResumedSession(sessionRef, resumed.ref());',
+  '',
+);
+assert.notEqual(weakenedHermesResumeEvidence, hermesLiveTest);
+assert.throws(() => assertHermesLiveEvidence(weakenedHermesResumeEvidence));
+const weakenedHermesCancellationEvidence = hermesLiveTest.replace(
+  'assertNativeCancellation(await cancelledRun.cancel());',
+  '',
+);
+assert.notEqual(weakenedHermesCancellationEvidence, hermesLiveTest);
+assert.throws(() =>
+  assertHermesLiveEvidence(weakenedHermesCancellationEvidence),
+);
+const leakingHermesFailure = hermesLiveTest.replace(
+  "throw new Error(\n      'Hermes Agent did not return the expected synthetic response.',\n    );",
+  "throw new Error(`Hermes Agent did not return the expected synthetic response. ${result.finalMessage ?? ''}`);",
+);
+assert.notEqual(leakingHermesFailure, hermesLiveTest);
+assert.throws(() => assertHermesLiveEvidence(leakingHermesFailure));
 
 const prepareLiveCanary = resolve(
   repositoryRoot,
@@ -1127,6 +1162,68 @@ function assertDshWorkflowEvidence(job) {
   assert.match(summaryStep['run'], /- Completed message Event: passed/u);
   assert.match(summaryStep['run'], /- Authoritative terminal: run\.completed/u);
   assert.match(summaryStep['run'], /- Model tools enabled: 0/u);
+}
+
+function assertHermesLiveEvidence(source) {
+  assert.match(source, /session\.start\s*\(/u);
+  assert.match(source, /assertToolFreeLiveEvent\(event\)/u);
+  assert.match(
+    source,
+    /assertCompletedTextRun\(result, 'HARAPTER_HERMES_LIVE_OK'\)/u,
+  );
+  assert.match(source, /eventTypes\)\.toContain\('run\.started'\)/u);
+  assert.match(source, /eventTypes\)\.toContain\('message\.completed'\)/u);
+  assert.match(source, /eventTypes\.at\(-1\)\)\.toBe\('run\.completed'\)/u);
+  assert.match(source, /client\.resumeSession\(sessionRef\)/u);
+  assert.match(source, /assertResumedSession\(sessionRef, resumed\.ref\(\)\)/u);
+  assert.match(
+    source,
+    /assertNativeCancellation\(await cancelledRun\.cancel\(\)\)/u,
+  );
+  assert.match(source, /assertCancelledRun\(cancelledResult\)/u);
+  assert.match(
+    source,
+    /cancelledEventTypes\.at\(-1\)\)\.toBe\('run\.cancelled'\)/u,
+  );
+  assert.match(source, /await session\.close\(\)/u);
+  assert.match(source, /await resumed\.close\(\)/u);
+  assert.match(source, /await client\.close\(\)/u);
+  assert.match(
+    source,
+    /'Hermes Agent did not return the expected synthetic response\.'/u,
+  );
+  assert.match(source, /assertThrowsExactMessage\(\(\) => \{/u);
+  assert.doesNotMatch(
+    source,
+    /throw new Error\(`[^`]*\$\{result\.finalMessage/u,
+  );
+  assert.doesNotMatch(source, /events\.push\(event\)/u);
+  assert.doesNotMatch(source, /expect\(result/u);
+  assert.doesNotMatch(source, /expect\(sessionRef/u);
+  assert.doesNotMatch(source, /expect\(resumed\.ref/u);
+}
+
+function assertHermesWorkflowEvidence(job) {
+  const liveStep = requiredStep(job, 'Run Hermes Agent live lifecycle');
+  assert.match(liveStep['run'], /HARAPTER_HERMES_LIVE=1/u);
+  assert.equal(liveStep['continue-on-error'], undefined);
+  const summaryStep = requiredStep(job, 'Record passing Hermes Agent evidence');
+  assert.ok(
+    stepIndex(job, 'Record passing Hermes Agent evidence') >
+      stepIndex(job, 'Run Hermes Agent live lifecycle'),
+  );
+  assert.equal(summaryStep['if'], undefined);
+  assert.equal(summaryStep['continue-on-error'], undefined);
+  assert.match(summaryStep['run'], /- Lifecycle: passed/u);
+  assert.match(summaryStep['run'], /- Prompt submitted: yes/u);
+  assert.match(summaryStep['run'], /- Completed message Event: passed/u);
+  assert.match(summaryStep['run'], /- Session resume: passed/u);
+  assert.match(summaryStep['run'], /- Native cancellation: passed/u);
+  assert.match(
+    summaryStep['run'],
+    /- Authoritative terminals: run\.completed, run\.cancelled/u,
+  );
+  assert.match(summaryStep['run'], /- Model toolsets enabled: 0/u);
 }
 
 function assertPiLiveEvidence(source) {
