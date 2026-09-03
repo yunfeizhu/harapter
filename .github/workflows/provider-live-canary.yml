@@ -360,6 +360,10 @@ jobs:
       - name: Record passing DSH evidence
         run: |
           printf '%s\n' '- Lifecycle: passed' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Prompt submitted: yes' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Completed message Event: passed' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Authoritative terminal: run.completed' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- Model tools enabled: 0' >> "$GITHUB_STEP_SUMMARY"
 
   hermes:
     name: Hermes Agent latest live lifecycle

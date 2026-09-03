@@ -285,6 +285,13 @@ assert.match(
   ],
   /--profile sdk-minimal.*validate-dsh-config/su,
 );
+const dshJob = requiredJob(liveJobs, 'dsh');
+assertDshWorkflowEvidence(dshJob);
+const weakenedDshJob = structuredClone(dshJob);
+delete requiredStep(weakenedDshJob, 'Run DSH live lifecycle')['env'][
+  'HARAPTER_DSH_LIVE'
+];
+assert.throws(() => assertDshWorkflowEvidence(weakenedDshJob));
 assert.match(
   requiredStep(
     requiredJob(liveJobs, 'opencode'),
@@ -419,6 +426,30 @@ assert.match(
   liveCanaryWorkflow,
   /docker pull nousresearch\/hermes-agent:latest/u,
 );
+
+const dshLiveTest = readFileSync(
+  resolve(repositoryRoot, 'providers/dsh/test/live.test.ts'),
+  'utf8',
+);
+assertDshLiveEvidence(dshLiveTest);
+const weakenedDshMessageEvidence = dshLiveTest.replace(
+  "assertCompletedTextRun(result, 'HARAPTER_DSH_LIVE_OK');",
+  '',
+);
+assert.notEqual(weakenedDshMessageEvidence, dshLiveTest);
+assert.throws(() => assertDshLiveEvidence(weakenedDshMessageEvidence));
+const weakenedDshEventEvidence = dshLiveTest.replace(
+  "expect(eventTypes).toContain('message.completed');",
+  '',
+);
+assert.notEqual(weakenedDshEventEvidence, dshLiveTest);
+assert.throws(() => assertDshLiveEvidence(weakenedDshEventEvidence));
+const leakingDshFailure = dshLiveTest.replace(
+  "throw new Error('DSH did not return the expected synthetic response.');",
+  "throw new Error(`DSH did not return the expected synthetic response. ${result.finalMessage ?? ''}`);",
+);
+assert.notEqual(leakingDshFailure, dshLiveTest);
+assert.throws(() => assertDshLiveEvidence(leakingDshFailure));
 
 const piLiveTest = readFileSync(
   resolve(repositoryRoot, 'providers/pi/test/live.test.ts'),
@@ -1056,6 +1087,46 @@ function assertOpenClawLiveEvidence(source) {
   );
   assert.match(source, /toContain\('message\.completed'\)/u);
   assert.match(source, /events\.at\(-1\)\?\.type\)\.toBe\('run\.completed'\)/u);
+}
+
+function assertDshLiveEvidence(source) {
+  assert.match(source, /session\.start\s*\(/u);
+  assert.match(source, /assertToolFreeLiveEvent\(event\)/u);
+  assert.match(
+    source,
+    /assertCompletedTextRun\(result, 'HARAPTER_DSH_LIVE_OK'\)/u,
+  );
+  assert.match(source, /eventTypes\)\.toContain\('run\.started'\)/u);
+  assert.match(source, /eventTypes\)\.toContain\('message\.completed'\)/u);
+  assert.match(source, /eventTypes\.at\(-1\)\)\.toBe\('run\.completed'\)/u);
+  assert.match(source, /await session\.close\(\)/u);
+  assert.match(source, /await client\.close\(\)/u);
+  assert.match(
+    source,
+    /throw new Error\('DSH did not return the expected synthetic response\.'\);/u,
+  );
+  assert.match(source, /assertThrowsExactMessage\(\(\) => \{/u);
+  assert.doesNotMatch(source, /expect\(result/u);
+  assert.doesNotMatch(source, /toMatchObject\(\{\s*status: 'completed'/u);
+}
+
+function assertDshWorkflowEvidence(job) {
+  const liveStep = requiredStep(job, 'Run DSH live lifecycle');
+  assert.ok(isObject(liveStep['env']));
+  assert.equal(liveStep['env']['HARAPTER_DSH_LIVE'], '1');
+  assert.equal(liveStep['continue-on-error'], undefined);
+  const summaryStep = requiredStep(job, 'Record passing DSH evidence');
+  assert.ok(
+    stepIndex(job, 'Record passing DSH evidence') >
+      stepIndex(job, 'Run DSH live lifecycle'),
+  );
+  assert.equal(summaryStep['if'], undefined);
+  assert.equal(summaryStep['continue-on-error'], undefined);
+  assert.match(summaryStep['run'], /- Lifecycle: passed/u);
+  assert.match(summaryStep['run'], /- Prompt submitted: yes/u);
+  assert.match(summaryStep['run'], /- Completed message Event: passed/u);
+  assert.match(summaryStep['run'], /- Authoritative terminal: run\.completed/u);
+  assert.match(summaryStep['run'], /- Model tools enabled: 0/u);
 }
 
 function assertPiLiveEvidence(source) {

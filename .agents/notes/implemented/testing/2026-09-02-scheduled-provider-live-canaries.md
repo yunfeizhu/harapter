@@ -79,6 +79,11 @@ negotiated compatibility range. A newly published Runtime failure means that
 release needs investigation or Adapter work; it does not make an older recorded
 live result false.
 
+The DSH lifecycle requires the exact synthetic response, `run.started`,
+`message.completed`, and a final authoritative `run.completed` Event. It rejects
+every observed tool or interaction Event. Failure diagnostics remain
+content-free so the credential-backed job cannot expose Provider output.
+
 DSH follows the current SDK Profile prerelease channel without an exact version
 allowlist. Each run records the DSH CLI, `@deepseek-ai/dsh-sdk-minimal`, and
 `@deepseek-ai/dsh-sdk-app` versions. Codex and OpenCode follow their current
