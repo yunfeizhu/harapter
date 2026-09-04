@@ -2,6 +2,12 @@ name: Release Please
 
 on:
   workflow_dispatch:
+    inputs:
+      resume_release_tag:
+        description: Existing Release Please draft tag to finalize
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -17,10 +23,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      release-created: ${{ steps.release.outputs.release_created }}
-      release-sha: ${{ steps.release.outputs.sha }}
-      release-tag: ${{ steps.release.outputs.tag_name }}
-      release-version: ${{ steps.release.outputs.version }}
+      release-created:
+        ${{ steps.release.outputs.release_created ||
+        steps.resume.outputs.release_created }}
+      release-sha: ${{ steps.release.outputs.sha || steps.resume.outputs.sha }}
+      release-tag:
+        ${{ steps.release.outputs.tag_name || steps.resume.outputs.tag_name }}
+      release-version:
+        ${{ steps.release.outputs.version || steps.resume.outputs.version }}
+      release-resumed: ${{ steps.resume.outputs.release_resumed || 'false' }}
     permissions:
       actions: write
       contents: write
@@ -29,11 +40,51 @@ jobs:
     steps:
       - name: Run Release Please
         id: release
+        if: inputs.resume_release_tag == ''
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
           target-branch: main
+
+      - name: Resolve existing Release Please draft
+        id: resume
+        if: inputs.resume_release_tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESUME_RELEASE_TAG: ${{ inputs.resume_release_tag }}
+        run: |
+          [[ "$RESUME_RELEASE_TAG" =~ ^harapter-v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          release_version="${RESUME_RELEASE_TAG#harapter-v}"
+          release_json="$(gh release view "$RESUME_RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json tagName,isDraft,isPrerelease,isImmutable,targetCommitish,publishedAt)"
+          test "$(jq -r '.tagName' <<<"$release_json")" = "$RESUME_RELEASE_TAG"
+          test "$(jq -r '.isDraft' <<<"$release_json")" = "true"
+          test "$(jq -r '.isPrerelease' <<<"$release_json")" = "false"
+          test "$(jq -r '.isImmutable' <<<"$release_json")" = "false"
+          test "$(jq -r '.publishedAt' <<<"$release_json")" = "null"
+
+          release_sha="$(jq -r '.targetCommitish' <<<"$release_json")"
+          [[ "$release_sha" =~ ^[a-f0-9]{40}$ ]]
+          compare_json="$(gh api "repos/$GITHUB_REPOSITORY/compare/$release_sha...$GITHUB_SHA")"
+          compare_status="$(jq -r '.status' <<<"$compare_json")"
+          if [[ "$compare_status" != 'ahead' && "$compare_status" != 'identical' ]]; then
+            echo "The resumed release commit is not reachable from the dispatch commit." >&2
+            exit 1
+          fi
+          tag_refs="$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/$RESUME_RELEASE_TAG")"
+          tag_ref_count="$(jq --arg ref "refs/tags/$RESUME_RELEASE_TAG" \
+            '[.[] | select(.ref == $ref)] | length' <<<"$tag_refs")"
+          test "$tag_ref_count" = '0'
+
+          {
+            echo 'release_created=true'
+            echo 'release_resumed=true'
+            echo "sha=$release_sha"
+            echo "tag_name=$RESUME_RELEASE_TAG"
+            echo "version=$release_version"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Resolve release pull request branch
         id: release-pr
@@ -84,12 +135,16 @@ jobs:
       - name: Verify release candidate
         env:
           EXPECTED_RELEASE_SHA: ${{ needs.release-please.outputs.release-sha }}
+          RELEASE_RESUMED: ${{ needs.release-please.outputs.release-resumed }}
           RELEASE_TAG: ${{ needs.release-please.outputs.release-tag }}
           RELEASE_VERSION: ${{ needs.release-please.outputs.release-version }}
         run: |
           [[ "$EXPECTED_RELEASE_SHA" =~ ^[a-f0-9]{40}$ ]]
           [[ "$RELEASE_VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
-          test "$EXPECTED_RELEASE_SHA" = "$GITHUB_SHA"
+          [[ "$RELEASE_RESUMED" =~ ^(true|false)$ ]]
+          if [[ "$RELEASE_RESUMED" = 'false' ]]; then
+            test "$EXPECTED_RELEASE_SHA" = "$GITHUB_SHA"
+          fi
           test "$RELEASE_TAG" = "harapter-v$RELEASE_VERSION"
           test "$(git rev-parse HEAD)" = "$EXPECTED_RELEASE_SHA"
 
@@ -146,10 +201,10 @@ jobs:
           if [[ "$draft" = 'true' ]]; then
             test "$(jq -r '.isImmutable' <<<"$release_json")" = "false"
             test "$(jq -r '.publishedAt' <<<"$release_json")" = "null"
-            if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
-              echo "The draft Release tag must not exist before publication." >&2
-              exit 1
-            fi
+            tag_refs="$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/$RELEASE_TAG")"
+            tag_ref_count="$(jq --arg ref "refs/tags/$RELEASE_TAG" \
+              '[.[] | select(.ref == $ref)] | length' <<<"$tag_refs")"
+            test "$tag_ref_count" = '0'
             echo 'published=false' >> "$GITHUB_OUTPUT"
             exit 0
           fi

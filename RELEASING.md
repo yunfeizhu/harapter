@@ -105,10 +105,10 @@ commit, and GitHub-hosted runner.
 
 ## Recovery and rollback
 
-Inspect state and logs before retrying. The same-run finalizer resumes a
-matching draft or verifies the immutable Release with its original output and
-SHA. Partial npm publication may be retried from that tag after inspection and
-reauthorization.
+Inspect state first. Retry failures in the run. After a workflow fix, dispatch
+`release-please.yml` from `main` with `resume_release_tag` set to the draft tag;
+it verifies ancestry and resumes the SHA. Retry partial npm publication from its
+immutable tag after inspection and reauthorization.
 
 Published npm versions are immutable. Do not unpublish, move a Git tag, or
 replace a version during ordinary recovery. Deprecate a broken version with a
