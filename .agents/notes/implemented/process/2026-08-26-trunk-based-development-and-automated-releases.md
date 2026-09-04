@@ -62,7 +62,10 @@ user-visible addition or removal uses `feat`, `fix`, or a breaking-change
 marker; `refactor` is reserved for behavior-preserving work because making a
 normally hidden type visible can create an otherwise unintended patch release.
 Markdown and link validation remain in force, and repository metadata accepts
-both observed GitHub Actions bot login forms.
+both observed GitHub Actions bot login forms. The generated root `CHANGELOG.md`
+accepts Release Please's consecutive blank lines while every other Markdown file
+retains the standard blank-line rule, and its list markers follow the
+generator's asterisk style.
 
 Public Core, conformance, transport, and Provider Adapter packages use a single
 synchronized version before 1.0. The Workspace root and examples remain private.

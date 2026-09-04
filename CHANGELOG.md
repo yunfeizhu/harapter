@@ -10,4 +10,4 @@ and the project follows
 
 ### Added
 
-- Initial open-source project foundation and migrated design documents.
+* Initial open-source project foundation and migrated design documents.
