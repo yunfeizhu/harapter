@@ -44,16 +44,19 @@ tarball, mutable branch, or unreviewed workflow. Use only `publish-npm.yml`
 against an existing GitHub Release tag.
 
 Normal npm publication uses the protected `npm` GitHub environment, OIDC trusted
-publishing, and provenance without a registry token. The one-time `0.1.0`
+publishing, and provenance without a registry token. Release Please tags the
+single release train as `harapter-vX.Y.Z`; npm package versions remain `X.Y.Z`.
+The immutable `harapter-v0.1.0` Release is source-only. The one-time `0.1.1` npm
 bootstrap may use the environment secret `NPM_BOOTSTRAP_TOKEN` only after the
 maintainer has created a short-lived granular token. Reject bootstrap for any
-later version. After the first packages exist, verify trusted-publisher setup,
+other version. After the first packages exist, verify trusted-publisher setup,
 remove the GitHub secret, and revoke the token before treating the release as
 complete.
 
 Before creating the first GitHub Release, require explicit authorization to
 enable immutable releases; the setting is not retroactive. The npm workflow must
-resolve the Release tag exactly to its dispatch run's current `main` commit.
+resolve the Release tag exactly to its dispatch run's current `main` commit so
+npm provenance identifies the immutable source revision.
 
 ## Complete and verify
 
