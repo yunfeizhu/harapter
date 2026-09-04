@@ -1,6 +1,6 @@
 {
   "name": "@harapter/transport-jsonl-process",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Bounded strict JSONL transport for Harapter process providers.",
   "keywords": [
     "agent",
