@@ -45,6 +45,11 @@ export function validateReleaseAutomation({
       'release-please-config.json must keep one simple root release train.',
     );
   }
+  if (rootRelease?.draft !== true) {
+    failures.push(
+      'release-please-config.json must create draft releases for verified assets.',
+    );
+  }
   const expectedVersionFiles = new Set([
     'package.json',
     ...(Array.isArray(publicPackagePolicy?.packages)

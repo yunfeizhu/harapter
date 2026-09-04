@@ -264,6 +264,76 @@ try {
     consumerRoot,
     'type consumer smoke',
   );
+
+  const releaseAssetsRoot = resolve(fixtureRoot, 'release-assets');
+  const repeatedReleaseAssetsRoot = resolve(
+    fixtureRoot,
+    'release-assets-repeat',
+  );
+  const releaseSha = run(
+    'git',
+    ['rev-parse', 'HEAD'],
+    repositoryRoot,
+    'release commit resolution',
+  ).stdout.trim();
+  run(
+    process.execPath,
+    [
+      'scripts/build-release-assets.mjs',
+      '--version',
+      versionFile,
+      '--output-dir',
+      releaseAssetsRoot,
+      '--release-sha',
+      releaseSha,
+    ],
+    repositoryRoot,
+    'release asset build',
+  );
+  run(
+    process.execPath,
+    [
+      'scripts/build-release-assets.mjs',
+      '--version',
+      versionFile,
+      '--output-dir',
+      repeatedReleaseAssetsRoot,
+      '--release-sha',
+      releaseSha,
+    ],
+    repositoryRoot,
+    'repeated release asset build',
+  );
+  const releaseAssetNames = readdirSync(releaseAssetsRoot).sort();
+  const repeatedReleaseAssetNames = readdirSync(
+    repeatedReleaseAssetsRoot,
+  ).sort();
+  if (
+    JSON.stringify(releaseAssetNames) !==
+      JSON.stringify(repeatedReleaseAssetNames) ||
+    releaseAssetNames.some(
+      (name) =>
+        fileSha(resolve(releaseAssetsRoot, name)) !==
+        fileSha(resolve(repeatedReleaseAssetsRoot, name)),
+    )
+  ) {
+    failures.push('Release assets must be reproducible for one commit.');
+  }
+  exitWithFailures(failures);
+  run(
+    process.execPath,
+    [
+      'scripts/verify-release-assets.mjs',
+      '--version',
+      versionFile,
+      '--assets-dir',
+      releaseAssetsRoot,
+      '--release-sha',
+      releaseSha,
+    ],
+    repositoryRoot,
+    'release asset verification',
+  );
 } finally {
   rmSync(fixtureRoot, { recursive: true, force: true });
 }

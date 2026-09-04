@@ -24,12 +24,23 @@ const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const [command, ...argumentsList] = process.argv.slice(2);
 if (!['publish', 'verify'].includes(command)) {
   fail(
-    'Usage: publish-packages.mjs <verify|publish> --version X.Y.Z [--bootstrap].',
+    'Usage: publish-packages.mjs <verify|publish> --version X.Y.Z [--artifacts-dir PATH] [--bootstrap].',
   );
 }
 const options = parseArguments(argumentsList);
 const version = options.get('version');
 const bootstrap = options.has('bootstrap');
+const artifactsDirectoryOption = options.get('artifacts-dir');
+if (command === 'publish' && typeof artifactsDirectoryOption !== 'string') {
+  fail('--artifacts-dir is required for publication.');
+}
+if (command === 'verify' && artifactsDirectoryOption !== undefined) {
+  fail('--artifacts-dir is only valid for publication.');
+}
+const artifactsDirectory =
+  typeof artifactsDirectoryOption === 'string'
+    ? resolve(repositoryRoot, artifactsDirectoryOption)
+    : undefined;
 const bootstrapToken = bootstrap ? process.env.NODE_AUTH_TOKEN : undefined;
 const childEnvironment = { ...process.env };
 delete childEnvironment.NODE_AUTH_TOKEN;
@@ -121,13 +132,23 @@ try {
     if (typeof packed.filename !== 'string') {
       fail(`${entry.name} pack did not report a tarball filename.`);
     }
-    const tarballPath = resolve(fixtureRoot, basename(packed.filename));
-    if (!existsSync(tarballPath)) {
+    const rebuiltTarballPath = resolve(fixtureRoot, basename(packed.filename));
+    if (!existsSync(rebuiltTarballPath)) {
       fail(`${entry.name} pack did not create its tarball.`);
     }
+    const tarballPath = resolve(artifactsDirectory, basename(packed.filename));
+    if (!existsSync(tarballPath)) {
+      fail(`${entry.name} is missing its immutable Release tarball.`);
+    }
+    const rebuiltIntegrity = `sha512-${createHash('sha512')
+      .update(readFileSync(rebuiltTarballPath))
+      .digest('base64')}`;
     const localIntegrity = `sha512-${createHash('sha512')
       .update(readFileSync(tarballPath))
       .digest('base64')}`;
+    if (rebuiltIntegrity !== localIntegrity) {
+      fail(`${entry.name} immutable Release tarball is not reproducible.`);
+    }
     artifacts.set(entry.name, { localIntegrity, tarballPath });
   }
 
@@ -225,6 +246,15 @@ function parseArguments(values) {
     const value = values[index];
     if (value === '--bootstrap') {
       parsed.set('bootstrap', true);
+      continue;
+    }
+    if (value === '--artifacts-dir') {
+      const next = values[index + 1];
+      if (next === undefined) {
+        fail('--artifacts-dir requires a value.');
+      }
+      parsed.set('artifacts-dir', next);
+      index += 1;
       continue;
     }
     if (value === '--version') {

@@ -52,20 +52,21 @@ automatically create a release pull request. After a maintainer approves the
 first usable pre-alpha milestone, they explicitly enable Actions-created pull
 requests and dispatch the reviewed Release Please workflow from `main` to
 prepare the release pull request. After manually merging that pull request, they
-dispatch the workflow from `main` a second time to create the version tag and
-GitHub Release. The release job rejects non-`main` refs, and the CI dispatch
-rejects a branch head that differs from the queried pull request head. Enabling
-an automatic `main` trigger is a separate reviewed repository-policy change. The
-first approved pre-alpha release is `0.1.0`. Release Please owns its generated
-changelog formatting and retains its default visible commit types. A
-user-visible addition or removal uses `feat`, `fix`, or a breaking-change
-marker; `refactor` is reserved for behavior-preserving work because making a
-normally hidden type visible can create an otherwise unintended patch release.
-Markdown and link validation remain in force, and repository metadata accepts
-both observed GitHub Actions bot login forms. The generated root `CHANGELOG.md`
-accepts Release Please's consecutive blank lines while every other Markdown file
-retains the standard blank-line rule, and its list markers follow the
-generator's asterisk style.
+dispatch the workflow from `main` a second time. Release Please creates a draft
+Release, and an isolated finalizer builds and verifies its assets before
+publication creates the immutable tag. The release job rejects non-`main` refs,
+and the CI dispatch rejects a branch head that differs from the queried pull
+request head. Enabling an automatic `main` trigger is a separate reviewed
+repository-policy change. The first approved pre-alpha release is `0.1.0`.
+Release Please owns its generated changelog formatting and retains its default
+visible commit types. A user-visible addition or removal uses `feat`, `fix`, or
+a breaking-change marker; `refactor` is reserved for behavior-preserving work
+because making a normally hidden type visible can create an otherwise unintended
+patch release. Markdown and link validation remain in force, and repository
+metadata accepts both observed GitHub Actions bot login forms. The generated
+root `CHANGELOG.md` accepts Release Please's consecutive blank lines while every
+other Markdown file retains the standard blank-line rule, and its list markers
+follow the generator's asterisk style.
 
 Public Core, conformance, transport, and Provider Adapter packages use a single
 synchronized version before 1.0. The Workspace root and examples remain private.
@@ -73,11 +74,21 @@ Pre-alpha packages publish under the npm `next` dist-tag so consumers opt in
 without assigning the stable `latest` channel. Registry publication is a
 separate manual workflow after an immutable GitHub Release exists. The workflow
 requires GitHub's immutable-release setting, accepts Release Please's
-`harapter-vX.Y.Z` tag format, resolves the tag exactly to the dispatch run's
-current protected `main` commit, rebuilds and verifies every tarball, publishes
-in dependency order with provenance, and uses a protected GitHub environment. It
-uses npm trusted publishing through GitHub Actions OIDC after bootstrap and
-stores no long-lived registry token.
+`harapter-vX.Y.Z` tag format, requires that tag as its dispatch ref, resolves it
+exactly to the event commit, downloads the Release tarballs, reproduces each
+one, publishes those exact files in dependency order with provenance, and uses a
+protected GitHub environment. It uses npm trusted publishing through GitHub
+Actions OIDC after bootstrap and stores no long-lived registry token.
+
+The Release finalizer runs repository evidence at the candidate SHA, packages
+all 12 public workspaces, creates a deterministic SPDX document bound to the
+candidate commit and exact tarballs, and creates canonical SHA-256 checksums for
+the tarballs and SBOM. It uploads only absent draft assets, rejects remote name,
+size, state, or digest conflicts, and publishes only the complete set. GitHub
+creates and locks the tag and assets when the draft is published. Recovery
+reruns the failed finalizer job in the same workflow run so Release Please
+outputs and the source SHA cannot drift; it resumes a matching draft or
+reverifies an already immutable Release.
 
 npm does not allow a trusted publisher to be configured before a package exists.
 The immutable `harapter-v0.1.0` Release remains source-only; the first registry
@@ -88,7 +99,7 @@ is unavailable; the bootstrap path cannot publish another version. Registry
 recovery requires matching SHA-512 integrity, the `next` dist-tag,
 cryptographically verified attestation bundles, and provenance that identifies
 the expected repository, workflow, builder, commit, and tarball. It stops on any
-mismatch and reuses the same failed workflow run so a later `main` commit cannot
+mismatch. A retry uses the same immutable tag, so a later `main` commit cannot
 change the provenance source. Ordinary rollback deprecates the bad version and
 releases a fix rather than moving tags, replacing packages, or unpublishing. The
 operational workflow is documented in
@@ -192,18 +203,18 @@ creation, and keep the branch and title types aligned. The pull request title
 determines the eventual squash commit and release impact, while the metadata
 check rejects tool-specific or mismatched branch prefixes. Early feature work
 accumulates without creating release pull requests until a maintainer explicitly
-activates the first pre-alpha release. Release preparation and publication
-require separate explicit workflow dispatches around the manual release pull
-request merge. npm publication adds a third, separately authorized dispatch
-against an immutable GitHub Release at that run's current `main` commit. Public
-packages share the generated version and use `next`; the first publication has a
-documented one-time token bootstrap, while subsequent releases require OIDC.
-Maintainers preserve `Repository checks`, `Pull request metadata`, and
-`Dependency review` as required status checks. Local delivery retains one
-independent model review and test rerun while its termination rule prevents P2
-churn. Pull requests no longer wait for a second model review or permit
-automated review-comment repair. Eligible contributors explicitly enable native
-auto-merge, and GitHub waits for the deterministic requirements and resolved
-conversations. The migration first removes the synthetic `AI code review`
-required context while preserving strict updates and the three deterministic
-contexts, then deletes its workflow producer.
+activates the first pre-alpha release. Release preparation and GitHub
+publication use two explicit workflow dispatches around the manual release pull
+request merge. npm publication adds a third, separately authorized dispatch from
+the immutable GitHub Release tag. Public packages share the generated version
+and use `next`; the first publication has a documented one-time token bootstrap,
+while subsequent releases require OIDC. Maintainers preserve
+`Repository checks`, `Pull request metadata`, and `Dependency review` as
+required status checks. Local delivery retains one independent model review and
+test rerun while its termination rule prevents P2 churn. Pull requests no longer
+wait for a second model review or permit automated review-comment repair.
+Eligible contributors explicitly enable native auto-merge, and GitHub waits for
+the deterministic requirements and resolved conversations. The migration first
+removes the synthetic `AI code review` required context while preserving strict
+updates and the three deterministic contexts, then deletes its workflow
+producer.

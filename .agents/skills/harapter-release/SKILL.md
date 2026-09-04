@@ -40,8 +40,8 @@ user's explicit authorization.
 The Workspace root and examples remain private. Public packages follow
 `scripts/public-packages.json`, use the synchronized Release Please version, and
 publish under the npm `next` dist-tag. Never publish from a checkout, local
-tarball, mutable branch, or unreviewed workflow. Use only `publish-npm.yml`
-against an existing GitHub Release tag.
+tarball, mutable branch, or unreviewed workflow. npm uses only the verified
+tarballs attached to an immutable GitHub Release.
 
 Normal npm publication uses the protected `npm` GitHub environment, OIDC trusted
 publishing, and provenance without a registry token. Release Please tags the
@@ -55,32 +55,43 @@ complete.
 
 Before creating the first GitHub Release, require explicit authorization to
 enable immutable releases; the setting is not retroactive. The npm workflow must
-resolve the Release tag exactly to its dispatch run's current `main` commit so
-npm provenance identifies the immutable source revision.
+run from the immutable Release tag and resolve it exactly to the event commit so
+npm provenance identifies the released source revision even after `main`
+advances.
+
+Release Please creates a draft Release. Its finalizer checks the Release output
+against the dispatch SHA, runs repository and package evidence, builds all 12
+`pnpm pack` tarballs, creates a deterministic SPDX SBOM bound to that commit and
+those tarballs, writes SHA-256 checksums, uploads only missing assets, verifies
+the exact remote names, sizes, and digests, and publishes only that complete
+draft. Do not create the tag early, clobber a draft asset, or publish a partial
+set.
 
 ## Complete and verify
 
 After explicit authorization, merge the release pull request through the normal
 protected flow. Because the workflow is manual-only during initial development,
 obtain authorization for publication and dispatch `release-please.yml` with
-`--ref main` a second time. Wait for that run, then verify the immutable tag,
-GitHub Release, changelog, and target commit.
+`--ref main` a second time. Wait for both jobs, then verify the immutable tag,
+GitHub Release, 14 explicit assets, changelog, and target commit.
 
 npm publication is a separate irreversible action and requires explicit
-authorization immediately before dispatch. Run `publish-npm.yml` from `main`
-with the exact GitHub Release tag and the correct bootstrap flag. Verify every
-package in `scripts/public-packages.json`, its `next` dist-tag, SHA-512
-integrity, and provenance. Report the exact GitHub Release, workflow, and
-package URLs.
+authorization immediately before dispatch. Run `publish-npm.yml` from the exact
+GitHub Release tag with that tag as the input and the correct bootstrap flag.
+Verify every package in `scripts/public-packages.json`, its Release tarball,
+`next` dist-tag, SHA-512 integrity, and provenance. Report the exact GitHub
+Release, workflow, and package URLs.
 
-If a workflow fails, inspect existing tags, releases, and job logs before any
-retry. Recover partial publication by rerunning the same failed workflow run.
-The publisher skips an existing package only after matching SHA-512, `next`,
-verified attestations, repository, workflow, builder, commit, and tarball. Stop
-on any conflict. Never delete, move, or recreate a published tag, replace a
-package version, or unpublish as an ordinary recovery step; deprecate a bad
-version and release a fix. Stop for an incident decision if immutable state
-conflicts.
+If a workflow fails, inspect existing tags, releases, assets, and job logs.
+Recover finalization by rerunning its failed job in the same workflow run; it
+resumes a matching draft or only reverifies an already immutable Release.
+Recover partial npm publication by rerunning that job, or after reauthorization
+by dispatching the same immutable tag again. The publisher skips an existing
+package only after matching SHA-512, `next`, verified attestations, repository,
+workflow, builder, commit, and tarball. Stop on any conflict. Never delete,
+move, or recreate a published tag, replace a package version, or unpublish as an
+ordinary recovery step; deprecate a bad version and release a fix. Stop for an
+incident decision if immutable state conflicts.
 
 Read [RELEASING.md](../../../RELEASING.md) before the one-time bootstrap or any
 recovery operation.

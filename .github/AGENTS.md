@@ -22,10 +22,10 @@ under `.github/`.
   interrupt release publication after an immutable tag or artifact is created.
 - CI checks pull requests and `main`; exhaustive runtime or credential-backed
   tests use separately scoped workflows and environments.
-- Release Please owns version PRs, changelog updates, tags, and GitHub Releases.
-  Registry publication remains a separately authorized trusted-publishing job
-  for an immutable GitHub Release at the dispatch run's current `main` commit,
-  with provenance and environment protection.
+- Release Please owns version PRs, changelog updates, and draft GitHub Releases.
+  Build, verify, and upload every asset before publishing an immutable Release.
+  Registry publication remains separately authorized and runs from that exact
+  immutable tag, with provenance and environment protection.
 - Dependabot groups compatible updates, but automated merging is enabled only
   after required checks and update policy are enforced by branch protection.
 - Before push, the contributor flow completes risk-matched tests, an independent
