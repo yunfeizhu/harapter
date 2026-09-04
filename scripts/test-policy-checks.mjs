@@ -2366,11 +2366,19 @@ try {
 
 write(
   'src/provider.ts',
-  `export const formerName = '${['Hi', 'Work'].join('')}';\n`,
+  `export const productContext = '${['Hi', 'Work'].join('')}';\nexport const adapterDescription = '${['Codex ', 'harness adapter'].join('')}';\n`,
 );
 assert.deepEqual(
   findForbiddenTextViolations(fixtureRoot, ['src/provider.ts']),
-  ['src/provider.ts contains a forbidden former host-product name.'],
+  [],
+);
+write(
+  'src/local-path.ts',
+  `export const localPath = '${['/', 'Users', '/example/project'].join('')}';\n`,
+);
+assert.deepEqual(
+  findForbiddenTextViolations(fixtureRoot, ['src/local-path.ts']),
+  ['src/local-path.ts contains a forbidden local absolute path.'],
 );
 
 try {
