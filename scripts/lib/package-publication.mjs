@@ -232,8 +232,8 @@ export function validateReleaseVersion(version, { bootstrap = false } = {}) {
   if (!isReleaseVersion(version, { allowZero: false })) {
     return [`Release version ${String(version)} is not publishable.`];
   }
-  if (bootstrap && version !== '0.1.0') {
-    return ['The npm bootstrap path is restricted to release 0.1.0.'];
+  if (bootstrap && version !== '0.1.1') {
+    return ['The npm bootstrap path is restricted to release 0.1.1.'];
   }
   return [];
 }

@@ -246,7 +246,19 @@ assert.match(resolveReleaseStep['run'], /\.prerelease.*=.*"false"/u);
 assert.match(resolveReleaseStep['run'], /\.published_at.*!=.*"null"/u);
 assert.match(
   resolveReleaseStep['run'],
+  /\^harapter-v\(0\|\[1-9\]\[0-9\]\*\)\\\.\(0\|\[1-9\]\[0-9\]\*\)\\\.\(0\|\[1-9\]\[0-9\]\*\)\$/u,
+);
+assert.match(
+  resolveReleaseStep['run'],
   /test "\$object_sha" = "\$EXPECTED_MAIN_SHA"/u,
+);
+assert.match(
+  resolveReleaseStep['run'],
+  /version=\$\{RELEASE_TAG#harapter-v\}/u,
+);
+assert.doesNotMatch(
+  resolveReleaseStep['run'],
+  /repos\/\$GITHUB_REPOSITORY\/compare\//u,
 );
 const publishJob = requiredJob(publishNpm['jobs'], 'publish');
 assert.equal(publishJob['needs'], 'resolve-release');
@@ -2004,8 +2016,12 @@ assert.deepEqual(validateReleaseVersion('0.1.0'), []);
 assert.deepEqual(validateReleaseVersion('0.0.0'), [
   'Release version 0.0.0 is not publishable.',
 ]);
+assert.deepEqual(validateReleaseVersion('0.1.1', { bootstrap: true }), []);
+assert.deepEqual(validateReleaseVersion('0.1.0', { bootstrap: true }), [
+  'The npm bootstrap path is restricted to release 0.1.1.',
+]);
 assert.deepEqual(validateReleaseVersion('0.2.0', { bootstrap: true }), [
-  'The npm bootstrap path is restricted to release 0.1.0.',
+  'The npm bootstrap path is restricted to release 0.1.1.',
 ]);
 const registryIntegrity = `sha512-${Buffer.from('a'.repeat(128), 'hex').toString('base64')}`;
 const otherRegistryIntegrity = `sha512-${Buffer.from('b'.repeat(128), 'hex').toString('base64')}`;
