@@ -1,6 +1,6 @@
 {
   "name": "@harapter/adapter-opencode",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "OpenCode HTTP provider adapter for Harapter.",
   "keywords": [
     "agent",

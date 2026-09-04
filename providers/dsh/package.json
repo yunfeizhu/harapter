@@ -1,6 +1,6 @@
 {
   "name": "@harapter/adapter-dsh",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "DeepSeek Harness stdio JSON-RPC provider adapter for Harapter.",
   "keywords": [
     "agent",
