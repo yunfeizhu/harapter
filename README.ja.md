@@ -321,8 +321,9 @@ Coverage、共通 Conformance、明示的な互換性境界が含まれます。
 Public Core、Conformance、Transport、Adapter
 Package は 1.0 より前は同じ Version で進み、`next` に公開されます。Workspace
 Root と Example は Private のままです。Release Please が Version と GitHub
-Release を管理し、別途承認された Workflow が Provenance 付きで Immutable
-Release を npm に公開します。
+Release を管理し、各 Immutable Release に検証済みの 12 個の Tarball、SPDX
+SBOM、SHA-256
+Checksum を含めます。別途承認された Workflow が同じ Tarball を Provenance 付きで npm に公開します。
 
 ## 対象外
 

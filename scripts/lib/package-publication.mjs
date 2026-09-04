@@ -2,6 +2,9 @@ const repositoryUrl = 'git+https://github.com/yunfeizhu/harapter.git';
 const repositoryHomepage = 'https://github.com/yunfeizhu/harapter#readme';
 const repositoryIssues = 'https://github.com/yunfeizhu/harapter/issues';
 const registryUrl = 'https://registry.npmjs.org/';
+const releaseRepositoryName = 'harapter';
+const releaseRepositoryUrl = 'https://github.com/yunfeizhu/harapter';
+const releaseRootSpdxId = 'SPDXRef-Harapter-Release';
 
 export function validatePublicPackagePolicy(policy) {
   const failures = [];
@@ -238,6 +241,284 @@ export function validateReleaseVersion(version, { bootstrap = false } = {}) {
   return [];
 }
 
+export function expectedReleaseAssetNames(policy, version) {
+  if (
+    validatePublicPackagePolicy(policy).length > 0 ||
+    validateReleaseVersion(version).length > 0
+  ) {
+    return [];
+  }
+  return [
+    ...policy.packages.map(({ name }) => releaseTarballFileName(name, version)),
+    `harapter-${version}.spdx.json`,
+    'SHA256SUMS.txt',
+  ];
+}
+
+export function validateReleaseAssetNames({ fileNames, policy, version }) {
+  const failures = [
+    ...validatePublicPackagePolicy(policy),
+    ...validateReleaseVersion(version),
+  ];
+  if (!Array.isArray(fileNames)) {
+    return [...failures, 'Release assets must be an array of file names.'];
+  }
+  if (failures.length > 0) {
+    return failures;
+  }
+
+  const expected = new Set(expectedReleaseAssetNames(policy, version));
+  const actual = new Set();
+  for (const name of fileNames) {
+    if (typeof name !== 'string') {
+      failures.push('Release assets contain a non-string file name.');
+      continue;
+    }
+    if (actual.has(name)) {
+      failures.push(`Release assets contain duplicate file ${name}.`);
+      continue;
+    }
+    actual.add(name);
+  }
+  for (const name of [...expected].sort(compareStrings)) {
+    if (!actual.has(name)) {
+      failures.push(`Release assets are missing ${name}.`);
+    }
+  }
+  for (const name of [...actual].sort(compareStrings)) {
+    if (!expected.has(name)) {
+      failures.push(`Release assets contain unexpected file ${name}.`);
+    }
+  }
+  return failures;
+}
+
+export function createReleaseSbom({ created, packages, releaseSha, version }) {
+  const failures = validateReleaseSbomInput({
+    created,
+    packages,
+    releaseSha,
+    version,
+  });
+  if (failures.length > 0) {
+    throw new TypeError(failures.join('\n'));
+  }
+
+  const packageComponents = packages.map((entry) => ({
+    SPDXID: releasePackageSpdxId(entry.name),
+    checksums: [
+      {
+        algorithm: 'SHA256',
+        checksumValue: entry.sha256,
+      },
+    ],
+    copyrightText: 'NOASSERTION',
+    downloadLocation: `${releaseRepositoryUrl}/releases/download/harapter-v${version}/${releaseTarballFileName(entry.name, version)}`,
+    externalRefs: [
+      {
+        referenceCategory: 'PACKAGE-MANAGER',
+        referenceLocator: releasePackagePurl(entry.name, version),
+        referenceType: 'purl',
+      },
+    ],
+    filesAnalyzed: false,
+    licenseConcluded: 'Apache-2.0',
+    licenseDeclared: 'Apache-2.0',
+    name: entry.name,
+    packageFileName: releaseTarballFileName(entry.name, version),
+    primaryPackagePurpose: 'LIBRARY',
+    versionInfo: version,
+  }));
+  const relationships = [
+    {
+      relatedSpdxElement: releaseRootSpdxId,
+      relationshipType: 'DESCRIBES',
+      spdxElementId: 'SPDXRef-DOCUMENT',
+    },
+    ...packages.map((entry) => ({
+      relatedSpdxElement: releasePackageSpdxId(entry.name),
+      relationshipType: 'CONTAINS',
+      spdxElementId: releaseRootSpdxId,
+    })),
+    ...packages.flatMap((entry) =>
+      [...entry.dependencies].sort(compareStrings).map((dependency) => ({
+        relatedSpdxElement: releasePackageSpdxId(dependency),
+        relationshipType: 'DEPENDS_ON',
+        spdxElementId: releasePackageSpdxId(entry.name),
+      })),
+    ),
+  ];
+
+  return {
+    SPDXID: 'SPDXRef-DOCUMENT',
+    creationInfo: {
+      created,
+      creators: ['Tool: Harapter release asset builder'],
+    },
+    dataLicense: 'CC0-1.0',
+    documentNamespace: `${releaseRepositoryUrl}/releases/tag/harapter-v${version}/sbom-${releaseSha}`,
+    name: `Harapter ${version} release`,
+    packages: [
+      {
+        SPDXID: releaseRootSpdxId,
+        copyrightText: 'NOASSERTION',
+        downloadLocation: `${repositoryUrl}@${releaseSha}`,
+        externalRefs: [
+          {
+            referenceCategory: 'PACKAGE-MANAGER',
+            referenceLocator: `pkg:github/yunfeizhu/harapter@${releaseSha}`,
+            referenceType: 'purl',
+          },
+        ],
+        filesAnalyzed: false,
+        licenseConcluded: 'Apache-2.0',
+        licenseDeclared: 'Apache-2.0',
+        name: releaseRepositoryName,
+        primaryPackagePurpose: 'SOURCE',
+        versionInfo: version,
+      },
+      ...packageComponents,
+    ],
+    relationships,
+    spdxVersion: 'SPDX-2.3',
+  };
+}
+
+export function validateReleaseSbom({
+  created,
+  packages,
+  releaseSha,
+  sbom,
+  version,
+}) {
+  const failures = validateReleaseSbomInput({
+    created,
+    packages,
+    releaseSha,
+    version,
+  });
+  if (!isMapping(sbom)) {
+    failures.push('Release SBOM must contain an SPDX document.');
+    return failures;
+  }
+  if (failures.length > 0) {
+    return failures;
+  }
+
+  const expected = createReleaseSbom({
+    created,
+    packages,
+    releaseSha,
+    version,
+  });
+  if (JSON.stringify(sbom) !== JSON.stringify(expected)) {
+    failures.push(
+      'Release SBOM must exactly describe the release commit and package artifacts.',
+    );
+  }
+  return failures;
+}
+
+export function renderReleaseChecksums(digests) {
+  return [...digests]
+    .sort(([left], [right]) => compareStrings(left, right))
+    .map(([name, digest]) => {
+      if (!isReleaseAssetName(name) || !/^[a-f0-9]{64}$/u.test(digest)) {
+        throw new TypeError('Release checksum input is invalid.');
+      }
+      return `${digest}  ${name}\n`;
+    })
+    .join('');
+}
+
+export function validateReleaseChecksums({ checksumText, expectedDigests }) {
+  const failures = [];
+  if (typeof checksumText !== 'string' || !(expectedDigests instanceof Map)) {
+    return ['SHA256SUMS.txt validation input is invalid.'];
+  }
+  const actual = new Map();
+  const normalized = checksumText.endsWith('\n')
+    ? checksumText.slice(0, -1)
+    : checksumText;
+  for (const [index, line] of normalized.split(/\r?\n/u).entries()) {
+    const match = line.match(
+      /^([a-f0-9]{64}) {2}([A-Za-z0-9][A-Za-z0-9._-]*)$/u,
+    );
+    if (match === null) {
+      failures.push(
+        `SHA256SUMS.txt line ${String(index + 1)} has invalid syntax.`,
+      );
+      continue;
+    }
+    const [, digest, name] = match;
+    if (actual.has(name)) {
+      failures.push(`SHA256SUMS.txt contains duplicate file ${name}.`);
+      continue;
+    }
+    actual.set(name, digest);
+  }
+  for (const [name, digest] of [...expectedDigests].sort(([left], [right]) =>
+    compareStrings(left, right),
+  )) {
+    if (!actual.has(name)) {
+      failures.push(`SHA256SUMS.txt is missing ${name}.`);
+    } else if (actual.get(name) !== digest) {
+      failures.push(`SHA256SUMS.txt has the wrong digest for ${name}.`);
+    }
+  }
+  for (const name of [...actual.keys()].sort(compareStrings)) {
+    if (!expectedDigests.has(name)) {
+      failures.push(`SHA256SUMS.txt contains unexpected file ${name}.`);
+    }
+  }
+  return failures;
+}
+
+export function validateRemoteReleaseAssets({ assets, expectedAssets }) {
+  if (!Array.isArray(assets) || !(expectedAssets instanceof Map)) {
+    return ['GitHub Release asset validation input is invalid.'];
+  }
+  const failures = [];
+  const actual = new Map();
+  for (const asset of assets) {
+    if (!isMapping(asset) || typeof asset.name !== 'string') {
+      failures.push('GitHub Release contains an invalid asset.');
+      continue;
+    }
+    if (actual.has(asset.name)) {
+      failures.push(`GitHub Release contains duplicate asset ${asset.name}.`);
+      continue;
+    }
+    actual.set(asset.name, asset);
+  }
+  for (const [name, expected] of [...expectedAssets].sort(([left], [right]) =>
+    compareStrings(left, right),
+  )) {
+    const asset = actual.get(name);
+    if (!isMapping(asset)) {
+      failures.push(`GitHub Release is missing asset ${name}.`);
+      continue;
+    }
+    if (asset.state !== 'uploaded') {
+      failures.push(`GitHub Release asset ${name} is not uploaded.`);
+    }
+    if (asset.digest !== `sha256:${expected.sha256}`) {
+      failures.push(
+        `GitHub Release asset ${name} has the wrong SHA-256 digest.`,
+      );
+    }
+    if (asset.size !== expected.size) {
+      failures.push(`GitHub Release asset ${name} has the wrong size.`);
+    }
+  }
+  for (const name of [...actual.keys()].sort(compareStrings)) {
+    if (!expectedAssets.has(name)) {
+      failures.push(`GitHub Release contains unexpected asset ${name}.`);
+    }
+  }
+  return failures;
+}
+
 export function normalizeRegistryIntegrity(value) {
   if (typeof value !== 'string') {
     return undefined;
@@ -368,7 +649,7 @@ export function validateProvenanceStatement({
   if (
     workflow?.repository !== 'https://github.com/yunfeizhu/harapter' ||
     workflow?.path !== '.github/workflows/publish-npm.yml' ||
-    workflow?.ref !== 'refs/heads/main'
+    workflow?.ref !== `refs/tags/harapter-v${version}`
   ) {
     failures.push(`${label} provenance identifies an unexpected workflow.`);
   }
@@ -409,6 +690,79 @@ function isReleaseVersion(version, { allowZero }) {
     return false;
   }
   return allowZero || version !== '0.0.0';
+}
+
+function releaseTarballFileName(name, version) {
+  return `${name.slice(1).replace('/', '-')}-${version}.tgz`;
+}
+
+function releasePackageSpdxId(name) {
+  return `SPDXRef-Package-${name.slice(1).replace('/', '-')}`;
+}
+
+function releasePackagePurl(name, version) {
+  const [scope, packageName] = name.slice(1).split('/');
+  return `pkg:npm/%40${scope}/${packageName}@${version}`;
+}
+
+function validateReleaseSbomInput({ created, packages, releaseSha, version }) {
+  const failures = validateReleaseVersion(version);
+  if (!/^[a-f0-9]{40}$/u.test(releaseSha ?? '')) {
+    failures.push('Release SBOM must identify a full release commit SHA.');
+  }
+  if (
+    typeof created !== 'string' ||
+    Number.isNaN(Date.parse(created)) ||
+    new Date(created).toISOString() !== created
+  ) {
+    failures.push('Release SBOM must use a canonical release timestamp.');
+  }
+  if (!Array.isArray(packages) || packages.length === 0) {
+    failures.push('Release SBOM packages must be a non-empty array.');
+    return failures;
+  }
+
+  const packageNames = new Set();
+  for (const entry of packages) {
+    if (
+      !isMapping(entry) ||
+      typeof entry.name !== 'string' ||
+      !/^@harapter\/[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(entry.name) ||
+      !/^[a-f0-9]{64}$/u.test(entry.sha256 ?? '') ||
+      !Array.isArray(entry.dependencies) ||
+      entry.dependencies.some((dependency) => typeof dependency !== 'string')
+    ) {
+      failures.push('Release SBOM contains invalid package input.');
+      continue;
+    }
+    if (packageNames.has(entry.name)) {
+      failures.push(`Release SBOM contains duplicate package ${entry.name}.`);
+    }
+    packageNames.add(entry.name);
+  }
+  for (const entry of packages) {
+    if (!isMapping(entry) || !Array.isArray(entry.dependencies)) {
+      continue;
+    }
+    for (const dependency of entry.dependencies) {
+      if (!packageNames.has(dependency)) {
+        failures.push(
+          `Release SBOM package ${String(entry.name)} references unknown package ${String(dependency)}.`,
+        );
+      }
+    }
+  }
+  return failures;
+}
+
+function isReleaseAssetName(value) {
+  return (
+    typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(value)
+  );
+}
+
+function compareStrings(left, right) {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 function arraysEqual(actual, expected) {

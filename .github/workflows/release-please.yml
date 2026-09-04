@@ -12,10 +12,15 @@ concurrency:
 
 jobs:
   release-please:
-    name: Prepare or publish release
+    name: Prepare release pull request or draft
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      release-created: ${{ steps.release.outputs.release_created }}
+      release-sha: ${{ steps.release.outputs.sha }}
+      release-tag: ${{ steps.release.outputs.tag_name }}
+      release-version: ${{ steps.release.outputs.version }}
     permissions:
       actions: write
       contents: write
@@ -60,3 +65,193 @@ jobs:
             -f pr_title="$pr_title" \
             -f base_sha="$base_sha" \
             -f head_sha="$head_sha"
+
+  finalize-release:
+    name: Publish verified GitHub Release
+    needs: release-please
+    if: needs.release-please.outputs.release-created == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    steps:
+      - name: Check out release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ needs.release-please.outputs.release-sha }}
+
+      - name: Verify release candidate
+        env:
+          EXPECTED_RELEASE_SHA: ${{ needs.release-please.outputs.release-sha }}
+          RELEASE_TAG: ${{ needs.release-please.outputs.release-tag }}
+          RELEASE_VERSION: ${{ needs.release-please.outputs.release-version }}
+        run: |
+          [[ "$EXPECTED_RELEASE_SHA" =~ ^[a-f0-9]{40}$ ]]
+          [[ "$RELEASE_VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          test "$EXPECTED_RELEASE_SHA" = "$GITHUB_SHA"
+          test "$RELEASE_TAG" = "harapter-v$RELEASE_VERSION"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_RELEASE_SHA"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run release evidence
+        run: pnpm check
+
+      - name: Verify release package versions
+        env:
+          RELEASE_VERSION: ${{ needs.release-please.outputs.release-version }}
+        run:
+          node scripts/publish-packages.mjs verify --version "$RELEASE_VERSION"
+
+      - name: Build release assets
+        env:
+          RELEASE_SHA: ${{ needs.release-please.outputs.release-sha }}
+          RELEASE_VERSION: ${{ needs.release-please.outputs.release-version }}
+        run: |
+          node scripts/build-release-assets.mjs \
+            --version "$RELEASE_VERSION" \
+            --output-dir release-assets \
+            --release-sha "$RELEASE_SHA"
+
+      - name: Inspect release state
+        id: release-state
+        env:
+          EXPECTED_RELEASE_SHA: ${{ needs.release-please.outputs.release-sha }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.release-please.outputs.release-tag }}
+        run: |
+          release_json="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
+          test "$(jq -r '.tag_name' <<<"$release_json")" = "$RELEASE_TAG"
+          test "$(jq -r '.target_commitish' <<<"$release_json")" = "$EXPECTED_RELEASE_SHA"
+          test "$(jq -r '.prerelease' <<<"$release_json")" = "false"
+
+          draft="$(jq -r '.draft' <<<"$release_json")"
+          if [[ "$draft" = 'true' ]]; then
+            test "$(jq -r '.immutable' <<<"$release_json")" = "false"
+            test "$(jq -r '.published_at' <<<"$release_json")" = "null"
+            if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+              echo "The draft Release tag must not exist before publication." >&2
+              exit 1
+            fi
+            echo 'published=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          test "$draft" = 'false'
+          test "$(jq -r '.immutable' <<<"$release_json")" = "true"
+          test "$(jq -r '.published_at' <<<"$release_json")" != "null"
+          ref_json="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG")"
+          object_type="$(jq -r '.object.type' <<<"$ref_json")"
+          object_sha="$(jq -r '.object.sha' <<<"$ref_json")"
+          for _ in 1 2; do
+            if [[ "$object_type" != 'tag' ]]; then
+              break
+            fi
+            tag_json="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$object_sha")"
+            object_type="$(jq -r '.object.type' <<<"$tag_json")"
+            object_sha="$(jq -r '.object.sha' <<<"$tag_json")"
+          done
+          test "$object_type" = 'commit'
+          test "$object_sha" = "$EXPECTED_RELEASE_SHA"
+          echo 'published=true' >> "$GITHUB_OUTPUT"
+
+      - name: Upload missing release assets
+        if: steps.release-state.outputs.published == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.release-please.outputs.release-tag }}
+        run: |
+          release_json="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
+          for asset_path in release-assets/*; do
+            asset_name="${asset_path##*/}"
+            local_digest="sha256:$(sha256sum "$asset_path" | cut -d ' ' -f 1)"
+            matches="$(jq --arg name "$asset_name" '[.assets[] | select(.name == $name)] | length' <<<"$release_json")"
+            if [[ "$matches" = '0' ]]; then
+              gh release upload "$RELEASE_TAG" "$asset_path" \
+                --repo "$GITHUB_REPOSITORY"
+              release_json="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
+              continue
+            fi
+            test "$matches" = '1'
+            remote_digest="$(jq -r --arg name "$asset_name" '.assets[] | select(.name == $name) | .digest' <<<"$release_json")"
+            test "$remote_digest" = "$local_digest"
+          done
+
+      - name: Verify uploaded release assets
+        if: steps.release-state.outputs.published == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ needs.release-please.outputs.release-sha }}
+          RELEASE_TAG: ${{ needs.release-please.outputs.release-tag }}
+          RELEASE_VERSION: ${{ needs.release-please.outputs.release-version }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" \
+            > "$RUNNER_TEMP/release.json"
+          node scripts/verify-release-assets.mjs \
+            --version "$RELEASE_VERSION" \
+            --assets-dir release-assets \
+            --release-sha "$RELEASE_SHA" \
+            --release-json "$RUNNER_TEMP/release.json"
+
+      - name: Publish immutable release
+        if: steps.release-state.outputs.published == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.release-please.outputs.release-tag }}
+        run: |
+          gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --draft=false
+
+      - name: Verify immutable release
+        env:
+          EXPECTED_RELEASE_SHA: ${{ needs.release-please.outputs.release-sha }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.release-please.outputs.release-tag }}
+          RELEASE_VERSION: ${{ needs.release-please.outputs.release-version }}
+        run: |
+          immutable='false'
+          for _ in {1..12}; do
+            release_json="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
+            immutable="$(jq -r '.immutable' <<<"$release_json")"
+            if [[ "$immutable" = 'true' ]]; then
+              break
+            fi
+            sleep 5
+          done
+          test "$immutable" = "true"
+          test "$(jq -r '.tag_name' <<<"$release_json")" = "$RELEASE_TAG"
+          test "$(jq -r '.draft' <<<"$release_json")" = "false"
+          test "$(jq -r '.prerelease' <<<"$release_json")" = "false"
+          test "$(jq -r '.published_at' <<<"$release_json")" != "null"
+
+          ref_json="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG")"
+          object_type="$(jq -r '.object.type' <<<"$ref_json")"
+          object_sha="$(jq -r '.object.sha' <<<"$ref_json")"
+          for _ in 1 2; do
+            if [[ "$object_type" != "tag" ]]; then
+              break
+            fi
+            tag_json="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$object_sha")"
+            object_type="$(jq -r '.object.type' <<<"$tag_json")"
+            object_sha="$(jq -r '.object.sha' <<<"$tag_json")"
+          done
+          test "$object_type" = "commit"
+          test "$object_sha" = "$EXPECTED_RELEASE_SHA"
+
+          printf '%s\n' "$release_json" > "$RUNNER_TEMP/release.json"
+          node scripts/verify-release-assets.mjs \
+            --version "$RELEASE_VERSION" \
+            --assets-dir release-assets \
+            --release-sha "$EXPECTED_RELEASE_SHA" \
+            --release-json "$RUNNER_TEMP/release.json"

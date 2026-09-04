@@ -337,8 +337,9 @@ deterministic implementation evidence.
 
 Public Core, conformance, transport, and Adapter packages move together on one
 pre-1.0 version and publish under `next`. The Workspace root and examples stay
-private. Release Please owns versions and GitHub Releases; a separately
-authorized workflow publishes the immutable release to npm with provenance.
+private. Release Please publishes 12 verified tarballs, an SPDX SBOM, and
+SHA-256 checksums in each immutable GitHub Release; a separately authorized
+workflow publishes those exact tarballs to npm with provenance.
 
 ## Non-goals
 

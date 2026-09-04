@@ -244,20 +244,21 @@ do not start Release Please; a maintainer enables Actions-created pull requests
 and manually dispatches the workflow. An automatic `main` trigger requires a
 separate repository-policy change.
 
-Maintainers review and manually merge the generated release pull request when
-the accumulated changes are ready, then dispatch the workflow from `main` a
-second time to create the tag and GitHub Release. The first dispatch prepares
-the version update and changelog; the second publishes them after the release
-pull request is merged. Do not create those artifacts manually. See
-[RELEASING.md](../RELEASING.md) for the activation and verification procedure.
+Maintainers merge the release pull request, then dispatch the workflow from
+`main` again. The first dispatch prepares versions and the changelog. The second
+creates a draft Release; an isolated finalizer checks the SHA, builds 12
+tarballs, an SPDX SBOM, and SHA-256 checksums, verifies the uploaded digests,
+then publishes the immutable Release. Do not create those artifacts manually.
+See [RELEASING.md](../RELEASING.md) for the activation and verification
+procedure.
 
 Public packages use one synchronized pre-1.0 version and the npm `next`
 dist-tag. `pnpm check` validates their manifests, tarballs, dependency rewrites,
 and consumer imports. The Workspace root and examples remain private.
 
-npm publication is a separate manual workflow after Release Please creates an
-immutable GitHub Release at the dispatch run's current `main` commit. It checks
-SHA-512, the `next` tag, and verified provenance before recovery skips, then
-uses the protected `npm` environment and trusted publishing. The first `0.1.0`
-publication has a one-time short-lived token bootstrap. See
-[RELEASING.md](../RELEASING.md) for setup, verification, recovery, and rollback.
+npm publication is a separate manual workflow for an immutable Release at the
+dispatch ref. It verifies the asset set, reproduces and publishes the attached
+tarballs, then checks SHA-512, `next`, and provenance. The first registry
+publication is `0.1.1` with a one-time short-lived token; later releases use the
+protected `npm` environment and trusted publishing. See
+[RELEASING.md](../RELEASING.md) for setup, recovery, and rollback.

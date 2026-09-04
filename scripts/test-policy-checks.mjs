@@ -24,16 +24,23 @@ import {
   validateWorkspacePackageManifest,
 } from './lib/repository-policy.mjs';
 import {
+  createReleaseSbom,
+  expectedReleaseAssetNames,
   normalizeRegistryIntegrity,
+  renderReleaseChecksums,
   validatePackageOrder,
   validatePackedFiles,
   validatePublicPackageManifest,
   validatePublicPackagePolicy,
   validateProvenanceStatement,
+  validateReleaseAssetNames,
+  validateReleaseChecksums,
   validateRegistryAudit,
   validateRegistryDistribution,
   validateRegistryDistTag,
   validateReleaseVersion,
+  validateReleaseSbom,
+  validateRemoteReleaseAssets,
 } from './lib/package-publication.mjs';
 import { validateWorkflowActionPins } from './lib/workflow-actions.mjs';
 
@@ -148,6 +155,109 @@ const releaseWorkflow = readFileSync(
   resolve(repositoryRoot, '.github/workflows/release-please.yml'),
   'utf8',
 );
+const releasePlease = load(releaseWorkflow, { schema: JSON_SCHEMA });
+assert.ok(isObject(releasePlease));
+assert.deepEqual(Object.keys(releasePlease['jobs']).sort(), [
+  'finalize-release',
+  'release-please',
+]);
+const releasePleaseJob = requiredJob(releasePlease['jobs'], 'release-please');
+assert.equal(
+  releasePleaseJob['outputs']['release-created'],
+  '${{ steps.release.outputs.release_created }}',
+);
+assert.equal(
+  releasePleaseJob['outputs']['release-sha'],
+  '${{ steps.release.outputs.sha }}',
+);
+assert.equal(
+  releasePleaseJob['outputs']['release-tag'],
+  '${{ steps.release.outputs.tag_name }}',
+);
+assert.equal(
+  releasePleaseJob['outputs']['release-version'],
+  '${{ steps.release.outputs.version }}',
+);
+const finalizeReleaseJob = requiredJob(
+  releasePlease['jobs'],
+  'finalize-release',
+);
+assert.equal(finalizeReleaseJob['needs'], 'release-please');
+assert.equal(
+  finalizeReleaseJob['if'],
+  "needs.release-please.outputs.release-created == 'true'",
+);
+assert.deepEqual(finalizeReleaseJob['permissions'], { contents: 'write' });
+assert.equal(finalizeReleaseJob['concurrency'], undefined);
+const releaseCheckout = requiredStep(
+  finalizeReleaseJob,
+  'Check out release commit',
+);
+assert.equal(
+  releaseCheckout['with']['ref'],
+  '${{ needs.release-please.outputs.release-sha }}',
+);
+assert.equal(releaseCheckout['with']['persist-credentials'], false);
+assert.match(
+  requiredStep(finalizeReleaseJob, 'Verify release candidate')['run'],
+  /test "\$EXPECTED_RELEASE_SHA" = "\$GITHUB_SHA"/u,
+);
+assert.match(
+  requiredStep(finalizeReleaseJob, 'Run release evidence')['run'],
+  /^pnpm check$/u,
+);
+const buildReleaseAssets = requiredStep(
+  finalizeReleaseJob,
+  'Build release assets',
+);
+assert.match(
+  buildReleaseAssets['run'],
+  /node scripts\/build-release-assets\.mjs/u,
+);
+assert.match(buildReleaseAssets['run'], /--release-sha "\$RELEASE_SHA"/u);
+assert.doesNotMatch(releaseWorkflow, /dependency-graph\/sbom/u);
+const releaseState = requiredStep(finalizeReleaseJob, 'Inspect release state');
+assert.equal(releaseState['id'], 'release-state');
+assert.match(releaseState['run'], /if \[\[ "\$draft" = 'true' \]\]/u);
+assert.match(releaseState['run'], /published=false/u);
+assert.match(releaseState['run'], /published=true/u);
+const uploadReleaseAssets = requiredStep(
+  finalizeReleaseJob,
+  'Upload missing release assets',
+);
+assert.equal(
+  uploadReleaseAssets['if'],
+  "steps.release-state.outputs.published == 'false'",
+);
+assert.doesNotMatch(uploadReleaseAssets['run'], /--clobber/u);
+assert.match(
+  requiredStep(finalizeReleaseJob, 'Verify uploaded release assets')['run'],
+  /node scripts\/verify-release-assets\.mjs/u,
+);
+assert.equal(
+  requiredStep(finalizeReleaseJob, 'Verify uploaded release assets')['if'],
+  "steps.release-state.outputs.published == 'false'",
+);
+const publishImmutableRelease = requiredStep(
+  finalizeReleaseJob,
+  'Publish immutable release',
+);
+assert.equal(
+  publishImmutableRelease['if'],
+  "steps.release-state.outputs.published == 'false'",
+);
+assert.match(
+  publishImmutableRelease['run'],
+  /gh release edit "\$RELEASE_TAG" --repo "\$GITHUB_REPOSITORY" \\\n\s+--draft=false/u,
+);
+assert.match(
+  requiredStep(finalizeReleaseJob, 'Verify immutable release')['run'],
+  /immutable=.*jq -r '\.immutable'/u,
+);
+assert.match(
+  requiredStep(finalizeReleaseJob, 'Verify immutable release')['run'],
+  /test "\$immutable" = "true"/u,
+);
 assert.match(releaseWorkflow, /--repo "\$GITHUB_REPOSITORY"/u);
 assert.match(releaseWorkflow, /-f pr_author="\$pr_author"/u);
 assert.match(releaseWorkflow, /-f base_sha="\$base_sha"/u);
@@ -223,15 +333,19 @@ assert.deepEqual(Object.keys(publishNpm['jobs']).sort(), [
   'resolve-release',
 ]);
 const resolveReleaseJob = requiredJob(publishNpm['jobs'], 'resolve-release');
-assert.equal(resolveReleaseJob['if'], "github.ref == 'refs/heads/main'");
+assert.equal(resolveReleaseJob['if'], undefined);
 assert.doesNotMatch(JSON.stringify(resolveReleaseJob), /secrets\./u);
 const resolveReleaseStep = requiredStep(
   resolveReleaseJob,
   'Resolve published release tag',
 );
 assert.equal(
-  resolveReleaseStep['env']['EXPECTED_MAIN_SHA'],
+  resolveReleaseStep['env']['EXPECTED_RELEASE_SHA'],
   '${{ github.sha }}',
+);
+assert.match(
+  resolveReleaseStep['run'],
+  /test "\$GITHUB_REF" = "refs\/tags\/\$RELEASE_TAG"/u,
 );
 assert.match(
   resolveReleaseStep['run'],
@@ -250,7 +364,7 @@ assert.match(
 );
 assert.match(
   resolveReleaseStep['run'],
-  /test "\$object_sha" = "\$EXPECTED_MAIN_SHA"/u,
+  /test "\$object_sha" = "\$EXPECTED_RELEASE_SHA"/u,
 );
 assert.match(
   resolveReleaseStep['run'],
@@ -280,6 +394,18 @@ assert.match(
   requiredStep(publishJob, 'Run release evidence')['run'],
   /^pnpm check$/u,
 );
+assert.match(
+  requiredStep(publishJob, 'Download immutable release assets')['run'],
+  /gh release download/u,
+);
+assert.match(
+  requiredStep(publishJob, 'Verify immutable release assets')['run'],
+  /node scripts\/verify-release-assets\.mjs/u,
+);
+assert.match(
+  requiredStep(publishJob, 'Verify immutable release assets')['run'],
+  /--release-sha "\$RELEASE_SHA"/u,
+);
 const bootstrapPublish = requiredStep(
   publishJob,
   'Publish first npm release with bootstrap credential',
@@ -293,6 +419,7 @@ assert.equal(
   '${{ needs.resolve-release.outputs.sha }}',
 );
 assert.match(bootstrapPublish['run'], /--bootstrap/u);
+assert.match(bootstrapPublish['run'], /--artifacts-dir release-assets/u);
 const trustedPublish = requiredStep(
   publishJob,
   'Publish npm release with trusted publishing',
@@ -302,6 +429,7 @@ assert.equal(
   trustedPublish['env']['EXPECTED_RELEASE_SHA'],
   '${{ needs.resolve-release.outputs.sha }}',
 );
+assert.match(trustedPublish['run'], /--artifacts-dir release-assets/u);
 assert.equal(
   (publishJob['steps'] ?? []).filter((step) =>
     JSON.stringify(step).includes('${{ secrets.'),
@@ -1855,6 +1983,7 @@ assert.deepEqual(
     releasePleaseConfig: {
       packages: {
         '.': {
+          draft: true,
           'initial-version': '0.1.0',
           'release-type': 'simple',
           'extra-files': [
@@ -1882,6 +2011,7 @@ assert.deepEqual(
   [
     'release-please-config.json must set packages["."].initial-version to 0.1.0.',
     'release-please-config.json must keep one simple root release train.',
+    'release-please-config.json must create draft releases for verified assets.',
     'release-please-config.json must update package.json on every release.',
     'release-please-config.json must update packages/core/package.json on every release.',
     '.prettierignore must exclude Release Please-owned CHANGELOG.md.',
@@ -2023,6 +2153,146 @@ assert.deepEqual(validateReleaseVersion('0.1.0', { bootstrap: true }), [
 assert.deepEqual(validateReleaseVersion('0.2.0', { bootstrap: true }), [
   'The npm bootstrap path is restricted to release 0.1.1.',
 ]);
+assert.deepEqual(
+  expectedReleaseAssetNames(publicPackagePolicyFixture, '0.1.1'),
+  ['harapter-core-0.1.1.tgz', 'harapter-0.1.1.spdx.json', 'SHA256SUMS.txt'],
+);
+assert.deepEqual(
+  validateReleaseAssetNames({
+    fileNames: [
+      'harapter-core-0.1.1.tgz',
+      'harapter-0.1.1.spdx.json',
+      'SHA256SUMS.txt',
+    ],
+    policy: publicPackagePolicyFixture,
+    version: '0.1.1',
+  }),
+  [],
+);
+assert.deepEqual(
+  validateReleaseAssetNames({
+    fileNames: [
+      'harapter-core-0.1.1.tgz',
+      'harapter-core-0.1.1.tgz',
+      'unexpected.tgz',
+    ],
+    policy: publicPackagePolicyFixture,
+    version: '0.1.1',
+  }),
+  [
+    'Release assets contain duplicate file harapter-core-0.1.1.tgz.',
+    'Release assets are missing SHA256SUMS.txt.',
+    'Release assets are missing harapter-0.1.1.spdx.json.',
+    'Release assets contain unexpected file unexpected.tgz.',
+  ],
+);
+const releaseSbomCreated = '2026-09-04T00:00:00.000Z';
+const releaseSbomSha = 'a'.repeat(40);
+const releaseSbomPackages = [
+  {
+    dependencies: [],
+    name: '@harapter/core',
+    sha256: 'b'.repeat(64),
+  },
+];
+const releaseSbomDocument = createReleaseSbom({
+  created: releaseSbomCreated,
+  packages: releaseSbomPackages,
+  releaseSha: releaseSbomSha,
+  version: '0.1.1',
+});
+assert.equal(
+  JSON.stringify(
+    createReleaseSbom({
+      created: releaseSbomCreated,
+      packages: releaseSbomPackages,
+      releaseSha: releaseSbomSha,
+      version: '0.1.1',
+    }),
+  ),
+  JSON.stringify(releaseSbomDocument),
+);
+assert.deepEqual(
+  validateReleaseSbom({
+    created: releaseSbomCreated,
+    packages: releaseSbomPackages,
+    releaseSha: releaseSbomSha,
+    sbom: releaseSbomDocument,
+    version: '0.1.1',
+  }),
+  [],
+);
+assert.deepEqual(
+  validateReleaseSbom({
+    created: releaseSbomCreated,
+    packages: releaseSbomPackages,
+    releaseSha: 'c'.repeat(40),
+    sbom: releaseSbomDocument,
+    version: '0.1.1',
+  }),
+  [
+    'Release SBOM must exactly describe the release commit and package artifacts.',
+  ],
+);
+const checksumDigests = new Map([
+  ['harapter-core-0.1.1.tgz', 'b'.repeat(64)],
+  ['harapter-0.1.1.spdx.json', 'a'.repeat(64)],
+]);
+const checksumText = `${'a'.repeat(64)}  harapter-0.1.1.spdx.json\n${'b'.repeat(64)}  harapter-core-0.1.1.tgz\n`;
+assert.equal(renderReleaseChecksums(checksumDigests), checksumText);
+assert.deepEqual(
+  validateReleaseChecksums({ checksumText, expectedDigests: checksumDigests }),
+  [],
+);
+assert.deepEqual(
+  validateReleaseChecksums({
+    checksumText: `${'c'.repeat(64)}  harapter-core-0.1.1.tgz\n`,
+    expectedDigests: checksumDigests,
+  }),
+  [
+    'SHA256SUMS.txt is missing harapter-0.1.1.spdx.json.',
+    'SHA256SUMS.txt has the wrong digest for harapter-core-0.1.1.tgz.',
+  ],
+);
+const remoteReleaseAssets = [
+  {
+    digest: `sha256:${'a'.repeat(64)}`,
+    name: 'harapter-0.1.1.spdx.json',
+    size: 10,
+    state: 'uploaded',
+  },
+  {
+    digest: `sha256:${'b'.repeat(64)}`,
+    name: 'harapter-core-0.1.1.tgz',
+    size: 20,
+    state: 'uploaded',
+  },
+];
+assert.deepEqual(
+  validateRemoteReleaseAssets({
+    assets: remoteReleaseAssets,
+    expectedAssets: new Map([
+      ['harapter-0.1.1.spdx.json', { sha256: 'a'.repeat(64), size: 10 }],
+      ['harapter-core-0.1.1.tgz', { sha256: 'b'.repeat(64), size: 20 }],
+    ]),
+  }),
+  [],
+);
+assert.deepEqual(
+  validateRemoteReleaseAssets({
+    assets: [
+      ...remoteReleaseAssets.slice(0, 1),
+      { ...remoteReleaseAssets[1], digest: `sha256:${'c'.repeat(64)}` },
+    ],
+    expectedAssets: new Map([
+      ['harapter-0.1.1.spdx.json', { sha256: 'a'.repeat(64), size: 10 }],
+      ['harapter-core-0.1.1.tgz', { sha256: 'b'.repeat(64), size: 20 }],
+    ]),
+  }),
+  [
+    'GitHub Release asset harapter-core-0.1.1.tgz has the wrong SHA-256 digest.',
+  ],
+);
 const registryIntegrity = `sha512-${Buffer.from('a'.repeat(128), 'hex').toString('base64')}`;
 const otherRegistryIntegrity = `sha512-${Buffer.from('b'.repeat(128), 'hex').toString('base64')}`;
 assert.equal(
@@ -2096,7 +2366,7 @@ const provenanceStatement = {
         workflow: {
           repository: 'https://github.com/yunfeizhu/harapter',
           path: '.github/workflows/publish-npm.yml',
-          ref: 'refs/heads/main',
+          ref: 'refs/tags/harapter-v0.1.0',
         },
       },
       resolvedDependencies: [{ digest: { gitCommit: releaseCommit } }],

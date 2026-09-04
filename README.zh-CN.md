@@ -306,7 +306,8 @@ Abort 与 Provider 确认的 Cancellation 是不同的生命周期结果。
 公开的 Core、Conformance、Transport 和 Adapter
 Package 在 1.0 前使用同一版本，并发布到
 `next`。Workspace 根目录和示例保持 Private。Release Please 管理版本和 GitHub
-Release；另一个需要单独授权的 Workflow 使用 Provenance 将该不可变 Release 发布到 npm。
+Release；每个不可变 Release 都包含 12 个已验证 Tarball、SPDX
+SBOM 和 SHA-256 校验文件。另一个需要单独授权的 Workflow 使用 Provenance 将这些相同 Tarball 发布到 npm。
 
 ## 明确不做什么
 
