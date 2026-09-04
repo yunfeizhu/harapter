@@ -75,7 +75,7 @@ jobs:
     name: Publish verified tarballs
     needs: resolve-release
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 50
     environment: npm
     permissions:
       contents: read

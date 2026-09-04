@@ -43,6 +43,11 @@ publish under the npm `next` dist-tag. Never publish from a checkout, local
 tarball, mutable branch, or unreviewed workflow. npm uses only the verified
 tarballs attached to an immutable GitHub Release.
 
+npm creates `latest` for the first version of a new package even when the
+publisher selects `next`. Treat that initial tag as registry bootstrap behavior,
+not stable-channel approval. Verify that `next` identifies the release being
+published, and do not move `latest` during pre-alpha publication.
+
 Normal npm publication uses the protected `npm` GitHub environment, OIDC trusted
 publishing, and provenance without a registry token. Release Please tags the
 single release train as `harapter-vX.Y.Z`; npm package versions remain `X.Y.Z`.
@@ -81,6 +86,12 @@ GitHub Release tag with that tag as the input and the correct bootstrap flag.
 Verify every package in `scripts/public-packages.json`, its Release tarball,
 `next` dist-tag, SHA-512 integrity, and provenance. Report the exact GitHub
 Release, workflow, and package URLs.
+
+Use one policy-defined availability window for each acceptance batch. Recovery
+verifies a startup-pending batch before new writes; newly accepted tarballs
+share a second window. The job timeout covers both. An accepted tarball is not
+complete evidence until registry metadata, `next`, and provenance are
+verifiable; inspect held packages before rerunning the immutable release.
 
 If a workflow fails, inspect existing tags, releases, assets, and job logs.
 Retry an operational finalizer failure in the same workflow run. If recovery

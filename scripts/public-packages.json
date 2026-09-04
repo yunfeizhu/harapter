@@ -1,6 +1,11 @@
 {
   "schemaVersion": 1,
   "distTag": "next",
+  "registryAvailability": {
+    "timeoutSeconds": 1200,
+    "pollIntervalSeconds": 15,
+    "queryTimeoutSeconds": 30
+  },
   "packages": [
     {
       "path": "packages/core",

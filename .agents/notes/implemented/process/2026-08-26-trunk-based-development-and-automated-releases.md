@@ -70,15 +70,29 @@ follow the generator's asterisk style.
 
 Public Core, conformance, transport, and Provider Adapter packages use a single
 synchronized version before 1.0. The Workspace root and examples remain private.
-Pre-alpha packages publish under the npm `next` dist-tag so consumers opt in
-without assigning the stable `latest` channel. Registry publication is a
-separate manual workflow after an immutable GitHub Release exists. The workflow
-requires GitHub's immutable-release setting, accepts Release Please's
-`harapter-vX.Y.Z` tag format, requires that tag as its dispatch ref, resolves it
-exactly to the event commit, downloads the Release tarballs, reproduces each
-one, publishes those exact files in dependency order with provenance, and uses a
-protected GitHub environment. It uses npm trusted publishing through GitHub
-Actions OIDC after bootstrap and stores no long-lived registry token.
+Harapter submits pre-alpha packages with the npm `next` dist-tag so consumers
+select the pre-alpha channel explicitly. The public registry also creates
+`latest` for a package's first version when publication selects another tag.
+Harapter treats that initial tag as registry bootstrap behavior rather than
+stable-channel approval and does not advance it during later pre-alpha
+publication. Registry publication is a separate manual workflow after an
+immutable GitHub Release exists. The workflow requires GitHub's
+immutable-release setting, accepts Release Please's `harapter-vX.Y.Z` tag
+format, requires that tag as its dispatch ref, resolves it exactly to the event
+commit, downloads the Release tarballs, reproduces each one, submits those exact
+files in dependency order with provenance, and uses a protected GitHub
+environment. It uses npm trusted publishing through GitHub Actions OIDC after
+bootstrap and stores no long-lived registry token.
+
+npm scans accepted packages before making their version metadata and contents
+available. Publication first uses a bounded availability window for versions
+already pending at startup and audits all existing provenance before another
+irreversible write. It then submits every missing tarball and polls that new
+batch through a second bounded window. Each registry query receives a shorter
+timeout within its remaining monotonic deadline. The workflow timeout covers
+both windows plus evidence, packaging, provenance, and cleanup. Registry
+visibility does not establish success by itself: the publisher still requires
+the immutable SHA-512, `next`, and provenance checks for every package.
 
 The Release finalizer runs repository evidence at the candidate SHA, packages
 all 12 public workspaces, creates a deterministic SPDX document bound to the
@@ -169,6 +183,16 @@ copied, leaked, or used outside the reviewed workflow. Only the unavoidable
 first-package bootstrap uses a short-lived token; normal releases use trusted
 publishing and provenance.
 
+### Verify each package before submitting the next package
+
+Serial verification localizes the first unavailable package, but npm scans each
+accepted version independently. Waiting for every scan before submitting the
+next tarball multiplies registry delay across the synchronized package train.
+Submitting verified tarballs in dependency order and waiting through one shared
+deadline preserves the same final checks while allowing those scans to progress
+together. Publication can already stop after a partial irreversible upload, so
+the shared wait does not introduce a new atomicity guarantee.
+
 ### Human-only review and merge
 
 This keeps every decision with a maintainer but repeats high-signal review and
@@ -212,14 +236,16 @@ activates the first pre-alpha release. Release preparation and GitHub
 publication use two explicit workflow dispatches around the manual release pull
 request merge. npm publication adds a third, separately authorized dispatch from
 the immutable GitHub Release tag. Public packages share the generated version
-and use `next`; the first publication has a documented one-time token bootstrap,
-while subsequent releases require OIDC. Maintainers preserve
-`Repository checks`, `Pull request metadata`, and `Dependency review` as
-required status checks. Local delivery retains one independent model review and
-test rerun while its termination rule prevents P2 churn. Pull requests no longer
-wait for a second model review or permit automated review-comment repair.
-Eligible contributors explicitly enable native auto-merge, and GitHub waits for
-the deterministic requirements and resolved conversations. The migration first
-removes the synthetic `AI code review` required context while preserving strict
-updates and the three deterministic contexts, then deletes its workflow
-producer.
+and Harapter publishes them with `next`; npm's initial `latest` tag remains
+explicitly outside the stable-channel decision. The publisher uses one bounded
+shared availability window for independent npm scans. The first publication has
+a documented one-time token bootstrap, while subsequent releases require OIDC.
+Maintainers preserve `Repository checks`, `Pull request metadata`, and
+`Dependency review` as required status checks. Local delivery retains one
+independent model review and test rerun while its termination rule prevents P2
+churn. Pull requests no longer wait for a second model review or permit
+automated review-comment repair. Eligible contributors explicitly enable native
+auto-merge, and GitHub waits for the deterministic requirements and resolved
+conversations. The migration first removes the synthetic `AI code review`
+required context while preserving strict updates and the three deterministic
+contexts, then deletes its workflow producer.

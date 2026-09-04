@@ -252,13 +252,14 @@ then publishes the immutable Release. Do not create those artifacts manually.
 See [RELEASING.md](../RELEASING.md) for the activation and verification
 procedure.
 
-Public packages use one synchronized pre-1.0 version and the npm `next`
-dist-tag. `pnpm check` validates their manifests, tarballs, dependency rewrites,
-and consumer imports. The Workspace root and examples remain private.
+Public packages share one pre-1.0 version and publish under `next`. npm's
+initial `latest` is not a stable Harapter channel and is not advanced during
+pre-alpha. `pnpm check` validates manifests, tarballs, dependency rewrites, and
+consumer imports.
 
-npm publication is a separate manual workflow for an immutable Release at the
-dispatch ref. It verifies the asset set, reproduces and publishes the attached
-tarballs, then checks SHA-512, `next`, and provenance. The first registry
+`npm` publication is dispatched from an immutable Release tag. It verifies and
+submits the tarballs in dependency order, then shares one bounded availability
+window before checking SHA-512, `next`, and provenance. The first registry
 publication is `0.1.1` with a one-time short-lived token; later releases use the
 protected `npm` environment and trusted publishing. See
 [RELEASING.md](../RELEASING.md) for setup, recovery, and rollback.
