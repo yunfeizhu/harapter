@@ -166,6 +166,49 @@ assert.match(
   /User-visible additions and removals use `feat`, `fix`, or a breaking-change marker; `refactor` is behavior-preserving/u,
 );
 
+copyFileSync(
+  resolve(repositoryRoot, '.markdownlint-cli2.jsonc'),
+  resolve(fixtureRoot, '.markdownlint-cli2.jsonc'),
+);
+const markdownlintCli = resolve(
+  repositoryRoot,
+  'node_modules/markdownlint-cli2/markdownlint-cli2-bin.mjs',
+);
+const checkedInChangelog = readFileSync(
+  resolve(repositoryRoot, 'CHANGELOG.md'),
+  'utf8',
+);
+const generatedChangelog = checkedInChangelog.replace(
+  '## [Unreleased]',
+  `## 0.1.0 (2026-09-03)
+
+
+### Features
+
+* Added a public feature.
+
+## [Unreleased]`,
+);
+assert.notEqual(generatedChangelog, checkedInChangelog);
+write('CHANGELOG.md', generatedChangelog);
+requireSuccess(
+  run(markdownlintCli, ['CHANGELOG.md']),
+  'Release Please changelog formatting',
+);
+write(
+  'README.md',
+  `# Ordinary Markdown
+
+
+The standard blank-line rule remains enabled.
+`,
+);
+requireFailure(
+  run(markdownlintCli, ['README.md']),
+  'MD012/no-multiple-blanks',
+  'Ordinary Markdown blank-line policy',
+);
+
 const publishWorkflow = readFileSync(
   resolve(repositoryRoot, '.github/workflows/publish-npm.yml'),
   'utf8',

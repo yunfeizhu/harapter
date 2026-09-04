@@ -10,4 +10,13 @@
   },
   "globs": ["**/*.md", "#node_modules"],
   "ignores": ["**/node_modules/**"],
+  "overrides": [
+    {
+      "filter": ["CHANGELOG.md"],
+      "config": {
+        "MD012": false,
+      },
+      "combine": "merge",
+    },
+  ],
 }
