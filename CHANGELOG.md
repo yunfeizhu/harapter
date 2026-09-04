@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1](https://github.com/yunfeizhu/harapter/compare/harapter-v0.1.0...harapter-v0.1.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* **release:** align npm publication with generated tags ([#97](https://github.com/yunfeizhu/harapter/issues/97)) ([6a53d3b](https://github.com/yunfeizhu/harapter/commit/6a53d3bfd8b07850a69c2887a43e54e42db9d780))
+* **release:** publish verified package assets ([#99](https://github.com/yunfeizhu/harapter/issues/99)) ([b4d64ad](https://github.com/yunfeizhu/harapter/commit/b4d64ad25a1f136985ec672efa130c52e65bf503))
+
 ## 0.1.0 (2026-09-04)
 
 
