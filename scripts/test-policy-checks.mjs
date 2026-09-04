@@ -25,8 +25,10 @@ import {
 } from './lib/repository-policy.mjs';
 import {
   createReleaseSbom,
+  executeRegistryPublication,
   expectedReleaseAssetNames,
   normalizeRegistryIntegrity,
+  parseRegistryDistTagListing,
   renderReleaseChecksums,
   validatePackageOrder,
   validatePackedFiles,
@@ -36,6 +38,7 @@ import {
   validateReleaseAssetNames,
   validateReleaseChecksums,
   validateRegistryAudit,
+  waitForRegistryAvailability,
   validateRegistryDistribution,
   validateRegistryDistTag,
   validateReleaseVersion,
@@ -425,6 +428,19 @@ assert.doesNotMatch(
 const publishJob = requiredJob(publishNpm['jobs'], 'publish');
 assert.equal(publishJob['needs'], 'resolve-release');
 assert.equal(publishJob['environment'], 'npm');
+const checkedPublicPackagePolicy = JSON.parse(
+  readFileSync(resolve(repositoryRoot, 'scripts/public-packages.json'), 'utf8'),
+);
+assert.deepEqual(validatePublicPackagePolicy(checkedPublicPackagePolicy), []);
+assert.ok(
+  publishJob['timeout-minutes'] >=
+    2 *
+      Math.ceil(
+        checkedPublicPackagePolicy.registryAvailability.timeoutSeconds / 60,
+      ) +
+      10,
+  'npm publication must cover two bounded registry availability windows plus ten minutes.',
+);
 assert.deepEqual(publishJob['permissions'], {
   contents: 'read',
   'id-token': 'write',
@@ -2015,6 +2031,11 @@ assert.deepEqual(
 const publicPackagePolicyFixture = {
   schemaVersion: 1,
   distTag: 'next',
+  registryAvailability: {
+    timeoutSeconds: 1_200,
+    pollIntervalSeconds: 15,
+    queryTimeoutSeconds: 30,
+  },
   packages: [
     {
       path: 'packages/core',
@@ -2023,6 +2044,18 @@ const publicPackagePolicyFixture = {
     },
   ],
 };
+assert.deepEqual(
+  parseRegistryDistTagListing('latest: 0.1.1\nnext: 0.1.1\n'),
+  new Map([
+    ['latest', '0.1.1'],
+    ['next', '0.1.1'],
+  ]),
+);
+assert.equal(
+  parseRegistryDistTagListing('next: 0.1.1\nnext: 0.1.2\n'),
+  undefined,
+);
+assert.equal(parseRegistryDistTagListing('not a dist-tag line\n'), undefined);
 assert.deepEqual(validatePublicPackagePolicy(publicPackagePolicyFixture), []);
 assert.deepEqual(
   validateReleaseAutomation({
@@ -2070,6 +2103,12 @@ assert.deepEqual(
   validatePublicPackagePolicy({
     schemaVersion: 2,
     distTag: 'latest',
+    registryAvailability: {
+      timeoutSeconds: 899,
+      pollIntervalSeconds: 61,
+      queryTimeoutSeconds: 4,
+      unexpected: true,
+    },
     packages: [
       { path: 'examples/demo', name: '@other/core', smokeExport: 'not-valid!' },
       { path: 'examples/demo', name: '@other/core', smokeExport: '' },
@@ -2080,6 +2119,10 @@ assert.deepEqual(
     'scripts/public-packages.json contains unknown key unexpected.',
     'scripts/public-packages.json schemaVersion must be 1.',
     'scripts/public-packages.json distTag must be next.',
+    'scripts/public-packages.json registryAvailability contains unknown key unexpected.',
+    'scripts/public-packages.json registryAvailability.timeoutSeconds must be an integer from 900 through 3600.',
+    'scripts/public-packages.json registryAvailability.pollIntervalSeconds must be an integer from 5 through 60.',
+    'scripts/public-packages.json registryAvailability.queryTimeoutSeconds must be an integer from 5 through 60.',
     'scripts/public-packages.json packages[0].path must identify one package directory.',
     'scripts/public-packages.json packages[0].name must be an @harapter package name.',
     'scripts/public-packages.json packages[0].smokeExport must be a public identifier.',
@@ -2088,6 +2131,127 @@ assert.deepEqual(
     'scripts/public-packages.json packages[1].smokeExport must be a public identifier.',
   ],
 );
+
+{
+  let elapsedMilliseconds = 0;
+  const attempts = new Map();
+  const budgets = [];
+  const pending = await waitForRegistryAvailability({
+    entries: [{ name: 'core' }, { name: 'adapter' }],
+    inspect: ({ name }, { remainingMilliseconds }) => {
+      budgets.push(remainingMilliseconds());
+      const attempt = (attempts.get(name) ?? 0) + 1;
+      attempts.set(name, attempt);
+      return name === 'core' ? attempt >= 2 : attempt >= 3;
+    },
+    now: () => elapsedMilliseconds,
+    pollIntervalMilliseconds: 15,
+    sleep: (delayMilliseconds) => {
+      elapsedMilliseconds += delayMilliseconds;
+    },
+    timeoutMilliseconds: 40,
+  });
+  assert.deepEqual(pending, []);
+  assert.deepEqual(Object.fromEntries(attempts), { core: 2, adapter: 3 });
+  assert.deepEqual(budgets, [40, 40, 25, 25, 10]);
+  assert.equal(elapsedMilliseconds, 30);
+}
+
+{
+  let elapsedMilliseconds = 0;
+  const delays = [];
+  const budgets = [];
+  const pending = await waitForRegistryAvailability({
+    entries: [{ name: 'core' }],
+    inspect: (_entry, { remainingMilliseconds }) => {
+      budgets.push(remainingMilliseconds());
+      return false;
+    },
+    now: () => elapsedMilliseconds,
+    pollIntervalMilliseconds: 15,
+    sleep: (delayMilliseconds) => {
+      delays.push(delayMilliseconds);
+      elapsedMilliseconds += delayMilliseconds;
+    },
+    timeoutMilliseconds: 40,
+  });
+  assert.deepEqual(pending, [{ name: 'core' }]);
+  assert.deepEqual(delays, [15, 15, 10]);
+  assert.deepEqual(budgets, [40, 25, 10]);
+  assert.equal(elapsedMilliseconds, 40);
+}
+
+{
+  let elapsedMilliseconds = 0;
+  const budgets = [];
+  const pending = await waitForRegistryAvailability({
+    entries: [{ name: 'core' }],
+    inspect: (_entry, { remainingMilliseconds }) => {
+      const budget = remainingMilliseconds();
+      budgets.push(budget);
+      elapsedMilliseconds += budget;
+      return false;
+    },
+    now: () => elapsedMilliseconds,
+    pollIntervalMilliseconds: 15,
+    sleep: () => {
+      throw new Error('A consumed deadline must not sleep.');
+    },
+    timeoutMilliseconds: 40,
+  });
+  assert.deepEqual(pending, [{ name: 'core' }]);
+  assert.deepEqual(budgets, [40]);
+  assert.equal(elapsedMilliseconds, 40);
+}
+
+{
+  const events = [];
+  await assert.rejects(
+    executeRegistryPublication({
+      entries: [{ name: 'existing' }, { name: 'new' }],
+      inspectExisting: ({ name }) =>
+        name === 'existing' ? 'verified' : 'missing',
+      publishEntry: ({ name }) => {
+        events.push(`publish:${name}`);
+      },
+      verifyAvailableEntries: (entries) => {
+        events.push(`wait:${entries.map(({ name }) => name).join(',')}`);
+      },
+      verifyProvenanceEntries: (entries) => {
+        events.push(`audit:${entries.map(({ name }) => name).join(',')}`);
+        throw new Error('invalid existing provenance');
+      },
+    }),
+    /invalid existing provenance/u,
+  );
+  assert.deepEqual(events, ['audit:existing']);
+}
+
+{
+  const entries = [{ name: 'pending' }, { name: 'core' }, { name: 'adapter' }];
+  const events = [];
+  await executeRegistryPublication({
+    entries,
+    inspectExisting: ({ name }) => (name === 'pending' ? 'pending' : 'missing'),
+    publishEntry: ({ name }) => {
+      events.push(`publish:${name}`);
+    },
+    verifyAvailableEntries: (selectedEntries) => {
+      events.push(`wait:${selectedEntries.map(({ name }) => name).join(',')}`);
+    },
+    verifyProvenanceEntries: (selectedEntries) => {
+      events.push(`audit:${selectedEntries.map(({ name }) => name).join(',')}`);
+    },
+  });
+  assert.deepEqual(events, [
+    'wait:pending',
+    'audit:pending',
+    'publish:core',
+    'publish:adapter',
+    'wait:core,adapter',
+    'audit:pending,core,adapter',
+  ]);
+}
 
 const validPublicManifest = {
   name: '@harapter/core',

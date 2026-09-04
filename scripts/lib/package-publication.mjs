@@ -1,3 +1,5 @@
+import { performance } from 'node:perf_hooks';
+
 const repositoryUrl = 'git+https://github.com/yunfeizhu/harapter.git';
 const repositoryHomepage = 'https://github.com/yunfeizhu/harapter#readme';
 const repositoryIssues = 'https://github.com/yunfeizhu/harapter/issues';
@@ -13,7 +15,7 @@ export function validatePublicPackagePolicy(policy) {
   }
   validateExactKeys(
     policy,
-    new Set(['distTag', 'packages', 'schemaVersion']),
+    new Set(['distTag', 'packages', 'registryAvailability', 'schemaVersion']),
     'scripts/public-packages.json',
     failures,
   );
@@ -23,6 +25,7 @@ export function validatePublicPackagePolicy(policy) {
   if (policy.distTag !== 'next') {
     failures.push('scripts/public-packages.json distTag must be next.');
   }
+  validateRegistryAvailabilityPolicy(policy.registryAvailability, failures);
   if (!Array.isArray(policy.packages) || policy.packages.length === 0) {
     failures.push(
       'scripts/public-packages.json packages must be a non-empty array.',
@@ -72,6 +75,151 @@ export function validatePublicPackagePolicy(policy) {
     }
   }
   return failures;
+}
+
+function validateRegistryAvailabilityPolicy(registryAvailability, failures) {
+  const label = 'scripts/public-packages.json registryAvailability';
+  if (!isMapping(registryAvailability)) {
+    failures.push(`${label} must be an object.`);
+    return;
+  }
+  validateExactKeys(
+    registryAvailability,
+    new Set(['pollIntervalSeconds', 'queryTimeoutSeconds', 'timeoutSeconds']),
+    label,
+    failures,
+  );
+  if (
+    !Number.isInteger(registryAvailability.timeoutSeconds) ||
+    registryAvailability.timeoutSeconds < 900 ||
+    registryAvailability.timeoutSeconds > 3_600
+  ) {
+    failures.push(
+      `${label}.timeoutSeconds must be an integer from 900 through 3600.`,
+    );
+  }
+  if (
+    !Number.isInteger(registryAvailability.pollIntervalSeconds) ||
+    registryAvailability.pollIntervalSeconds < 5 ||
+    registryAvailability.pollIntervalSeconds > 60
+  ) {
+    failures.push(
+      `${label}.pollIntervalSeconds must be an integer from 5 through 60.`,
+    );
+  }
+  if (
+    !Number.isInteger(registryAvailability.queryTimeoutSeconds) ||
+    registryAvailability.queryTimeoutSeconds < 5 ||
+    registryAvailability.queryTimeoutSeconds > 60
+  ) {
+    failures.push(
+      `${label}.queryTimeoutSeconds must be an integer from 5 through 60.`,
+    );
+  }
+}
+
+export function parseRegistryDistTagListing(value) {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const tags = new Map();
+  for (const line of value.trim().split('\n')) {
+    if (line.length === 0) {
+      continue;
+    }
+    const separatorIndex = line.lastIndexOf(': ');
+    const tag = line.slice(0, separatorIndex);
+    const version = line.slice(separatorIndex + 2);
+    if (
+      separatorIndex <= 0 ||
+      /\s/u.test(tag) ||
+      version.length === 0 ||
+      /\s/u.test(version) ||
+      tags.has(tag)
+    ) {
+      return undefined;
+    }
+    tags.set(tag, version);
+  }
+  return tags;
+}
+
+export async function waitForRegistryAvailability({
+  entries,
+  inspect,
+  now = () => performance.now(),
+  pollIntervalMilliseconds,
+  sleep = (delayMilliseconds) =>
+    new Promise((resolvePromise) => {
+      setTimeout(resolvePromise, delayMilliseconds);
+    }),
+  timeoutMilliseconds,
+}) {
+  const pending = new Set(entries);
+  const deadline = now() + timeoutMilliseconds;
+  const remainingMilliseconds = () => Math.max(0, deadline - now());
+  availability: while (pending.size > 0) {
+    for (const entry of pending) {
+      if (remainingMilliseconds() <= 0) {
+        break availability;
+      }
+      if (await inspect(entry, { remainingMilliseconds })) {
+        pending.delete(entry);
+      }
+    }
+    if (pending.size === 0) {
+      break;
+    }
+    const remaining = remainingMilliseconds();
+    if (remaining <= 0) {
+      break;
+    }
+    await sleep(Math.min(pollIntervalMilliseconds, remaining));
+  }
+  return [...pending];
+}
+
+export async function executeRegistryPublication({
+  entries,
+  inspectExisting,
+  publishEntry,
+  verifyAvailableEntries,
+  verifyProvenanceEntries,
+}) {
+  const statuses = new Map();
+  for (const entry of entries) {
+    const status = await inspectExisting(entry);
+    if (!['missing', 'pending', 'verified'].includes(status)) {
+      throw new Error(`Unknown registry publication status ${String(status)}.`);
+    }
+    statuses.set(entry, status);
+  }
+
+  const pendingEntries = entries.filter(
+    (entry) => statuses.get(entry) === 'pending',
+  );
+  if (pendingEntries.length > 0) {
+    await verifyAvailableEntries(pendingEntries);
+  }
+  const existingEntries = entries.filter(
+    (entry) => statuses.get(entry) !== 'missing',
+  );
+  if (existingEntries.length > 0) {
+    await verifyProvenanceEntries(existingEntries);
+  }
+
+  const missingEntries = entries.filter(
+    (entry) => statuses.get(entry) === 'missing',
+  );
+  for (const entry of missingEntries) {
+    await publishEntry(entry);
+  }
+  if (missingEntries.length > 0) {
+    await verifyAvailableEntries(missingEntries);
+    await verifyProvenanceEntries(entries);
+  }
+
+  return { existingEntries, missingEntries, pendingEntries };
 }
 
 export function validatePublicPackageManifest({

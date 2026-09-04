@@ -10,10 +10,10 @@ The Workspace root and examples stay private. The public packages listed in
 synchronized pre-1.0 version. Internal `workspace:*` dependencies become exact
 versions in npm tarballs.
 
-Pre-alpha packages use the npm `next` dist-tag. Consumers must opt in with
-`@next`; the `latest` tag is reserved for a later stability decision. `feat`
-produces a minor release, `fix` produces a patch release, and `!` or a
-`BREAKING CHANGE` footer produces a major release.
+Pre-alpha packages publish under `next`; consumers select `@next`. npm also
+creates `latest` for a new package's first version. Harapter neither treats nor
+advances that tag as stable. `feat` produces a minor release, `fix` a patch, and
+`!` or `BREAKING CHANGE` a major release.
 
 ## GitHub release flow
 
@@ -43,13 +43,10 @@ internal dependencies. Release Please owns `CHANGELOG.md`.
 
 ## npm publication flow
 
-The `publish-npm.yml` workflow accepts a `harapter-vX.Y.Z` GitHub Release tag.
-It resolves that tag to an immutable commit, verifies the Workspace, downloads
-the complete Release asset set, checks SHA-256 and SPDX metadata, reproduces
-each tarball, and publishes those exact files in dependency order with
-provenance. It never publishes a branch head or local artifact. The Release tag
-must also be the workflow dispatch ref, so provenance remains bound to the
-released commit after `main` advances.
+`publish-npm.yml` resolves a `harapter-vX.Y.Z` Release tag to its immutable
+commit, verifies and reproduces its complete asset set, then publishes the exact
+tarballs in dependency order with provenance. Its dispatch ref must match the
+tag; branch heads and local artifacts are rejected.
 
 The protected `npm` environment gates publication. Normal releases use GitHub
 Actions OIDC without a long-lived token.
@@ -65,8 +62,11 @@ gh workflow run publish-npm.yml \
 
 Replace the tag as needed. Use `bootstrap=false` after the first publication.
 
-Before skipping existing content, the publisher checks registry SHA-512, `next`,
-and cryptographically verified provenance. Conflicts stop publication.
+The publisher submits missing tarballs in dependency order, then polls them
+together every 15 seconds for up to 20 minutes. This covers npm's documented
+[publish-time scanning delay](https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata/)
+without serializing 12 scans. SHA-512, `next`, provenance, timeout, and conflict
+checks remain fail-closed.
 
 ## One-time npm bootstrap
 
@@ -84,6 +84,7 @@ one-time `0.1.1` bootstrap:
 4. With explicit publication authorization, dispatch `publish-npm.yml` for
    `harapter-v0.1.1` with `bootstrap=true`.
 5. Verify every package, `next` dist-tag, provenance attestation, and content.
+   The registry-created initial `latest` tag is not a stable-channel decision.
 6. Delete `NPM_BOOTSTRAP_TOKEN` from GitHub and revoke it on npm.
 7. Configure each published package's trusted publisher for repository
    `yunfeizhu/harapter`, workflow `publish-npm.yml`, and environment `npm`.
@@ -100,21 +101,19 @@ release assets, and an isolated TypeScript consumer.
 
 After publication, use
 `npm view <name>@<version> version dist-tags dist.integrity` for every policy
-package. Confirm that provenance identifies the repository, workflow, tag
-commit, and GitHub-hosted runner.
+package. Confirm provenance identifies the repository, workflow, tag commit, and
+GitHub-hosted runner. Do not advance the registry-created initial `latest`.
 
 ## Recovery and rollback
 
-Inspect state first. Retry failures in the run. After a workflow fix, dispatch
-`release-please.yml` from `main` with `resume_release_tag` set to the draft tag;
-it verifies ancestry and resumes the SHA. Retry partial npm publication from its
-immutable tag after inspection and reauthorization.
+Inspect before retrying. A workflow fix resumes a verified draft SHA through
+`resume_release_tag`; partial npm publication resumes from its immutable tag
+after reauthorization. Recovery may use one scan window before new writes and
+one afterward; the job timeout covers both plus verification.
 
-Published npm versions are immutable. Do not unpublish, move a Git tag, or
-replace a version during ordinary recovery. Deprecate a broken version with a
-clear message, merge the fix, and create a new Release Please version. Security
-incidents that may justify npm's narrowly limited unpublish path require a
-separate documented maintainer decision.
+Published versions are immutable. Ordinary recovery deprecates a broken version
+and releases a fix; it never unpublishes, retags, or replaces one. Incident
+unpublishing requires a separate documented maintainer decision.
 
 Authoritative platform behavior is documented by
 [Release Please](https://github.com/googleapis/release-please),
@@ -122,4 +121,5 @@ Authoritative platform behavior is documented by
 [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/),
 [npm provenance](https://docs.npmjs.com/generating-provenance-statements/),
 [npm trusted-publisher management](https://docs.npmjs.com/cli/v11/commands/npm-trust/),
+[npm's observed initial `latest` behavior](https://github.com/npm/cli/issues/6408),
 and [pnpm Workspace publishing](https://pnpm.io/workspaces).

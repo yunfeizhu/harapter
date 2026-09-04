@@ -12,9 +12,12 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  executeRegistryPublication,
+  parseRegistryDistTagListing,
   validatePackedFiles,
   validatePublicPackagePolicy,
   validateRegistryAudit,
+  waitForRegistryAvailability,
   validateRegistryDistribution,
   validateRegistryDistTag,
   validateReleaseVersion,
@@ -59,6 +62,8 @@ if (policyFailures.length > 0) {
   fail(policyFailures.join('\n'));
 }
 const entries = policy.packages;
+const registryQueryTimeoutMilliseconds =
+  policy.registryAvailability.queryTimeoutSeconds * 1_000;
 const rootVersion = readFileSync(
   resolve(repositoryRoot, 'version.txt'),
   'utf8',
@@ -152,81 +157,72 @@ try {
     artifacts.set(entry.name, { localIntegrity, tarballPath });
   }
 
-  const existingEntries = [];
-  for (const entry of entries) {
-    const dist = readRegistryJson(entry.name, version, 'dist');
-    if (dist === undefined) {
-      continue;
-    }
-    verifyRegistryMetadata(entry, version, artifacts, dist);
-    existingEntries.push(entry);
-  }
-  if (existingEntries.length > 0) {
-    verifyRegistryProvenance({
-      entries: existingEntries,
-      expectedCommit: expectedReleaseSha,
-      fixtureRoot,
-      localIntegrities: new Map(
-        [...artifacts].map(([name, artifact]) => [
-          name,
-          artifact.localIntegrity,
-        ]),
-      ),
-      version,
-    });
-  }
-
-  const existingNames = new Set(existingEntries.map(({ name }) => name));
-  for (const entry of entries) {
-    if (existingNames.has(entry.name)) {
-      console.log(
-        `${entry.name}@${version} is already published and verified.`,
+  const localIntegrities = new Map(
+    [...artifacts].map(([name, artifact]) => [name, artifact.localIntegrity]),
+  );
+  await executeRegistryPublication({
+    entries,
+    inspectExisting: (entry) => {
+      const dist = readRegistryJson(entry.name, version, 'dist');
+      if (dist !== undefined) {
+        verifyRegistryMetadata(entry, version, artifacts, dist);
+        console.log(
+          `${entry.name}@${version} is already published and verified.`,
+        );
+        return 'verified';
+      }
+      const distTags = readPackageDistTags(entry.name);
+      if (distTags?.get(policy.distTag) === version) {
+        console.log(
+          `${entry.name}@${version} is accepted and awaiting npm availability.`,
+        );
+        return 'pending';
+      }
+      return 'missing';
+    },
+    publishEntry: (entry) => {
+      const artifact = artifacts.get(entry.name);
+      if (artifact === undefined) {
+        fail(`${entry.name} is missing its verified publication artifact.`);
+      }
+      runVisible(
+        'npm',
+        [
+          'publish',
+          artifact.tarballPath,
+          '--access',
+          'public',
+          '--tag',
+          policy.distTag,
+          '--provenance',
+          '--ignore-scripts',
+          '--registry',
+          'https://registry.npmjs.org/',
+        ],
+        repositoryRoot,
+        `${entry.name} publish`,
+        bootstrapToken === undefined
+          ? childEnvironment
+          : { ...childEnvironment, NODE_AUTH_TOKEN: bootstrapToken },
       );
-      continue;
-    }
-    const artifact = artifacts.get(entry.name);
-    if (artifact === undefined) {
-      fail(`${entry.name} is missing its verified publication artifact.`);
-    }
-
-    runVisible(
-      'npm',
-      [
-        'publish',
-        artifact.tarballPath,
-        '--access',
-        'public',
-        '--tag',
-        policy.distTag,
-        '--provenance',
-        '--ignore-scripts',
-        '--registry',
-        'https://registry.npmjs.org/',
-      ],
-      repositoryRoot,
-      `${entry.name} publish`,
-      bootstrapToken === undefined
-        ? childEnvironment
-        : { ...childEnvironment, NODE_AUTH_TOKEN: bootstrapToken },
-    );
-    await waitForRegistryMetadata(entry, version, artifacts);
-    console.log(`${entry.name}@${version} published and verified.`);
-  }
-
-  if (existingEntries.length !== entries.length) {
-    verifyRegistryProvenance({
-      entries,
-      expectedCommit: expectedReleaseSha,
-      fixtureRoot,
-      localIntegrities: new Map(
-        [...artifacts].map(([name, artifact]) => [
-          name,
-          artifact.localIntegrity,
-        ]),
-      ),
-      version,
-    });
-  }
+      console.log(`${entry.name}@${version} was accepted by npm.`);
+    },
+    verifyAvailableEntries: async (releaseEntries) => {
+      await waitForRegistryMetadata(releaseEntries, version, artifacts);
+      for (const entry of releaseEntries) {
+        console.log(`${entry.name}@${version} published and verified.`);
+      }
+    },
+    verifyProvenanceEntries: (auditEntries) => {
+      verifyRegistryProvenance({
+        entries: auditEntries,
+        expectedCommit: expectedReleaseSha,
+        fixtureRoot,
+        localIntegrities,
+        version,
+      });
+    },
+  });
   for (const entry of entries) {
     const dist = readRegistryJson(entry.name, version, 'dist');
     if (dist === undefined) {
@@ -271,7 +267,15 @@ function parseArguments(values) {
   return parsed;
 }
 
-function readRegistryJson(name, packageVersion, property) {
+function readRegistryJson(
+  name,
+  packageVersion,
+  property,
+  {
+    timeoutAsUnavailable = false,
+    timeoutMilliseconds = registryQueryTimeoutMilliseconds,
+  } = {},
+) {
   const result = spawnSync(
     'npm',
     [
@@ -287,6 +291,7 @@ function readRegistryJson(name, packageVersion, property) {
       encoding: 'utf8',
       env: childEnvironment,
       maxBuffer: 1024 * 1024,
+      timeout: Math.max(1, Math.floor(timeoutMilliseconds)),
     },
   );
   if (result.status === 0) {
@@ -296,16 +301,72 @@ function readRegistryJson(name, packageVersion, property) {
       fail(`${name}@${packageVersion} returned invalid registry metadata.`);
     }
   }
+  if (result.error?.code === 'ETIMEDOUT') {
+    if (timeoutAsUnavailable) {
+      return undefined;
+    }
+    fail(`${name}@${packageVersion} registry inspection timed out.`);
+  }
   if (`${result.stdout}${result.stderr}`.includes('E404')) {
     return undefined;
   }
   fail(`Unable to inspect ${name}@${packageVersion} in the npm registry.`);
 }
 
-async function waitForRegistryMetadata(entry, packageVersion, artifacts) {
-  for (let attempt = 0; attempt < 12; attempt += 1) {
-    const dist = readRegistryJson(entry.name, packageVersion, 'dist');
-    if (dist !== undefined) {
+function readPackageDistTags(name) {
+  const result = spawnSync(
+    'npm',
+    ['dist-tag', 'ls', name, '--registry', 'https://registry.npmjs.org/'],
+    {
+      cwd: repositoryRoot,
+      encoding: 'utf8',
+      env: childEnvironment,
+      maxBuffer: 1024 * 1024,
+      timeout: registryQueryTimeoutMilliseconds,
+    },
+  );
+  if (result.status === 0) {
+    const distTags = parseRegistryDistTagListing(result.stdout);
+    if (distTags === undefined) {
+      fail(`${name} returned invalid registry dist-tags.`);
+    }
+    return distTags;
+  }
+  if (result.error?.code === 'ETIMEDOUT') {
+    fail(`${name} registry dist-tag inspection timed out.`);
+  }
+  if (`${result.stdout}${result.stderr}`.includes('E404')) {
+    return undefined;
+  }
+  fail(`Unable to inspect ${name} dist-tags in the npm registry.`);
+}
+
+async function waitForRegistryMetadata(
+  releaseEntries,
+  packageVersion,
+  artifacts,
+) {
+  const availability = policy.registryAvailability;
+  const pending = await waitForRegistryAvailability({
+    entries: releaseEntries,
+    inspect: (entry, { remainingMilliseconds }) => {
+      const readDuringWait = (property) => {
+        const remaining = remainingMilliseconds();
+        if (remaining <= 0) {
+          return undefined;
+        }
+        return readRegistryJson(entry.name, packageVersion, property, {
+          timeoutAsUnavailable: true,
+          timeoutMilliseconds: Math.min(
+            registryQueryTimeoutMilliseconds,
+            remaining,
+          ),
+        });
+      };
+      const dist = readDuringWait('dist');
+      if (dist === undefined) {
+        return false;
+      }
       const distFailures = validateRegistryDistribution({
         dist,
         localIntegrity: artifacts.get(entry.name)?.localIntegrity,
@@ -315,27 +376,24 @@ async function waitForRegistryMetadata(entry, packageVersion, artifacts) {
       if (distFailures.length > 0) {
         fail(distFailures.join('\n'));
       }
-      const distTags = readRegistryJson(
-        entry.name,
-        packageVersion,
-        'dist-tags',
-      );
-      if (
+      const distTags = readDuringWait('dist-tags');
+      return (
         validateRegistryDistTag({
           distTag: policy.distTag,
           distTags,
           name: entry.name,
           version: packageVersion,
         }).length === 0
-      ) {
-        return;
-      }
-    }
-    await new Promise((resolvePromise) => {
-      setTimeout(resolvePromise, 5_000);
-    });
+      );
+    },
+    pollIntervalMilliseconds: availability.pollIntervalSeconds * 1_000,
+    timeoutMilliseconds: availability.timeoutSeconds * 1_000,
+  });
+  if (pending.length > 0) {
+    fail(
+      `${pending.map(({ name }) => `${name}@${packageVersion}`).join(', ')} did not become verifiable in npm within ${String(availability.timeoutSeconds)} seconds.`,
+    );
   }
-  fail(`${entry.name}@${packageVersion} did not become verifiable in npm.`);
 }
 
 function verifyRegistryMetadata(entry, packageVersion, artifacts, dist) {
