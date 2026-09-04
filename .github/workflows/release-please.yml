@@ -131,15 +131,21 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.release-please.outputs.release-tag }}
         run: |
-          release_json="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
-          test "$(jq -r '.tag_name' <<<"$release_json")" = "$RELEASE_TAG"
-          test "$(jq -r '.target_commitish' <<<"$release_json")" = "$EXPECTED_RELEASE_SHA"
-          test "$(jq -r '.prerelease' <<<"$release_json")" = "false"
+          release_json="$(gh release view "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json databaseId,tagName,isDraft,isPrerelease,isImmutable,targetCommitish,publishedAt)"
+          test "$(jq -r '.tagName' <<<"$release_json")" = "$RELEASE_TAG"
+          test "$(jq -r '.targetCommitish' <<<"$release_json")" = "$EXPECTED_RELEASE_SHA"
+          test "$(jq -r '.isPrerelease' <<<"$release_json")" = "false"
 
-          draft="$(jq -r '.draft' <<<"$release_json")"
+          release_id="$(jq -r '.databaseId' <<<"$release_json")"
+          [[ "$release_id" =~ ^[1-9][0-9]*$ ]]
+          echo "release-id=$release_id" >> "$GITHUB_OUTPUT"
+
+          draft="$(jq -r '.isDraft' <<<"$release_json")"
           if [[ "$draft" = 'true' ]]; then
-            test "$(jq -r '.immutable' <<<"$release_json")" = "false"
-            test "$(jq -r '.published_at' <<<"$release_json")" = "null"
+            test "$(jq -r '.isImmutable' <<<"$release_json")" = "false"
+            test "$(jq -r '.publishedAt' <<<"$release_json")" = "null"
             if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
               echo "The draft Release tag must not exist before publication." >&2
               exit 1
@@ -149,8 +155,8 @@ jobs:
           fi
 
           test "$draft" = 'false'
-          test "$(jq -r '.immutable' <<<"$release_json")" = "true"
-          test "$(jq -r '.published_at' <<<"$release_json")" != "null"
+          test "$(jq -r '.isImmutable' <<<"$release_json")" = "true"
+          test "$(jq -r '.publishedAt' <<<"$release_json")" != "null"
           ref_json="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG")"
           object_type="$(jq -r '.object.type' <<<"$ref_json")"
           object_sha="$(jq -r '.object.sha' <<<"$ref_json")"
@@ -170,9 +176,10 @@ jobs:
         if: steps.release-state.outputs.published == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ steps.release-state.outputs.release-id }}
           RELEASE_TAG: ${{ needs.release-please.outputs.release-tag }}
         run: |
-          release_json="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
+          release_json="$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID")"
           for asset_path in release-assets/*; do
             asset_name="${asset_path##*/}"
             local_digest="sha256:$(sha256sum "$asset_path" | cut -d ' ' -f 1)"
@@ -180,7 +187,7 @@ jobs:
             if [[ "$matches" = '0' ]]; then
               gh release upload "$RELEASE_TAG" "$asset_path" \
                 --repo "$GITHUB_REPOSITORY"
-              release_json="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
+              release_json="$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID")"
               continue
             fi
             test "$matches" = '1'
@@ -192,11 +199,12 @@ jobs:
         if: steps.release-state.outputs.published == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ steps.release-state.outputs.release-id }}
           RELEASE_SHA: ${{ needs.release-please.outputs.release-sha }}
           RELEASE_TAG: ${{ needs.release-please.outputs.release-tag }}
           RELEASE_VERSION: ${{ needs.release-please.outputs.release-version }}
         run: |
-          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" \
+          gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
             > "$RUNNER_TEMP/release.json"
           node scripts/verify-release-assets.mjs \
             --version "$RELEASE_VERSION" \
@@ -207,11 +215,18 @@ jobs:
       - name: Publish immutable release
         if: steps.release-state.outputs.published == 'false'
         env:
+          EXPECTED_RELEASE_SHA: ${{ needs.release-please.outputs.release-sha }}
           GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ steps.release-state.outputs.release-id }}
           RELEASE_TAG: ${{ needs.release-please.outputs.release-tag }}
         run: |
-          gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
-            --draft=false
+          release_json="$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
+            --method PATCH \
+            -F draft=false)"
+          test "$(jq -r '.id' <<<"$release_json")" = "$RELEASE_ID"
+          test "$(jq -r '.tag_name' <<<"$release_json")" = "$RELEASE_TAG"
+          test "$(jq -r '.target_commitish' <<<"$release_json")" = "$EXPECTED_RELEASE_SHA"
+          test "$(jq -r '.draft' <<<"$release_json")" = "false"
 
       - name: Verify immutable release
         env:

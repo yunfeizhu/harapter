@@ -218,6 +218,12 @@ assert.match(buildReleaseAssets['run'], /--release-sha "\$RELEASE_SHA"/u);
 assert.doesNotMatch(releaseWorkflow, /dependency-graph\/sbom/u);
 const releaseState = requiredStep(finalizeReleaseJob, 'Inspect release state');
 assert.equal(releaseState['id'], 'release-state');
+assert.match(
+  releaseState['run'],
+  /gh release view "\$RELEASE_TAG".*--json databaseId,tagName,isDraft,isPrerelease,isImmutable,targetCommitish,publishedAt/su,
+);
+assert.doesNotMatch(releaseState['run'], /releases\/tags\/\$RELEASE_TAG/u);
+assert.match(releaseState['run'], /release-id=\$release_id/u);
 assert.match(releaseState['run'], /if \[\[ "\$draft" = 'true' \]\]/u);
 assert.match(releaseState['run'], /published=false/u);
 assert.match(releaseState['run'], /published=true/u);
@@ -230,9 +236,14 @@ assert.equal(
   "steps.release-state.outputs.published == 'false'",
 );
 assert.doesNotMatch(uploadReleaseAssets['run'], /--clobber/u);
+assert.match(uploadReleaseAssets['run'], /releases\/\$RELEASE_ID/u);
 assert.match(
   requiredStep(finalizeReleaseJob, 'Verify uploaded release assets')['run'],
   /node scripts\/verify-release-assets\.mjs/u,
+);
+assert.match(
+  requiredStep(finalizeReleaseJob, 'Verify uploaded release assets')['run'],
+  /releases\/\$RELEASE_ID/u,
 );
 assert.equal(
   requiredStep(finalizeReleaseJob, 'Verify uploaded release assets')['if'],
@@ -246,9 +257,12 @@ assert.equal(
   publishImmutableRelease['if'],
   "steps.release-state.outputs.published == 'false'",
 );
+assert.match(publishImmutableRelease['run'], /releases\/\$RELEASE_ID/u);
+assert.match(publishImmutableRelease['run'], /--method PATCH/u);
+assert.match(publishImmutableRelease['run'], /-F draft=false/u);
 assert.match(
   publishImmutableRelease['run'],
-  /gh release edit "\$RELEASE_TAG" --repo "\$GITHUB_REPOSITORY" \\\n\s+--draft=false/u,
+  /test "\$\(jq -r '\.id'.*\)" = "\$RELEASE_ID"/su,
 );
 assert.match(
   requiredStep(finalizeReleaseJob, 'Verify immutable release')['run'],
