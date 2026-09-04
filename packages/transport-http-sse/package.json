@@ -1,6 +1,6 @@
 {
   "name": "@harapter/transport-http-sse",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Bounded HTTP and Server-Sent Events transport for Harapter providers.",
   "keywords": [
     "agent",
