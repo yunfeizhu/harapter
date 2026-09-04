@@ -157,6 +157,15 @@ const releaseWorkflow = readFileSync(
 );
 const releasePlease = load(releaseWorkflow, { schema: JSON_SCHEMA });
 assert.ok(isObject(releasePlease));
+assert.deepEqual(
+  releasePlease['on']['workflow_dispatch']['inputs']['resume_release_tag'],
+  {
+    description: 'Existing Release Please draft tag to finalize',
+    required: false,
+    type: 'string',
+    default: '',
+  },
+);
 assert.deepEqual(Object.keys(releasePlease['jobs']).sort(), [
   'finalize-release',
   'release-please',
@@ -164,20 +173,43 @@ assert.deepEqual(Object.keys(releasePlease['jobs']).sort(), [
 const releasePleaseJob = requiredJob(releasePlease['jobs'], 'release-please');
 assert.equal(
   releasePleaseJob['outputs']['release-created'],
-  '${{ steps.release.outputs.release_created }}',
+  '${{ steps.release.outputs.release_created || steps.resume.outputs.release_created }}',
 );
 assert.equal(
   releasePleaseJob['outputs']['release-sha'],
-  '${{ steps.release.outputs.sha }}',
+  '${{ steps.release.outputs.sha || steps.resume.outputs.sha }}',
 );
 assert.equal(
   releasePleaseJob['outputs']['release-tag'],
-  '${{ steps.release.outputs.tag_name }}',
+  '${{ steps.release.outputs.tag_name || steps.resume.outputs.tag_name }}',
 );
 assert.equal(
   releasePleaseJob['outputs']['release-version'],
-  '${{ steps.release.outputs.version }}',
+  '${{ steps.release.outputs.version || steps.resume.outputs.version }}',
 );
+assert.equal(
+  releasePleaseJob['outputs']['release-resumed'],
+  "${{ steps.resume.outputs.release_resumed || 'false' }}",
+);
+assert.equal(
+  requiredStep(releasePleaseJob, 'Run Release Please')['if'],
+  "inputs.resume_release_tag == ''",
+);
+const resumeRelease = requiredStep(
+  releasePleaseJob,
+  'Resolve existing Release Please draft',
+);
+assert.equal(resumeRelease['id'], 'resume');
+assert.equal(resumeRelease['if'], "inputs.resume_release_tag != ''");
+assert.match(resumeRelease['run'], /\^harapter-v\(0\|\[1-9\]\[0-9\]\*\)/u);
+assert.match(resumeRelease['run'], /gh release view "\$RESUME_RELEASE_TAG"/u);
+assert.match(resumeRelease['run'], /compare\/\$release_sha\.\.\.\$GITHUB_SHA/u);
+assert.match(
+  resumeRelease['run'],
+  /git\/matching-refs\/tags\/\$RESUME_RELEASE_TAG/u,
+);
+assert.match(resumeRelease['run'], /test "\$tag_ref_count" = '0'/u);
+assert.match(resumeRelease['run'], /release_resumed=true/u);
 const finalizeReleaseJob = requiredJob(
   releasePlease['jobs'],
   'finalize-release',
@@ -200,7 +232,7 @@ assert.equal(
 assert.equal(releaseCheckout['with']['persist-credentials'], false);
 assert.match(
   requiredStep(finalizeReleaseJob, 'Verify release candidate')['run'],
-  /test "\$EXPECTED_RELEASE_SHA" = "\$GITHUB_SHA"/u,
+  /if \[\[ "\$RELEASE_RESUMED" = 'false' \]\]; then\n\s+test "\$EXPECTED_RELEASE_SHA" = "\$GITHUB_SHA"/u,
 );
 assert.match(
   requiredStep(finalizeReleaseJob, 'Run release evidence')['run'],
@@ -224,6 +256,8 @@ assert.match(
 );
 assert.doesNotMatch(releaseState['run'], /releases\/tags\/\$RELEASE_TAG/u);
 assert.match(releaseState['run'], /release-id=\$release_id/u);
+assert.match(releaseState['run'], /git\/matching-refs\/tags\/\$RELEASE_TAG/u);
+assert.match(releaseState['run'], /test "\$tag_ref_count" = '0'/u);
 assert.match(releaseState['run'], /if \[\[ "\$draft" = 'true' \]\]/u);
 assert.match(releaseState['run'], /published=false/u);
 assert.match(releaseState['run'], /published=true/u);

@@ -83,15 +83,17 @@ Verify every package in `scripts/public-packages.json`, its Release tarball,
 Release, workflow, and package URLs.
 
 If a workflow fails, inspect existing tags, releases, assets, and job logs.
-Recover finalization by rerunning its failed job in the same workflow run; it
-resumes a matching draft or only reverifies an already immutable Release.
-Recover partial npm publication by rerunning that job, or after reauthorization
-by dispatching the same immutable tag again. The publisher skips an existing
-package only after matching SHA-512, `next`, verified attestations, repository,
-workflow, builder, commit, and tarball. Stop on any conflict. Never delete,
-move, or recreate a published tag, replace a package version, or unpublish as an
-ordinary recovery step; deprecate a bad version and release a fix. Stop for an
-incident decision if immutable state conflicts.
+Retry an operational finalizer failure in the same workflow run. If recovery
+requires a workflow fix, dispatch `release-please.yml` from `main` with
+`resume_release_tag` set to the exact existing Release Please draft tag; the
+workflow verifies ancestry and resumes that draft SHA. An immutable Release is
+only reverified. Recover partial npm publication by rerunning that job, or after
+reauthorization by dispatching the same immutable tag again. The publisher skips
+an existing package only after matching SHA-512, `next`, verified attestations,
+repository, workflow, builder, commit, and tarball. Stop on any conflict. Never
+delete, move, or recreate a published tag, replace a package version, or
+unpublish as an ordinary recovery step; deprecate a bad version and release a
+fix. Stop for an incident decision if immutable state conflicts.
 
 Read [RELEASING.md](../../../RELEASING.md) before the one-time bootstrap or any
 recovery operation.

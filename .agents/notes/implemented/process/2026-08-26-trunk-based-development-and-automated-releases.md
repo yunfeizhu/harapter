@@ -88,7 +88,12 @@ size, state, or digest conflicts, and publishes only the complete set. GitHub
 creates and locks the tag and assets when the draft is published. Recovery
 reruns the failed finalizer job in the same workflow run so Release Please
 outputs and the source SHA cannot drift; it resumes a matching draft or
-reverifies an already immutable Release.
+reverifies an already immutable Release. When the workflow itself must be fixed,
+a new `main` dispatch may set `resume_release_tag` to an existing Release Please
+draft. That path accepts only a stable Harapter tag, requires an unpublished
+mutable draft without an existing Git ref, proves that its target commit is
+reachable from the dispatch commit, and carries the same target SHA into the
+ordinary finalizer.
 
 npm does not allow a trusted publisher to be configured before a package exists.
 The immutable `harapter-v0.1.0` Release remains source-only; the first registry
