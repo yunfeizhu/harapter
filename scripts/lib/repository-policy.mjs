@@ -8,8 +8,6 @@ const expectedNodeRange = '>=24';
 const expectedPackageManager = 'pnpm@11.23.0';
 
 const forbiddenTextPatterns = [
-  { pattern: /\x48\x69\x57\x6f\x72\x6b/iu, label: 'former host-product name' },
-  { pattern: /Harness[ -]Adapter/iu, label: 'former project name' },
   { pattern: /\/Users\//u, label: 'local absolute path' },
 ];
 

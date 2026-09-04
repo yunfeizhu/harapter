@@ -37,6 +37,10 @@ orchestrates every declared package build. Repository policy requires every
 workspace directory and a non-empty build script, preventing recursive builds
 from silently skipping a new package.
 
+Repository text checks cover objective, reviewable hazards such as workstation
+absolute paths. Conversational terminology does not become a global naming rule
+without an explicit repository requirement and durable rationale.
+
 The package gate owns a single public-package policy for Core, conformance,
 transports, and Provider Adapters. It validates publish metadata, synchronized
 versions, topological publication order, and the exact npm tarball file set.
