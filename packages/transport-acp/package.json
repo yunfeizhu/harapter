@@ -1,6 +1,6 @@
 {
   "name": "@harapter/transport-acp",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Provider-neutral stable ACP v1 client for Harapter providers.",
   "keywords": [
     "agent",

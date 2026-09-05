@@ -1,6 +1,6 @@
 {
   "name": "@harapter/conformance",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Reusable provider conformance tests and deterministic Fake Provider for Harapter.",
   "keywords": [
     "agent",
