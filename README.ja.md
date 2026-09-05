@@ -21,12 +21,11 @@
 </p>
 
 <p align="center">
+  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore/next?style=flat-square&amp;label=npm%20next" alt="npm next バージョン"></a>
+  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/dm/%40harapter%2Fcore?style=flat-square" alt="npm ダウンロード数"></a>
+  <a href="https://github.com/yunfeizhu/harapter/releases"><img src="https://img.shields.io/github/v/release/yunfeizhu/harapter?display_name=tag&amp;include_prereleases&amp;sort=semver&amp;style=flat-square&amp;label=release" alt="GitHub Release"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI ステータス"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 以降">
-  <img src="https://img.shields.io/badge/pnpm-11.23.0-F69220?style=flat-square&amp;logo=pnpm&amp;logoColor=white" alt="pnpm 11.23.0">
-  <img src="https://img.shields.io/badge/typescript-5.9.3-3178C6?style=flat-square&amp;logo=typescript&amp;logoColor=white" alt="TypeScript 5.9.3">
-  <img src="https://img.shields.io/badge/adapters-6-6E56CF?style=flat-square" alt="6 個の Provider Adapter">
-  <img src="https://img.shields.io/badge/transports-4-0891B2?style=flat-square" alt="4 個の Transport">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 ライセンス"></a>
   <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha ステータス">
 </p>
@@ -42,17 +41,34 @@ Loop ではありません。各 Runtime の選択、インストール、認証
 
 ## クイックスタート
 
-### 1. 公開済みリリースをインストールするか、ソース Workspace を準備する
+### 1. 公開済み Package をインストールする
 
-Node.js 24 以降と Corepack を使用します。リポジトリは pnpm `11.23.0`
-を固定しています。公開済みの pre-alpha Package は、明示的に選択する `next`
-dist-tag を使用します。
+Harapter は Node.js 24 以降を必要とします。Pre-alpha Package は明示的に選ぶ
+`next` dist-tag で公開されています。npm から Core と一つの Adapter を入れます。
 
 ```bash
-pnpm add @harapter/core@next @harapter/adapter-codex@next
+npm install @harapter/core@next @harapter/adapter-codex@next
+# または: pnpm add @harapter/core@next @harapter/adapter-codex@next
+# または: yarn add @harapter/core@next @harapter/adapter-codex@next
 ```
 
-Registry で利用できるのは最初の公開リリース以降です。npm にまだリリースがない場合、または管理されているリファレンスアプリケーションを実行する場合は、ソース Workspace を使用します。
+ホストが運用する Runtime に合う Adapter を選びます。
+
+| Runtime          | 公開済み Adapter                                                  | Connection の所有者        |
+| ---------------- | ----------------------------------------------------------------- | -------------------------- |
+| Codex            | [`@harapter/adapter-codex`](./providers/codex/README.ja.md)       | Adapter-managed process    |
+| OpenCode         | [`@harapter/adapter-opencode`](./providers/opencode/README.ja.md) | Host/external HTTP service |
+| DeepSeek Harness | [`@harapter/adapter-dsh`](./providers/dsh/README.ja.md)           | Adapter-managed process    |
+| Hermes Agent     | [`@harapter/adapter-hermes`](./providers/hermes/README.ja.md)     | Host/external HTTP service |
+| OpenClaw         | [`@harapter/adapter-openclaw`](./providers/openclaw/README.ja.md) | Adapter-managed ACP bridge |
+| Pi Agent         | [`@harapter/adapter-pi`](./providers/pi/README.ja.md)             | Adapter-managed process    |
+
+Runtime の導入と認証は別途行います。Harapter は Runtime の検出、導入、更新、ログインをホストの代わりに行いません。
+
+### 2. 管理されているソースリファレンスを実行する（任意）
+
+実行可能な参考アプリまたはコントリビューションにはリポジトリを clone します。Workspace は pnpm
+`11.23.0` を固定しています。
 
 ```bash
 git clone https://github.com/yunfeizhu/harapter.git
@@ -61,10 +77,6 @@ corepack enable
 pnpm install --frozen-lockfile
 pnpm build
 ```
-
-[実装済み Adapter](./providers/README.md)を 1 つ選び、Provider のドキュメントに従って Runtime を別途インストールし、認証します。Harapter がホストの代わりに Runtime を検出、インストール、更新、ログインすることはありません。
-
-### 2. 管理されている Single-Provider リファレンスを実行する
 
 リファレンスアプリケーションは live evidence が記録済みの Codex
 Adapter を使用します。ホストにインストール済みの `codex`
@@ -83,8 +95,8 @@ Traffic、Credential、ローカルパスを含みません。
 
 ### 3. ポータブルなライフサイクルを組み込む
 
-Composition
-Root が Adapter と Profile を選択し、アプリケーション向けのライフサイクルは Provider に依存しません。
+次のコードは手順 1 で導入した実際の public export を使います。Composition
+Root が Adapter と Profile を選択し、アプリケーション向けライフサイクルは Provider に依存しません。
 
 ```ts
 import { pathToFileURL } from 'node:url';
@@ -221,27 +233,27 @@ ID による Capability 推測を行いません。プロトコル変換、互�
 
 ## 実装済みモジュール
 
-| 領域                 | Package とモジュール                                                                                                                                                                                                                                            |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Portable API**     | [`@harapter/core`](./packages/core/README.md) — 契約、Registry、Capability Requirement、所有権検証、Error、Extension、Native Access                                                                                                                             |
-| **Conformance**      | [`@harapter/conformance`](./packages/conformance/README.md) — 再利用可能なポータブル動作スイートと決定論的 Fake Provider                                                                                                                                        |
-| **Transport**        | [JSON-RPC stdio](./packages/transport-jsonrpc-stdio/README.md)、[strict JSONL process RPC](./packages/transport-jsonl-process/README.md)、[HTTP/SSE](./packages/transport-http-sse/README.md)、[ACP v1](./packages/transport-acp/README.md)                     |
-| **Provider Adapter** | [Codex](./providers/codex/README.md)、[OpenCode](./providers/opencode/README.md)、[DeepSeek Harness](./providers/dsh/README.md)、[Hermes Agent](./providers/hermes/README.md)、[OpenClaw](./providers/openclaw/README.md)、[Pi Agent](./providers/pi/README.md) |
-| **リファレンス**     | [Single-Provider ライフサイクル](./examples/single-provider/README.md)と[並行 Multi-Provider Client](./examples/multi-provider-client/README.md)                                                                                                                |
+| 領域                 | Package とモジュール                                                                                                                                                                                                                                                              |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Portable API**     | [`@harapter/core`](./packages/core/README.ja.md) — 契約、Registry、Capability Requirement、所有権検証、Error、Extension、Native Access                                                                                                                                            |
+| **Conformance**      | [`@harapter/conformance`](./packages/conformance/README.ja.md) — 再利用可能なポータブル動作スイートと決定論的 Fake Provider                                                                                                                                                       |
+| **Transport**        | [JSON-RPC stdio](./packages/transport-jsonrpc-stdio/README.ja.md)、[strict JSONL process RPC](./packages/transport-jsonl-process/README.ja.md)、[HTTP/SSE](./packages/transport-http-sse/README.ja.md)、[ACP v1](./packages/transport-acp/README.ja.md)                           |
+| **Provider Adapter** | [Codex](./providers/codex/README.ja.md)、[OpenCode](./providers/opencode/README.ja.md)、[DeepSeek Harness](./providers/dsh/README.ja.md)、[Hermes Agent](./providers/hermes/README.ja.md)、[OpenClaw](./providers/openclaw/README.ja.md)、[Pi Agent](./providers/pi/README.ja.md) |
+| **リファレンス**     | [Single-Provider ライフサイクル](./examples/single-provider/README.md)と[並行 Multi-Provider Client](./examples/multi-provider-client/README.md)                                                                                                                                  |
 
 ## サポートを宣言する前に証拠を揃える
 
 マトリクスに行があるだけではサポートを意味しません。Harapter がインターフェースをソース上でサポート済みと表現するには、Adapter 実装、機密情報を除去した Fixture、Protocol
 Mapping とライフサイクルテスト、Provider-negative テスト、共通 Conformance、明示的な互換性境界、live-runtime 証拠が必要です。
 
-| Provider                                      | 公式インターフェース      | 現在の証拠ステータス                                                              |
-| --------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------- |
-| [Codex](./providers/codex/README.md)          | stable App Server         | **ソース上でサポート** — Fixture、Conformance、互換性、live 証拠あり              |
-| [OpenCode](./providers/opencode/README.md)    | stable HTTP/OpenAPI + SSE | **ソース上でサポート** — Fixture、Conformance、互換性、live 証拠あり              |
-| [DeepSeek Harness](./providers/dsh/README.md) | SDK Runtime JSON-RPC      | **ソース上で Experimental** — live 証拠あり、Runtime の互換 Version 交渉なし      |
-| [Hermes Agent](./providers/hermes/README.md)  | API Server HTTP/SSE       | **ソース上で Experimental** — 0.21.0 で live 検証済み、Runtime 互換性は未交渉     |
-| [OpenClaw](./providers/openclaw/README.md)    | ACP v1 bridge             | **ソース上で Supported** — Fixture、Conformance、互換性、live text Run の証拠あり |
-| [Pi Agent](./providers/pi/README.md)          | strict JSONL RPC mode     | **ソース上で Experimental** — 0.84.4 で live 検証済み、Runtime 互換性は未交渉     |
+| Provider                                         | 公式インターフェース      | 現在の証拠ステータス                                                              |
+| ------------------------------------------------ | ------------------------- | --------------------------------------------------------------------------------- |
+| [Codex](./providers/codex/README.ja.md)          | stable App Server         | **ソース上でサポート** — Fixture、Conformance、互換性、live 証拠あり              |
+| [OpenCode](./providers/opencode/README.ja.md)    | stable HTTP/OpenAPI + SSE | **ソース上でサポート** — Fixture、Conformance、互換性、live 証拠あり              |
+| [DeepSeek Harness](./providers/dsh/README.ja.md) | SDK Runtime JSON-RPC      | **ソース上で Experimental** — live 証拠あり、Runtime の互換 Version 交渉なし      |
+| [Hermes Agent](./providers/hermes/README.ja.md)  | API Server HTTP/SSE       | **ソース上で Experimental** — 0.21.0 で live 検証済み、Runtime 互換性は未交渉     |
+| [OpenClaw](./providers/openclaw/README.ja.md)    | ACP v1 bridge             | **ソース上で Supported** — Fixture、Conformance、互換性、live text Run の証拠あり |
+| [Pi Agent](./providers/pi/README.ja.md)          | strict JSONL RPC mode     | **ソース上で Experimental** — 0.84.4 で live 検証済み、Runtime 互換性は未交渉     |
 
 「ソース上でサポート」はソース Adapter が保持する証拠を示すもので、公開 Package の保証ではありません。「ソース上で Experimental」は Adapter の実装と、宣言したインターフェースに対する決定論的テストは完了しているものの、必要な live-runtime 証拠が未記録か、接続した Runtime を検証済み証拠へ安全に対応付けられない状態です。
 
@@ -287,7 +299,7 @@ Code、Crush、GitHub Copilot CLI、Cursor Agent CLI は現在の実装範囲外
 | はじめに読むもの                                                  | 確認できる内容                                             |
 | ----------------------------------------------------------------- | ---------------------------------------------------------- |
 | [アーキテクチャと設計](./docs/design/README.ja.md)                | システム境界、不変条件、契約、設計順序                     |
-| [Portable Core 契約](./packages/core/README.md)                   | Public TypeScript API と所有権セマンティクス               |
+| [Portable Core 契約](./packages/core/README.ja.md)                | Public TypeScript API と所有権セマンティクス               |
 | [Provider マトリクス](./docs/design/provider-matrix.ja.md)        | Provider ごとの Interface、Evidence、Capability ステータス |
 | [Provider 実装ガイド](./docs/design/provider-adapter-guide.ja.md) | ポータブルな事実を弱めずに Adapter を構築する方法          |
 | [開発ワークフロー](./docs/development.md)                         | Toolchain、Branch、Validation、Review、Pull Request        |

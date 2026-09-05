@@ -21,12 +21,11 @@
 </p>
 
 <p align="center">
+  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore/next?style=flat-square&amp;label=npm%20next" alt="npm next version"></a>
+  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/dm/%40harapter%2Fcore?style=flat-square" alt="npm downloads"></a>
+  <a href="https://github.com/yunfeizhu/harapter/releases"><img src="https://img.shields.io/github/v/release/yunfeizhu/harapter?display_name=tag&amp;include_prereleases&amp;sort=semver&amp;style=flat-square&amp;label=release" alt="GitHub Release"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
-  <img src="https://img.shields.io/badge/pnpm-11.23.0-F69220?style=flat-square&amp;logo=pnpm&amp;logoColor=white" alt="pnpm 11.23.0">
-  <img src="https://img.shields.io/badge/typescript-5.9.3-3178C6?style=flat-square&amp;logo=typescript&amp;logoColor=white" alt="TypeScript 5.9.3">
-  <img src="https://img.shields.io/badge/adapters-6-6E56CF?style=flat-square" alt="6 provider adapters">
-  <img src="https://img.shields.io/badge/transports-4-0891B2?style=flat-square" alt="4 transports">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
   <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
 </p>
@@ -45,18 +44,35 @@ runtime it uses.
 
 ## Quick start
 
-### 1. Install a release or prepare the source Workspace
+### 1. Install the published packages
 
-Use Node.js 24 or newer with Corepack. The repository pins pnpm `11.23.0`.
-Published pre-alpha packages use the opt-in `next` dist-tag:
+Harapter requires Node.js 24 or newer. Published pre-alpha packages use the
+opt-in `next` dist-tag. Install Core and one Adapter from npm:
 
 ```bash
-pnpm add @harapter/core@next @harapter/adapter-codex@next
+npm install @harapter/core@next @harapter/adapter-codex@next
+# or: pnpm add @harapter/core@next @harapter/adapter-codex@next
+# or: yarn add @harapter/core@next @harapter/adapter-codex@next
 ```
 
-Registry availability begins with the first public release. If npm does not yet
-report that release, or if you want to run the maintained reference
-applications, use the source Workspace:
+Choose the Adapter that matches the host-operated Runtime:
+
+| Runtime          | Published Adapter                                              | Connection owned by        |
+| ---------------- | -------------------------------------------------------------- | -------------------------- |
+| Codex            | [`@harapter/adapter-codex`](./providers/codex/README.md)       | Adapter-managed process    |
+| OpenCode         | [`@harapter/adapter-opencode`](./providers/opencode/README.md) | Host/external HTTP service |
+| DeepSeek Harness | [`@harapter/adapter-dsh`](./providers/dsh/README.md)           | Adapter-managed process    |
+| Hermes Agent     | [`@harapter/adapter-hermes`](./providers/hermes/README.md)     | Host/external HTTP service |
+| OpenClaw         | [`@harapter/adapter-openclaw`](./providers/openclaw/README.md) | Adapter-managed ACP bridge |
+| Pi Agent         | [`@harapter/adapter-pi`](./providers/pi/README.md)             | Adapter-managed process    |
+
+Install and authenticate the selected Runtime separately. Harapter does not
+discover, install, update, or sign in to runtimes for the host.
+
+### 2. Run the maintained source reference (optional)
+
+Clone the repository when you want an executable reference application or plan
+to contribute. The Workspace pins pnpm `11.23.0`:
 
 ```bash
 git clone https://github.com/yunfeizhu/harapter.git
@@ -65,13 +81,6 @@ corepack enable
 pnpm install --frozen-lockfile
 pnpm build
 ```
-
-Choose one [implemented Adapter](./providers/README.md), then separately install
-and authenticate its runtime according to that Provider's documentation.
-Harapter does not discover, install, update, or sign in to a runtime for the
-host.
-
-### 2. Run the maintained single-Provider reference
 
 The reference application uses Codex because that Adapter has recorded live
 evidence. Supply a host-installed `codex` command explicitly:
@@ -90,7 +99,8 @@ local paths.
 
 ### 3. Integrate the portable lifecycle
 
-The composition root chooses an Adapter and Profile. The application-facing
+The following uses the actual public exports installed in step 1. The
+composition root chooses an Adapter and Profile; the application-facing
 lifecycle remains Provider-agnostic:
 
 ```ts

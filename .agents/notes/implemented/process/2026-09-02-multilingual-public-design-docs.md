@@ -1,34 +1,35 @@
-# Agent Note: Maintain public design documentation in three languages
+# Agent Note: Maintain public entry documentation in three languages
 
 Status: implemented
 
 ## Problem
 
-The root project overview links readers into detailed design documentation. A
-multilingual root README does not provide a multilingual documentation
-experience when the linked design topics are available in only one language. It
-also leaves contributors without a stable rule for filenames, language
-navigation, or synchronized semantic changes.
+Harapter serves application developers through its repository landing page and
+the README embedded in each published npm package. A multilingual repository
+overview is insufficient when an npm user lands on a package guide that has no
+language choice, practical installation path, or package-specific example. The
+repository also needs one stable rule for filenames, package contents, language
+navigation, and synchronized semantic changes.
 
 ## Decision
 
-User-facing topics under [`docs/design/`](../../../../docs/design/README.md)
-migrate one complete topic at a time into synchronized triads. For every
-migrated topic:
+The root README and every published package README use synchronized triads:
 
 - the unsuffixed `topic.md` file is English;
 - `topic.zh-CN.md` is Simplified Chinese; and
 - `topic.ja.md` is Japanese.
 
-Every migrated variant links to its two siblings. Internal documentation links
-stay in the reader's language when the target topic has a localized variant.
+Every variant links to its two siblings. Each package triad is distributed in
+the npm tarball, and package metadata links directly to that package's guide.
+Package variants remain useful entry documents: they cover purpose, selection,
+installation, a minimal public-API example, lifecycle, safety, and limitations.
 Public API identifiers, protocol fields, package names, commands, and code
 remain in their canonical form in every language.
 
-A semantic change to a localized topic updates all three variants in one pull
-request. Existing single-language topics migrate one complete topic at a time so
-that review can compare the three versions without mixing unrelated design
-areas. The repository documentation rules own the ongoing authoring requirement.
+A semantic change to a localized README or design topic updates all three
+variants in one pull request. Technical design topics may remain English unless
+they already have a language triad. The repository documentation and package
+rules own the ongoing authoring and publication requirements.
 
 ## Alternatives considered
 
@@ -36,7 +37,14 @@ areas. The repository documentation rules own the ongoing authoring requirement.
 
 This preserves a small maintenance surface, but the language experience ends as
 soon as a reader follows a design link. It does not meet the purpose of the
-language selector.
+language selector, and npm users still arrive at English-only package pages.
+
+### Link localized package summaries outside the tarball
+
+One shared translation page is smaller, but it separates installation and API
+examples from the package version a user installed. Shipping each triad and
+linking package metadata to its own guide keeps the entry point discoverable and
+versioned with the implementation.
 
 ### Rely on browser or machine translation
 
@@ -49,20 +57,22 @@ canonical identifiers.
 One file avoids sibling-link maintenance, but triples page length, makes anchor
 navigation ambiguous, and prevents language-specific links from the root README.
 
-### Migrate every design topic in one pull request
+### Require every technical design topic to be translated
 
-One migration would finish sooner but would create a review surface spanning the
-portable API, provider compatibility, implementation workflow, and architecture
-at once. Topic-sized pull requests keep semantic comparison and correction
-bounded.
+Full translation would cover internal architecture and maintenance material that
+package consumers do not need, while tripling the review surface for every
+technical change. English remains the common language for technical documents;
+existing translated design triads stay synchronized.
 
 ## Consequences
 
-- Migrated design topics have a predictable English, Simplified Chinese, and
-  Japanese path.
-- Maintaining a design topic costs three synchronized edits and requires link,
-  formatting, and semantic-parity review for all variants.
+- Repository and npm package entry points have predictable English, Simplified
+  Chinese, and Japanese paths.
+- Maintaining a public README costs three synchronized edits and requires link,
+  formatting, example, and semantic-parity review for all variants.
+- Release verification rejects a public package that omits either localized
+  README, and each package Homepage resolves to its own guide.
 - New terminology must distinguish translated prose from canonical public
   identifiers.
-- A topic is not described as localized until all three complete variants and
-  their sibling links are present.
+- Technical design documents may remain English. A topic already described as
+  localized retains all three complete variants and sibling links.

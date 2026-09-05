@@ -1,13 +1,46 @@
-# `@harapter/core`
+<!-- markdownlint-disable MD033 MD041 -->
+
+<h1 align="center"><code>@harapter/core</code></h1>
+
+<p align="center"><strong>The provider-agnostic lifecycle and registry at the center of Harapter.</strong></p>
+
+<p align="center">
+  <a href="./README.md">English</a> · <a href="./README.zh-CN.md">简体中文</a> · <a href="./README.ja.md">日本語</a> · <a href="../../README.md">Harapter</a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore/next?style=flat-square&amp;label=npm%20next" alt="npm next version"></a>
+  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/dm/%40harapter%2Fcore?style=flat-square" alt="npm downloads"></a>
+  <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
+  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
+</p>
+
+<!-- markdownlint-enable MD033 -->
 
 `@harapter/core` is the provider-agnostic TypeScript API for Harapter. It owns
 portable contracts and the runtime checks that can be applied without knowing a
 Provider identity.
 
+## Use this package when
+
+- your application needs one Client → Session → Run lifecycle across several
+  agent harnesses;
+- you need capability-based routing without branching on Provider names; or
+- you are implementing an Adapter and need the canonical contracts, errors,
+  ownership checks, extensions, and native escape hatch.
+
 ## Installation
 
 ```bash
 pnpm add @harapter/core@next
+```
+
+The Provider-free example below also uses the deterministic test package:
+
+```bash
+pnpm add -D @harapter/conformance@next
 ```
 
 ## Public entrypoints
@@ -65,7 +98,7 @@ Profiles carry Secret references, not credential values. Credential resolution,
 runtime installation, authentication, process policy, and product persistence
 remain host or Provider responsibilities.
 
-## Example
+## Quick start
 
 The deterministic Fake Provider gives the Core flow executable evidence without
 introducing a Provider dependency:
@@ -82,18 +115,30 @@ registry.register(createFakeProviderFactory());
 
 const client = await registry.connect(createFakeProfile());
 const session = await client.createSession();
-const run = await session.start({
-  parts: [{ type: 'text', text: 'synthetic input' }],
-});
 
-for await (const event of run.events()) {
-  console.log(event.type);
+try {
+  const run = await session.start({
+    parts: [{ type: 'text', text: 'synthetic input' }],
+  });
+
+  for await (const event of run.events()) {
+    console.log(event.type);
+  }
+
+  const result = await run.result();
+  console.log(result.status);
+} finally {
+  try {
+    await session.close();
+  } finally {
+    await client.close();
+  }
 }
-
-const result = await run.result();
-await session.close();
-await client.close();
 ```
+
+Replace the Fake Provider with an
+[implemented Adapter](../../providers/README.md) in an application. The
+Registry, Client, Session, Run, Event, and Result flow stays the same.
 
 ## Limitations
 

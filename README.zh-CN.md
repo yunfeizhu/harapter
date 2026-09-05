@@ -21,12 +21,11 @@
 </p>
 
 <p align="center">
+  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore/next?style=flat-square&amp;label=npm%20next" alt="npm next 版本"></a>
+  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/dm/%40harapter%2Fcore?style=flat-square" alt="npm 下载量"></a>
+  <a href="https://github.com/yunfeizhu/harapter/releases"><img src="https://img.shields.io/github/v/release/yunfeizhu/harapter?display_name=tag&amp;include_prereleases&amp;sort=semver&amp;style=flat-square&amp;label=release" alt="GitHub Release"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI 状态"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 或更高版本">
-  <img src="https://img.shields.io/badge/pnpm-11.23.0-F69220?style=flat-square&amp;logo=pnpm&amp;logoColor=white" alt="pnpm 11.23.0">
-  <img src="https://img.shields.io/badge/typescript-5.9.3-3178C6?style=flat-square&amp;logo=typescript&amp;logoColor=white" alt="TypeScript 5.9.3">
-  <img src="https://img.shields.io/badge/adapters-6-6E56CF?style=flat-square" alt="6 个 Provider Adapter">
-  <img src="https://img.shields.io/badge/transports-4-0891B2?style=flat-square" alt="4 个 Transport">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 许可证"></a>
   <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha 状态">
 </p>
@@ -42,16 +41,34 @@ Loop。每个 Runtime 仍由宿主选择、安装、认证并实施安全策略�
 
 ## 快速上手
 
-### 1. 安装已发布版本或准备源码 Workspace
+### 1. 安装已经发布的 Package
 
-使用 Node.js 24 或更高版本与 Corepack。仓库固定使用 pnpm
-`11.23.0`。已发布的 pre-alpha Package 使用需要显式选择的 `next` dist-tag：
+Harapter 需要 Node.js 24 或更高版本。Pre-alpha Package 使用需要显式选择的 `next`
+dist-tag。从 npm 安装 Core 和一个 Adapter：
 
 ```bash
-pnpm add @harapter/core@next @harapter/adapter-codex@next
+npm install @harapter/core@next @harapter/adapter-codex@next
+# 或：pnpm add @harapter/core@next @harapter/adapter-codex@next
+# 或：yarn add @harapter/core@next @harapter/adapter-codex@next
 ```
 
-Registry 会从首个公开版本开始提供 Package。如果 npm 尚未显示该版本，或需要运行仓库维护的参考应用，请使用源码 Workspace：
+根据宿主运行的 Runtime 选择 Adapter：
+
+| Runtime          | 已发布 Adapter                                                       | Connection 所有者         |
+| ---------------- | -------------------------------------------------------------------- | ------------------------- |
+| Codex            | [`@harapter/adapter-codex`](./providers/codex/README.zh-CN.md)       | Adapter 管理的 Process    |
+| OpenCode         | [`@harapter/adapter-opencode`](./providers/opencode/README.zh-CN.md) | 宿主/外部 HTTP Service    |
+| DeepSeek Harness | [`@harapter/adapter-dsh`](./providers/dsh/README.zh-CN.md)           | Adapter 管理的 Process    |
+| Hermes Agent     | [`@harapter/adapter-hermes`](./providers/hermes/README.zh-CN.md)     | 宿主/外部 HTTP Service    |
+| OpenClaw         | [`@harapter/adapter-openclaw`](./providers/openclaw/README.zh-CN.md) | Adapter 管理的 ACP Bridge |
+| Pi Agent         | [`@harapter/adapter-pi`](./providers/pi/README.zh-CN.md)             | Adapter 管理的 Process    |
+
+对应 Runtime 仍需单独安装和认证。Harapter 不会替宿主发现、安装、更新或登录 Runtime。
+
+### 2. 运行维护中的源码参考实现（可选）
+
+如果要运行完整参考应用或参与贡献，再克隆仓库。Workspace 固定使用 pnpm
+`11.23.0`：
 
 ```bash
 git clone https://github.com/yunfeizhu/harapter.git
@@ -60,10 +77,6 @@ corepack enable
 pnpm install --frozen-lockfile
 pnpm build
 ```
-
-从[已实现 Adapter](./providers/README.md)中选择一个，再按照对应 Provider 文档单独安装和认证 Runtime。Harapter 不会替宿主发现、安装、更新 Runtime，也不会执行登录。
-
-### 2. 运行维护中的单 Provider 参考实现
 
 参考实现使用已有真实运行证据的 Codex Adapter。请显式提供宿主已经安装的 `codex`
 命令：
@@ -80,7 +93,7 @@ Token。输出只包含安全的生命周期元数据，不包含 Prompt、消�
 
 ### 3. 接入可移植生命周期
 
-组合根负责选择 Adapter 和 Profile；面向应用的生命周期不依赖具体 Provider：
+下面直接使用第 1 步安装的真实公开 Export。组合根负责选择 Adapter 和 Profile；面向应用的生命周期不依赖具体 Provider：
 
 ```ts
 import { pathToFileURL } from 'node:url';
@@ -217,26 +230,26 @@ SDK，不根据 Provider 名称分支，也不根据 Provider 身份推断 Capab
 
 ## 已实现模块
 
-| 范围                 | Package 与模块                                                                                                                                                                                                                                                    |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Portable API**     | [`@harapter/core`](./packages/core/README.md)——契约、Registry、Capability Requirement、所有权检查、Error、Extension 和 Native Access                                                                                                                              |
-| **Conformance**      | [`@harapter/conformance`](./packages/conformance/README.md)——可复用的可移植行为套件和确定性 Fake Provider                                                                                                                                                         |
-| **Transport**        | [JSON-RPC stdio](./packages/transport-jsonrpc-stdio/README.md)、[严格 JSONL process RPC](./packages/transport-jsonl-process/README.md)、[HTTP/SSE](./packages/transport-http-sse/README.md) 和 [ACP v1](./packages/transport-acp/README.md)                       |
-| **Provider Adapter** | [Codex](./providers/codex/README.md)、[OpenCode](./providers/opencode/README.md)、[DeepSeek Harness](./providers/dsh/README.md)、[Hermes Agent](./providers/hermes/README.md)、[OpenClaw](./providers/openclaw/README.md) 和 [Pi Agent](./providers/pi/README.md) |
-| **参考实现**         | [单 Provider 生命周期](./examples/single-provider/README.md)与[并发多 Provider Client](./examples/multi-provider-client/README.md)                                                                                                                                |
+| 范围                 | Package 与模块                                                                                                                                                                                                                                                                                        |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Portable API**     | [`@harapter/core`](./packages/core/README.zh-CN.md)——契约、Registry、Capability Requirement、所有权检查、Error、Extension 和 Native Access                                                                                                                                                            |
+| **Conformance**      | [`@harapter/conformance`](./packages/conformance/README.zh-CN.md)——可复用的可移植行为套件和确定性 Fake Provider                                                                                                                                                                                       |
+| **Transport**        | [JSON-RPC stdio](./packages/transport-jsonrpc-stdio/README.zh-CN.md)、[严格 JSONL process RPC](./packages/transport-jsonl-process/README.zh-CN.md)、[HTTP/SSE](./packages/transport-http-sse/README.zh-CN.md) 和 [ACP v1](./packages/transport-acp/README.zh-CN.md)                                   |
+| **Provider Adapter** | [Codex](./providers/codex/README.zh-CN.md)、[OpenCode](./providers/opencode/README.zh-CN.md)、[DeepSeek Harness](./providers/dsh/README.zh-CN.md)、[Hermes Agent](./providers/hermes/README.zh-CN.md)、[OpenClaw](./providers/openclaw/README.zh-CN.md) 和 [Pi Agent](./providers/pi/README.zh-CN.md) |
+| **参考实现**         | [单 Provider 生命周期](./examples/single-provider/README.md)与[并发多 Provider Client](./examples/multi-provider-client/README.md)                                                                                                                                                                    |
 
 ## 先有证据，再声明支持
 
 矩阵里的一行并不代表已经支持。Adapter 必须具备实现、脱敏 Fixture、协议 Mapping 与生命周期测试、Provider-negative 测试、公共 Conformance、明确的兼容边界和真实 Runtime 证据，Harapter 才会把该接口描述为源码级支持。
 
-| Provider                                      | 官方接口                | 当前证据状态                                                              |
-| --------------------------------------------- | ----------------------- | ------------------------------------------------------------------------- |
-| [Codex](./providers/codex/README.md)          | 稳定 App Server         | **源码级支持**——具备 Fixture、Conformance、兼容与真实运行证据             |
-| [OpenCode](./providers/opencode/README.md)    | 稳定 HTTP/OpenAPI + SSE | **源码级支持**——具备 Fixture、Conformance、兼容与真实运行证据             |
-| [DeepSeek Harness](./providers/dsh/README.md) | SDK Runtime JSON-RPC    | **源码级实验**——已有真实运行证据，但 Runtime 不协商兼容版本               |
-| [Hermes Agent](./providers/hermes/README.md)  | API Server HTTP/SSE     | **源码级实验**——已使用 0.21.0 完成真实运行验证，但 Runtime 不协商兼容版本 |
-| [OpenClaw](./providers/openclaw/README.md)    | ACP v1 Bridge           | **源码级支持**——具备 Fixture、Conformance、兼容性与真实文本 Run 证据      |
-| [Pi Agent](./providers/pi/README.md)          | 严格 JSONL RPC 模式     | **源码级实验**——已使用 0.84.4 完成真实运行验证，但 Runtime 不协商兼容版本 |
+| Provider                                            | 官方接口                | 当前证据状态                                                              |
+| --------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------- |
+| [Codex](./providers/codex/README.zh-CN.md)          | 稳定 App Server         | **源码级支持**——具备 Fixture、Conformance、兼容与真实运行证据             |
+| [OpenCode](./providers/opencode/README.zh-CN.md)    | 稳定 HTTP/OpenAPI + SSE | **源码级支持**——具备 Fixture、Conformance、兼容与真实运行证据             |
+| [DeepSeek Harness](./providers/dsh/README.zh-CN.md) | SDK Runtime JSON-RPC    | **源码级实验**——已有真实运行证据，但 Runtime 不协商兼容版本               |
+| [Hermes Agent](./providers/hermes/README.zh-CN.md)  | API Server HTTP/SSE     | **源码级实验**——已使用 0.21.0 完成真实运行验证，但 Runtime 不协商兼容版本 |
+| [OpenClaw](./providers/openclaw/README.zh-CN.md)    | ACP v1 Bridge           | **源码级支持**——具备 Fixture、Conformance、兼容性与真实文本 Run 证据      |
+| [Pi Agent](./providers/pi/README.zh-CN.md)          | 严格 JSONL RPC 模式     | **源码级实验**——已使用 0.84.4 完成真实运行验证，但 Runtime 不协商兼容版本 |
 
 “源码级支持”描述源码 Adapter 所持有的证据，不是已发布 Package 的保证。“源码级实验”表示 Adapter 已经实现，并按声明的接口完成确定性测试，但仍缺所需的真实 Runtime 证据，或当前连接的 Runtime 无法与已验证证据安全匹配。
 
@@ -274,7 +287,7 @@ CLI 和 Cursor Agent CLI 不在当前实现范围内。
 | 从这里开始                                                         | 适合了解                                   |
 | ------------------------------------------------------------------ | ------------------------------------------ |
 | [架构与目标设计](./docs/design/README.zh-CN.md)                    | 系统边界、不变量、契约和设计顺序           |
-| [Portable Core 契约](./packages/core/README.md)                    | 公共 TypeScript API 与所有权语义           |
+| [Portable Core 契约](./packages/core/README.zh-CN.md)              | 公共 TypeScript API 与所有权语义           |
 | [Provider 接入矩阵](./docs/design/provider-matrix.zh-CN.md)        | 各 Provider 的接口、证据与 Capability 状态 |
 | [Provider 实现指南](./docs/design/provider-adapter-guide.zh-CN.md) | 在不削弱可移植事实的前提下构建 Adapter     |
 | [开发流程](./docs/development.md)                                  | 工具链、分支、验证、Review 与 Pull Request |

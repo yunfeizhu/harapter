@@ -1,7 +1,6 @@
 import { performance } from 'node:perf_hooks';
 
 const repositoryUrl = 'git+https://github.com/yunfeizhu/harapter.git';
-const repositoryHomepage = 'https://github.com/yunfeizhu/harapter#readme';
 const repositoryIssues = 'https://github.com/yunfeizhu/harapter/issues';
 const registryUrl = 'https://registry.npmjs.org/';
 const releaseRepositoryName = 'harapter';
@@ -250,8 +249,12 @@ export function validatePublicPackageManifest({
   if (packageJson.sideEffects !== false) {
     failures.push(`${manifestPath} sideEffects must be false.`);
   }
-  if (!arraysEqual(packageJson.files, ['dist'])) {
-    failures.push(`${manifestPath} files must contain only dist.`);
+  if (
+    !arraysEqual(packageJson.files, ['dist', 'README.zh-CN.md', 'README.ja.md'])
+  ) {
+    failures.push(
+      `${manifestPath} files must contain dist and both localized READMEs.`,
+    );
   }
   if (packageJson.main !== './dist/index.js') {
     failures.push(`${manifestPath} main must be ./dist/index.js.`);
@@ -277,8 +280,9 @@ export function validatePublicPackageManifest({
   ) {
     failures.push(`${manifestPath} repository metadata must match its source.`);
   }
-  if (packageJson.homepage !== repositoryHomepage) {
-    failures.push(`${manifestPath} homepage must match the repository.`);
+  const expectedHomepage = `https://github.com/yunfeizhu/harapter/tree/main/${entry.path}#readme`;
+  if (packageJson.homepage !== expectedHomepage) {
+    failures.push(`${manifestPath} homepage must match its package guide.`);
   }
   if (packageJson.bugs?.url !== repositoryIssues) {
     failures.push(`${manifestPath} bugs URL must match the repository.`);
@@ -355,6 +359,8 @@ export function validatePackedFiles(entry, files) {
   for (const required of [
     'LICENSE',
     'README.md',
+    'README.zh-CN.md',
+    'README.ja.md',
     'package.json',
     'dist/index.js',
     'dist/index.d.ts',
@@ -367,6 +373,8 @@ export function validatePackedFiles(entry, files) {
     if (
       path !== 'LICENSE' &&
       path !== 'README.md' &&
+      path !== 'README.zh-CN.md' &&
+      path !== 'README.ja.md' &&
       path !== 'package.json' &&
       !path.startsWith('dist/')
     ) {

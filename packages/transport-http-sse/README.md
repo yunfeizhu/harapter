@@ -1,4 +1,23 @@
-# `@harapter/transport-http-sse`
+<!-- markdownlint-disable MD033 MD041 -->
+
+<h1 align="center"><code>@harapter/transport-http-sse</code></h1>
+
+<p align="center"><strong>Bounded HTTP requests and pull-driven Server-Sent Events for Adapters.</strong></p>
+
+<p align="center">
+  <a href="./README.md">English</a> · <a href="./README.zh-CN.md">简体中文</a> · <a href="./README.ja.md">日本語</a> · <a href="../../README.md">Harapter</a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@harapter/transport-http-sse"><img src="https://img.shields.io/npm/v/%40harapter%2Ftransport-http-sse/next?style=flat-square&amp;label=npm%20next" alt="npm next version"></a>
+  <a href="https://www.npmjs.com/package/@harapter/transport-http-sse"><img src="https://img.shields.io/npm/dm/%40harapter%2Ftransport-http-sse?style=flat-square" alt="npm downloads"></a>
+  <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
+  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
+</p>
+
+<!-- markdownlint-enable MD033 -->
 
 `@harapter/transport-http-sse` is a bounded, Provider-neutral transport for
 Harness machine interfaces exposed through HTTP requests and Server-Sent Events.
@@ -7,6 +26,14 @@ The package owns endpoint-safe URL resolution, request and response byte limits,
 local wait controls, incremental SSE framing, operation capacity, and transport
 disposal. It does not import Provider SDKs or assign Session, Run, Event,
 interaction, error, or cancellation meaning to upstream routes and payloads.
+
+## Use this package when
+
+- a harness exposes commands over HTTP and streams progress over SSE;
+- your Adapter needs origin-safe URL handling, finite body/event limits, and
+  explicit operation capacity; or
+- EOF, redirects, timeouts, and aborts must remain transport outcomes rather
+  than invented Provider lifecycle results.
 
 ## Installation
 
@@ -102,7 +129,7 @@ upstream exception, or cleanup exception. A safe numeric HTTP status is exposed
 only for `http_status`. Ordinary JSON serialization and Node inspection contain
 only the stable name, code, fixed message, and optional status.
 
-## Example
+## Quick start
 
 ```ts
 import { HttpSseTransport } from '@harapter/transport-http-sse';

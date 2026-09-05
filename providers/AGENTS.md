@@ -18,7 +18,8 @@ following:
 - redacted, deterministic fixtures for every declared portable capability;
 - the shared conformance suite and provider-specific negative tests;
 - live-runtime evidence for behavior that fixtures cannot establish;
-- a provider README covering installation, authentication ownership,
+- a synchronized English, Simplified Chinese, and Japanese Provider README
+  covering installation, authentication ownership, a portable lifecycle example,
   limitations, extensions, and native access.
 
 Popularity, naming similarity, CLI output scraping, or an architecture table is

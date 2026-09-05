@@ -1,10 +1,38 @@
-# `@harapter/adapter-codex`
+<!-- markdownlint-disable MD033 MD041 -->
+
+<h1 align="center"><code>@harapter/adapter-codex</code></h1>
+
+<p align="center"><strong>Run the stable Codex App Server through Harapter's portable lifecycle.</strong></p>
+
+<p align="center">
+  <a href="./README.md">English</a> · <a href="./README.zh-CN.md">简体中文</a> · <a href="./README.ja.md">日本語</a> · <a href="../../README.md">Harapter</a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@harapter/adapter-codex"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-codex/next?style=flat-square&amp;label=npm%20next" alt="npm next version"></a>
+  <a href="https://www.npmjs.com/package/@harapter/adapter-codex"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-codex?style=flat-square" alt="npm downloads"></a>
+  <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
+  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
+</p>
+
+<!-- markdownlint-enable MD033 -->
 
 `@harapter/adapter-codex` exposes the official Codex harness through the stable
 [Codex App Server](https://developers.openai.com/codex/app-server) interface and
 maps it to the portable Harapter lifecycle. The harness and App Server source
 live in the open-source
 [OpenAI Codex repository](https://github.com/openai/codex).
+
+## Use this Adapter when
+
+- a host application needs Codex alongside other harnesses behind the same
+  portable lifecycle;
+- you need stable App Server Sessions, streamed Turns, approvals, resume, and
+  native interruption without scraping CLI text; or
+- you want Codex-specific behavior available through typed extensions while
+  keeping application orchestration Provider-agnostic.
 
 ## Installation
 
@@ -66,17 +94,24 @@ const client = await registry.connect({
 });
 
 const session = await client.createSession();
-const run = await session.start({
-  parts: [{ type: 'text', text: 'Describe the current project.' }],
-});
+try {
+  const run = await session.start({
+    parts: [{ type: 'text', text: 'Describe the current project.' }],
+  });
 
-for await (const event of run.events()) {
-  // Render or persist according to the host's data policy.
+  for await (const event of run.events()) {
+    // Render or persist according to the host's data policy.
+  }
+
+  const result = await run.result();
+  console.log(result.status);
+} finally {
+  try {
+    await session.close();
+  } finally {
+    await client.close();
+  }
 }
-
-const result = await run.result();
-await session.close();
-await client.close();
 ```
 
 ## Profile and process ownership

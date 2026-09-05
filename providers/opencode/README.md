@@ -1,4 +1,23 @@
-# `@harapter/adapter-opencode`
+<!-- markdownlint-disable MD033 MD041 -->
+
+<h1 align="center"><code>@harapter/adapter-opencode</code></h1>
+
+<p align="center"><strong>Connect a host-operated OpenCode HTTP/SSE server to Harapter.</strong></p>
+
+<p align="center">
+  <a href="./README.md">English</a> · <a href="./README.zh-CN.md">简体中文</a> · <a href="./README.ja.md">日本語</a> · <a href="../../README.md">Harapter</a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@harapter/adapter-opencode"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-opencode/next?style=flat-square&amp;label=npm%20next" alt="npm next version"></a>
+  <a href="https://www.npmjs.com/package/@harapter/adapter-opencode"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-opencode?style=flat-square" alt="npm downloads"></a>
+  <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
+  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
+</p>
+
+<!-- markdownlint-enable MD033 -->
 
 `@harapter/adapter-opencode` maps the current documented stable `opencode serve`
 HTTP/OpenAPI and Server-Sent Events interface to Harapter Core.
@@ -6,6 +25,13 @@ HTTP/OpenAPI and Server-Sent Events interface to Harapter Core.
 The host installs, configures, authenticates, starts, and stops OpenCode. The
 Adapter connects only to a host-selected HTTP endpoint and never invokes a
 runtime installation, server disposal, or Session deletion route implicitly.
+
+## Use this Adapter when
+
+- your host already operates an `opencode serve` endpoint;
+- you need directory-bound Sessions, streamed Events, native abort, permissions,
+  and file or image references through the portable lifecycle; or
+- authentication and server process ownership must remain outside Harapter.
 
 ## Installation
 
