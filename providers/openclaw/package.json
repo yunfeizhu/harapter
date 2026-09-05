@@ -17,11 +17,13 @@
   "bugs": {
     "url": "https://github.com/yunfeizhu/harapter/issues"
   },
-  "homepage": "https://github.com/yunfeizhu/harapter#readme",
+  "homepage": "https://github.com/yunfeizhu/harapter/tree/main/providers/openclaw#readme",
   "type": "module",
   "sideEffects": false,
   "files": [
-    "dist"
+    "dist",
+    "README.zh-CN.md",
+    "README.ja.md"
   ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

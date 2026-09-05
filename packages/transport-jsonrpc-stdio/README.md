@@ -1,4 +1,23 @@
-# `@harapter/transport-jsonrpc-stdio`
+<!-- markdownlint-disable MD033 MD041 -->
+
+<h1 align="center"><code>@harapter/transport-jsonrpc-stdio</code></h1>
+
+<p align="center"><strong>Bounded bidirectional JSONL RPC over caller-owned Node streams.</strong></p>
+
+<p align="center">
+  <a href="./README.md">English</a> · <a href="./README.zh-CN.md">简体中文</a> · <a href="./README.ja.md">日本語</a> · <a href="../../README.md">Harapter</a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio"><img src="https://img.shields.io/npm/v/%40harapter%2Ftransport-jsonrpc-stdio/next?style=flat-square&amp;label=npm%20next" alt="npm next version"></a>
+  <a href="https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio"><img src="https://img.shields.io/npm/dm/%40harapter%2Ftransport-jsonrpc-stdio?style=flat-square" alt="npm downloads"></a>
+  <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
+  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
+</p>
+
+<!-- markdownlint-enable MD033 -->
 
 `@harapter/transport-jsonrpc-stdio` is a bounded, bidirectional JSONL transport
 for Provider Adapters whose official machine interface exchanges JSON-RPC-shaped
@@ -8,6 +27,14 @@ The package owns framing, request correlation, ordered inbound delivery,
 backpressure, local wait controls, and connection disposal. It does not import
 Provider SDKs or assign portable Harapter meaning to Provider methods and
 payloads.
+
+## Use this package when
+
+- an official harness interface speaks newline-delimited JSON-RPC-shaped
+  messages over stdin/stdout or equivalent streams;
+- your Adapter needs bounded request correlation, backpressure, remote requests,
+  and deterministic cleanup; or
+- you need strict transport errors without leaking frames or upstream messages.
 
 ## Installation
 
@@ -120,7 +147,7 @@ object itself through ordinary JSON serialization or Node inspection remains
 content-free. Inbound `method` and `params` have the same Provider-owned
 validation and redaction requirement.
 
-## Example
+## Quick start
 
 ```ts
 import { JsonRpcStdioTransport } from '@harapter/transport-jsonrpc-stdio';

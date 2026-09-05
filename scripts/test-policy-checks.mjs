@@ -2264,10 +2264,11 @@ const validPublicManifest = {
     directory: 'packages/core',
   },
   bugs: { url: 'https://github.com/yunfeizhu/harapter/issues' },
-  homepage: 'https://github.com/yunfeizhu/harapter#readme',
+  homepage:
+    'https://github.com/yunfeizhu/harapter/tree/main/packages/core#readme',
   type: 'module',
   sideEffects: false,
-  files: ['dist'],
+  files: ['dist', 'README.zh-CN.md', 'README.ja.md'],
   main: './dist/index.js',
   types: './dist/index.d.ts',
   exports: {
@@ -2303,7 +2304,7 @@ assert.deepEqual(
   }),
   [
     'packages/core/package.json must not set private.',
-    'packages/core/package.json files must contain only dist.',
+    'packages/core/package.json files must contain dist and both localized READMEs.',
     'packages/core/package.json dependencies contains unknown public package @harapter/missing.',
     'packages/core/package.json dependencies.@harapter/missing must use workspace:* before packing.',
   ],
@@ -2332,6 +2333,8 @@ assert.deepEqual(
     [
       'LICENSE',
       'README.md',
+      'README.zh-CN.md',
+      'README.ja.md',
       'package.json',
       'dist/index.js',
       'dist/index.d.ts',
@@ -2348,6 +2351,8 @@ assert.deepEqual(
   [
     '@harapter/core tarball is missing LICENSE.',
     '@harapter/core tarball is missing README.md.',
+    '@harapter/core tarball is missing README.zh-CN.md.',
+    '@harapter/core tarball is missing README.ja.md.',
     '@harapter/core tarball is missing dist/index.js.',
     '@harapter/core tarball is missing dist/index.d.ts.',
     '@harapter/core tarball contains unexpected path src/index.ts.',

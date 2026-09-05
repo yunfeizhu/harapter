@@ -1,4 +1,23 @@
-# `@harapter/transport-acp`
+<!-- markdownlint-disable MD033 MD041 -->
+
+<h1 align="center"><code>@harapter/transport-acp</code></h1>
+
+<p align="center"><strong>A strict, Provider-neutral client for the stable Agent Client Protocol v1.</strong></p>
+
+<p align="center">
+  <a href="./README.md">English</a> · <a href="./README.zh-CN.md">简体中文</a> · <a href="./README.ja.md">日本語</a> · <a href="../../README.md">Harapter</a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@harapter/transport-acp"><img src="https://img.shields.io/npm/v/%40harapter%2Ftransport-acp/next?style=flat-square&amp;label=npm%20next" alt="npm next version"></a>
+  <a href="https://www.npmjs.com/package/@harapter/transport-acp"><img src="https://img.shields.io/npm/dm/%40harapter%2Ftransport-acp?style=flat-square" alt="npm downloads"></a>
+  <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
+  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
+</p>
+
+<!-- markdownlint-enable MD033 -->
 
 `@harapter/transport-acp` is Harapter's Provider-neutral client for the stable
 Agent Client Protocol v1 wire contract. It composes
@@ -11,6 +30,14 @@ The package does not spawn an ACP Agent, select a Provider, map ACP events into
 portable Harapter lifecycle events, or infer capabilities from an Agent name.
 The consuming Provider Adapter owns process policy, Provider meaning, Session
 ownership, compatibility, and portable event and error mapping.
+
+## Use this package when
+
+- an Adapter connects to an Agent that implements stable ACP v1;
+- you need negotiated Session methods, typed updates, permission requests, and
+  bounded unknown-message observation; or
+- you want ACP validation without importing Provider identity or process policy
+  into a reusable transport layer.
 
 ## Installation
 
@@ -127,7 +154,7 @@ payloads, negotiated `_meta`, known tool `rawInput` and `rawOutput`, remote
 errors, and authentication-method values must not be logged or attached to
 portable errors without Adapter-owned validation and redaction.
 
-## Example
+## Quick start
 
 ```ts
 import { AcpClient } from '@harapter/transport-acp';

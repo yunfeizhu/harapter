@@ -1,4 +1,23 @@
-# `@harapter/adapter-openclaw`
+<!-- markdownlint-disable MD033 MD041 -->
+
+<h1 align="center"><code>@harapter/adapter-openclaw</code></h1>
+
+<p align="center"><strong>Drive an isolated OpenClaw Gateway Session through stable ACP v1.</strong></p>
+
+<p align="center">
+  <a href="./README.md">English</a> · <a href="./README.zh-CN.md">简体中文</a> · <a href="./README.ja.md">日本語</a> · <a href="../../README.md">Harapter</a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@harapter/adapter-openclaw"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-openclaw/next?style=flat-square&amp;label=npm%20next" alt="npm next version"></a>
+  <a href="https://www.npmjs.com/package/@harapter/adapter-openclaw"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-openclaw?style=flat-square" alt="npm downloads"></a>
+  <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
+  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
+</p>
+
+<!-- markdownlint-enable MD033 -->
 
 `@harapter/adapter-openclaw` maps the official `openclaw acp` stdio bridge to
 the portable Harapter lifecycle.
@@ -7,6 +26,14 @@ The host installs, configures, authenticates, and operates OpenClaw and its
 Gateway. Harapter starts only the exact adapter-owned command selected by the
 Profile. It does not install an OpenClaw Runtime or SDK, configure models or
 tools, manage Gateway credentials, or change host security policy.
+
+## Use this Adapter when
+
+- your host already operates an authenticated OpenClaw Gateway;
+- you need one isolated Gateway Session exposed as a portable Session over the
+  stable ACP v1 bridge; or
+- you need resume, native cancellation, approvals, and unknown ACP observations
+  without direct Gateway WebSocket coupling.
 
 ## Installation
 

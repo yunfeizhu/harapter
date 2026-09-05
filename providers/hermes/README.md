@@ -1,4 +1,23 @@
-# `@harapter/adapter-hermes`
+<!-- markdownlint-disable MD033 MD041 -->
+
+<h1 align="center"><code>@harapter/adapter-hermes</code></h1>
+
+<p align="center"><strong>Connect the Hermes Agent API Server to Harapter over HTTP and SSE.</strong></p>
+
+<p align="center">
+  <a href="./README.md">English</a> · <a href="./README.zh-CN.md">简体中文</a> · <a href="./README.ja.md">日本語</a> · <a href="../../README.md">Harapter</a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@harapter/adapter-hermes"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-hermes/next?style=flat-square&amp;label=npm%20next" alt="npm next version"></a>
+  <a href="https://www.npmjs.com/package/@harapter/adapter-hermes"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-hermes?style=flat-square" alt="npm downloads"></a>
+  <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
+  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
+</p>
+
+<!-- markdownlint-enable MD033 -->
 
 `@harapter/adapter-hermes` maps the official Hermes Agent API Server HTTP and
 Server-Sent Events interface to the portable Harapter lifecycle.
@@ -7,6 +26,14 @@ The host installs, configures, authenticates, starts, and stops Hermes Agent.
 The Adapter connects only to a host-selected endpoint. It does not install the
 Hermes Agent Runtime or SDK, start a server, configure models or tools, or own
 the host security policy.
+
+## Use this Adapter when
+
+- your host operates the official Hermes Agent API Server;
+- you need HTTP Session creation and Run submission with SSE progress behind the
+  portable lifecycle; or
+- endpoint credentials, model configuration, and server ownership must remain
+  controlled by the host.
 
 ## Installation
 

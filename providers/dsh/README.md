@@ -1,10 +1,37 @@
-# `@harapter/adapter-dsh`
+<!-- markdownlint-disable MD033 MD041 -->
+
+<h1 align="center"><code>@harapter/adapter-dsh</code></h1>
+
+<p align="center"><strong>Map the official DeepSeek Harness SDK Runtime protocol to Harapter.</strong></p>
+
+<p align="center">
+  <a href="./README.md">English</a> · <a href="./README.zh-CN.md">简体中文</a> · <a href="./README.ja.md">日本語</a> · <a href="../../README.md">Harapter</a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@harapter/adapter-dsh"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-dsh/next?style=flat-square&amp;label=npm%20next" alt="npm next version"></a>
+  <a href="https://www.npmjs.com/package/@harapter/adapter-dsh"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-dsh?style=flat-square" alt="npm downloads"></a>
+  <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
+  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
+</p>
+
+<!-- markdownlint-enable MD033 -->
 
 `@harapter/adapter-dsh` maps the official
 [DeepSeek Harness SDK protocol](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/sdk/protocol/README.md)
 to the portable Harapter lifecycle. It connects to the newline-delimited
 JSON-RPC 2.0 server exposed by the SDK Runtime and does not embed or reproduce
 the DeepSeek Harness Agent Loop.
+
+## Use this Adapter when
+
+- your host installs and starts the official DeepSeek Harness SDK Runtime;
+- you need its Session, Run, Event, interaction, resume, and cancellation
+  behavior behind Harapter Core; or
+- you want runtime validation and bounded raw observations without embedding the
+  DeepSeek Harness Agent Loop in your application.
 
 ## Installation
 
@@ -92,17 +119,24 @@ const client = await registry.connect({
 });
 
 const session = await client.createSession();
-const run = await session.start({
-  parts: [{ type: 'text', text: 'Describe the current project.' }],
-});
+try {
+  const run = await session.start({
+    parts: [{ type: 'text', text: 'Describe the current project.' }],
+  });
 
-for await (const event of run.events()) {
-  // Render or persist according to the host's data policy.
+  for await (const event of run.events()) {
+    // Render or persist according to the host's data policy.
+  }
+
+  const result = await run.result();
+  console.log(result.status);
+} finally {
+  try {
+    await session.close();
+  } finally {
+    await client.close();
+  }
 }
-
-const result = await run.result();
-await session.close();
-await client.close();
 ```
 
 ## Profile and process ownership

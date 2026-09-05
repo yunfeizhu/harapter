@@ -1,4 +1,23 @@
-# `@harapter/transport-jsonl-process`
+<!-- markdownlint-disable MD033 MD041 -->
+
+<h1 align="center"><code>@harapter/transport-jsonl-process</code></h1>
+
+<p align="center"><strong>Strict, bounded JSONL messaging for process-backed harness protocols.</strong></p>
+
+<p align="center">
+  <a href="./README.md">English</a> · <a href="./README.zh-CN.md">简体中文</a> · <a href="./README.ja.md">日本語</a> · <a href="../../README.md">Harapter</a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@harapter/transport-jsonl-process"><img src="https://img.shields.io/npm/v/%40harapter%2Ftransport-jsonl-process/next?style=flat-square&amp;label=npm%20next" alt="npm next version"></a>
+  <a href="https://www.npmjs.com/package/@harapter/transport-jsonl-process"><img src="https://img.shields.io/npm/dm/%40harapter%2Ftransport-jsonl-process?style=flat-square" alt="npm downloads"></a>
+  <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
+  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
+</p>
+
+<!-- markdownlint-enable MD033 -->
 
 `@harapter/transport-jsonl-process` is a bounded strict-JSONL transport for
 Provider Adapters that communicate with a host-supplied harness process.
@@ -8,6 +27,14 @@ backpressure, local write waits, connection disposal, and explicit resource
 limits. It does not spawn or discover executables, correlate protocol requests,
 interpret Provider messages, or assign Harapter Session, Run, Event, error, or
 cancellation semantics.
+
+## Use this package when
+
+- a harness exchanges one JSON object per line without JSON-RPC correlation;
+- your Adapter owns the process protocol but needs safe framing, bounded queues,
+  serialized writes, and cleanup; or
+- malformed, oversized, or truncated input must fail closed without leaking the
+  original payload.
 
 ## Installation
 
@@ -75,7 +102,7 @@ contain sensitive data. The consuming Provider Adapter must validate and redact
 them before producing Harapter events, errors, diagnostics, logs, fixtures, or
 raw-channel observations.
 
-## Example
+## Quick start
 
 ```ts
 import { JsonlProcessTransport } from '@harapter/transport-jsonl-process';

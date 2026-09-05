@@ -52,6 +52,10 @@ import packages from `providers/`.
 
 ## Documentation
 
-Each implemented package owns a README describing purpose, public entrypoints,
-configuration, lifecycle, errors, limitations, and an example. Update the README
-and exported type documentation in the same change as their behavior.
+Each published package owns a synchronized README triad: `README.md` is English,
+`README.zh-CN.md` is Simplified Chinese, and `README.ja.md` is Japanese. Every
+variant links to its two siblings and describes the package purpose, when to use
+it, installation, a minimal example, public entrypoints, configuration,
+lifecycle, errors, and limitations. Keep canonical identifiers and code exact in
+every language. Package all three variants and update them together when public
+behavior changes.

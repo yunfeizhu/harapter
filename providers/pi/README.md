@@ -1,4 +1,23 @@
-# `@harapter/adapter-pi`
+<!-- markdownlint-disable MD033 MD041 -->
+
+<h1 align="center"><code>@harapter/adapter-pi</code></h1>
+
+<p align="center"><strong>Run Pi Agent's strict JSONL RPC mode through Harapter.</strong></p>
+
+<p align="center">
+  <a href="./README.md">English</a> · <a href="./README.zh-CN.md">简体中文</a> · <a href="./README.ja.md">日本語</a> · <a href="../../README.md">Harapter</a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@harapter/adapter-pi"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-pi/next?style=flat-square&amp;label=npm%20next" alt="npm next version"></a>
+  <a href="https://www.npmjs.com/package/@harapter/adapter-pi"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-pi?style=flat-square" alt="npm downloads"></a>
+  <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
+  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
+</p>
+
+<!-- markdownlint-enable MD033 -->
 
 `@harapter/adapter-pi` maps the official Pi Agent RPC mode to the portable
 Harapter lifecycle.
@@ -7,6 +26,14 @@ The host installs, configures, authenticates, and operates Pi Agent. Harapter
 starts only the exact adapter-owned command selected by the Profile. It does not
 install a Pi Runtime or SDK, select models, manage credentials, read Session
 files, or change host security policy.
+
+## Use this Adapter when
+
+- your host supplies the official Pi Agent executable in strict RPC mode;
+- you need one isolated process per Session with streamed Events, persisted
+  resume, and native abort; or
+- you want Pi-specific reads and UI interactions behind explicit native and
+  Provider-extension boundaries.
 
 ## Installation
 
