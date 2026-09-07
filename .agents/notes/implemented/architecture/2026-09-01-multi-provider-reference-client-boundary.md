@@ -20,7 +20,7 @@ part of the default repository test suite.
 
 The
 [multi-provider reference client](../../../../examples/multi-provider-client/README.md)
-has two explicit layers:
+has explicit entrypoints:
 
 - the default entrypoint imports only `@harapter/core`, registers unique
   Provider/Profile pairs, routes tasks by `profileId`, consumes Run streams
@@ -29,7 +29,14 @@ has two explicit layers:
 - the `codex-opencode` subpath constructs the current process and external
   HTTP/SSE reference combination without connecting either runtime. The host
   supplies commands, endpoints, isolated Workspaces, authentication, security
-  policy, and cleanup around real execution.
+  policy, and cleanup around real execution;
+- `session-workflow` composes persisted create/run, fresh-Client resume, a
+  guarded native history operation, child continuation, cancellation, and local
+  cleanup. It imports only Core and keeps opaque references in host outcomes;
+- `session-providers` constructs one to six inert Provider setups using the
+  released public APIs and binds each native history extension explicitly. The
+  command entrypoint executes a trusted host configuration sequentially and
+  awaits its optional resource disposer.
 
 The portable client validates Session ownership before resume traffic. It
 returns opaque Session references to the host but never renders them. Its
@@ -45,7 +52,35 @@ implemented packages with fixture, conformance, and compatibility evidence.
 Deterministic tests use two independently identified Fake Providers and do not
 count as live Provider evidence.
 
+The Session workflow uses Codex, DSH Gateway, Hermes, OpenClaw, OpenCode, and Pi
+0.2.0 contracts. Its native history metadata preserves Hermes parent retirement,
+Pi active-branch copying, and each Provider's history boundary. It reconnects
+before resume and obtains a new extension binding for the new Client. Portable
+`session.fork` remains unsupported; the example-local binding is not a new Core
+contract.
+
+DSH cancellation remains Session-wide and waits for the public `step/start`
+checkpoint. Its acceptance is recorded separately from the authoritative Run
+result. Other Providers use observed native Run cancellation. The event consumer
+keeps draining during cancellation acknowledgment, and request or observer
+failure closes the connection without claiming native cancellation. A completed
+source and child continuation are prerequisites for later steps. Missing
+cancellation support skips the third model request.
+
 ## Alternatives considered
+
+### Extend the one-shot concurrent runner into a persistent application
+
+Changing its existing close-after-task contract would mix independent concurrent
+tasks with a sequential history demonstration. A separate small application
+entrypoint makes the lifecycle visible without adding host storage or an agent
+loop to Core.
+
+### Hide native history differences behind one portable fork method
+
+Hermes retires the parent, Pi copies only an active branch, and DSH cancels a
+whole Session rather than one Run. Treating these operations as interchangeable
+would overstate portability. Explicit typed bindings preserve those differences.
 
 ### Use Qwen Code and OpenCode before the Qwen Adapter exists
 
@@ -94,3 +129,16 @@ observed mode while hiding `unsupported` and `unknown` operations.
 - Real execution may incur Provider cost and requires host-installed or
   host-operated runtimes. It is not run by default and does not expand either
   Adapter's declared compatibility range.
+
+- Session workflow JSON records omit even Profile names, native identifiers, and
+  opaque references. CLI errors are fixed text; trusted host configuration and
+  custom renderers remain responsible for their own output policy.
+- Host code owns the OpenClaw Gateway binding and its disposal. The example does
+  not build another Gateway transport or infer that it shares a store with ACP.
+- Up to three model calls per selected Provider can incur cost and leave native
+  history. Local cleanup does not delete that history, undo a retired Hermes
+  parent, stop external services, or prove uncertain native work stopped.
+- Focused tests exercise the real workflow, six guarded bindings, cancellation
+  races, safe rendering, and command cleanup with synthetic Providers. A public
+  npm 0.2.0 consumer build checks exports without Workspace source aliases.
+  These are application-composition evidence, not new live-runtime evidence.

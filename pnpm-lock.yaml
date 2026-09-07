@@ -56,9 +56,21 @@ importers:
       '@harapter/adapter-codex':
         specifier: workspace:*
         version: link:../../providers/codex
+      '@harapter/adapter-dsh':
+        specifier: workspace:*
+        version: link:../../providers/dsh
+      '@harapter/adapter-hermes':
+        specifier: workspace:*
+        version: link:../../providers/hermes
+      '@harapter/adapter-openclaw':
+        specifier: workspace:*
+        version: link:../../providers/openclaw
       '@harapter/adapter-opencode':
         specifier: workspace:*
         version: link:../../providers/opencode
+      '@harapter/adapter-pi':
+        specifier: workspace:*
+        version: link:../../providers/pi
       '@harapter/core':
         specifier: workspace:*
         version: link:../../packages/core
