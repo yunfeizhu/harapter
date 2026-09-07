@@ -20,6 +20,7 @@ import {
   validateProviderRuntimeBoundary,
   validateProviderRuntimePolicy,
   validateReleaseAutomation,
+  validateDependabotPolicy,
   validateToolchain,
   validateWorkspacePackageManifest,
 } from './lib/repository-policy.mjs';
@@ -2051,6 +2052,7 @@ assert.deepEqual(
   validateToolchain({
     nodeVersion: '24.19.0\n',
     packageJson: {
+      devDependencies: { '@types/node': '24.13.3' },
       engines: { node: '>=24' },
       packageManager: 'pnpm@11.23.0',
     },
@@ -2061,6 +2063,7 @@ assert.deepEqual(
   validateToolchain({
     nodeVersion: '22\n',
     packageJson: {
+      devDependencies: { '@types/node': '25.0.0' },
       engines: { node: '>=22' },
       packageManager: 'pnpm@11.1.1',
     },
@@ -2069,8 +2072,100 @@ assert.deepEqual(
     '.node-version must pin 24.19.0.',
     'package.json engines.node must be >=24.',
     'package.json must pin pnpm@11.23.0.',
+    'package.json devDependencies["@types/node"] must be an exact version on Node.js runtime major 24.',
   ],
 );
+for (const nodeTypesVersion of [
+  '^24.13.3',
+  '24.13.3 || 25.0.0',
+  '24.13.3 - 25.0.0',
+]) {
+  assert.deepEqual(
+    validateToolchain({
+      nodeVersion: '24.19.0\n',
+      packageJson: {
+        devDependencies: { '@types/node': nodeTypesVersion },
+        engines: { node: '>=24' },
+        packageManager: 'pnpm@11.23.0',
+      },
+    }),
+    [
+      'package.json devDependencies["@types/node"] must be an exact version on Node.js runtime major 24.',
+    ],
+  );
+}
+
+const validDependabotPolicy = `version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    ignore:
+      - dependency-name: '@types/node'
+        update-types:
+          - version-update:semver-major
+`;
+assert.deepEqual(validateDependabotPolicy(validDependabotPolicy), []);
+assert.deepEqual(
+  validateDependabotPolicy(`version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+`),
+  ['.github/dependabot.yml must ignore semver-major updates for @types/node.'],
+);
+assert.deepEqual(
+  validateDependabotPolicy(`version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+`),
+  [
+    '.github/dependabot.yml must define exactly one npm update for the repository root.',
+  ],
+);
+for (const invalidIgnore of [
+  `      - dependency-name: '@types/node'
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor`,
+  `      - dependency-name: '@types/node'
+        update-types:
+          - version-update:semver-major
+      - dependency-name: '@types/*'`,
+  `      - dependency-name: '@types/node'
+        update-types:
+          - version-update:semver-major
+      - dependency-name: '*'
+        versions:
+          - 24.x`,
+]) {
+  assert.deepEqual(
+    validateDependabotPolicy(`version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    ignore:
+${invalidIgnore}
+`),
+    [
+      '.github/dependabot.yml must ignore only semver-major updates that apply to @types/node.',
+    ],
+  );
+}
+const malformedDependabotFailures = validateDependabotPolicy(`version: 2
+updates:
+  secret-value: must-not-appear-in-errors
+  - invalid
+`);
+assert.equal(malformedDependabotFailures.length, 1);
+assert.match(malformedDependabotFailures[0], /at line 4, column 3/u);
+assert.doesNotMatch(malformedDependabotFailures[0], /secret-value/u);
+
+const checkedDependabotPolicy = readFileSync(
+  resolve(repositoryRoot, '.github/dependabot.yml'),
+  'utf8',
+);
+assert.deepEqual(validateDependabotPolicy(checkedDependabotPolicy), []);
 
 const publicPackagePolicyFixture = {
   schemaVersion: 1,

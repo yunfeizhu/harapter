@@ -4,6 +4,7 @@ import { relative, resolve, sep } from 'node:path';
 import { JSON_SCHEMA, load } from 'js-yaml';
 
 const expectedNodeVersion = '24.19.0';
+const expectedNodeMajor = expectedNodeVersion.split('.')[0];
 const expectedNodeRange = '>=24';
 const expectedPackageManager = 'pnpm@11.23.0';
 
@@ -13,6 +14,13 @@ const forbiddenTextPatterns = [
 
 export function validateToolchain({ nodeVersion, packageJson }) {
   const failures = [];
+  const nodeTypesVersion = packageJson.devDependencies?.['@types/node'];
+  const exactNodeTypesVersion =
+    typeof nodeTypesVersion === 'string'
+      ? nodeTypesVersion.match(
+          /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/u,
+        )
+      : null;
 
   if (nodeVersion.trim() !== expectedNodeVersion) {
     failures.push(`.node-version must pin ${expectedNodeVersion}.`);
@@ -23,8 +31,83 @@ export function validateToolchain({ nodeVersion, packageJson }) {
   if (packageJson.packageManager !== expectedPackageManager) {
     failures.push(`package.json must pin ${expectedPackageManager}.`);
   }
+  if (
+    exactNodeTypesVersion === null ||
+    exactNodeTypesVersion[1] !== expectedNodeMajor
+  ) {
+    failures.push(
+      `package.json devDependencies["@types/node"] must be an exact version on Node.js runtime major ${expectedNodeMajor}.`,
+    );
+  }
 
   return failures;
+}
+
+export function validateDependabotPolicy(dependabot) {
+  let parsed;
+  try {
+    parsed = load(dependabot, { schema: JSON_SCHEMA });
+  } catch (error) {
+    const location =
+      Number.isInteger(error?.mark?.line) &&
+      Number.isInteger(error?.mark?.column)
+        ? ` at line ${String(error.mark.line + 1)}, column ${String(error.mark.column + 1)}`
+        : '';
+    return [`Invalid YAML in .github/dependabot.yml${location}.`];
+  }
+
+  if (!isMapping(parsed) || !Array.isArray(parsed.updates)) {
+    return ['.github/dependabot.yml must define updates as a sequence.'];
+  }
+
+  const npmRootUpdates = parsed.updates.filter(
+    (entry) =>
+      isMapping(entry) &&
+      entry['package-ecosystem'] === 'npm' &&
+      entry.directory === '/',
+  );
+  if (npmRootUpdates.length !== 1) {
+    return [
+      '.github/dependabot.yml must define exactly one npm update for the repository root.',
+    ];
+  }
+
+  const ignoreEntries = npmRootUpdates[0].ignore;
+  const applicableNodeTypesIgnores = Array.isArray(ignoreEntries)
+    ? ignoreEntries.filter(
+        (entry) =>
+          isMapping(entry) &&
+          typeof entry['dependency-name'] === 'string' &&
+          matchesDependabotDependencyName(
+            entry['dependency-name'],
+            '@types/node',
+          ),
+      )
+    : [];
+  if (
+    !applicableNodeTypesIgnores.some(
+      (entry) => entry['dependency-name'] === '@types/node',
+    )
+  ) {
+    return [
+      '.github/dependabot.yml must ignore semver-major updates for @types/node.',
+    ];
+  }
+  if (
+    applicableNodeTypesIgnores.some(
+      (entry) =>
+        Object.hasOwn(entry, 'versions') ||
+        !Array.isArray(entry['update-types']) ||
+        entry['update-types'].length !== 1 ||
+        entry['update-types'][0] !== 'version-update:semver-major',
+    )
+  ) {
+    return [
+      '.github/dependabot.yml must ignore only semver-major updates that apply to @types/node.',
+    ];
+  }
+
+  return [];
 }
 
 export function validateReleaseAutomation({
@@ -325,6 +408,14 @@ function matchesRuntimeFamily(reference, familyPrefix) {
     normalized.startsWith(`${familyPrefix}@`) ||
     normalized.startsWith(`${familyPrefix}-`)
   );
+}
+
+function matchesDependabotDependencyName(pattern, dependencyName) {
+  const expression = pattern
+    .split('*')
+    .map((part) => part.replace(/[\\^$.*+?()[\]{}|]/gu, '\\$&'))
+    .join('.*');
+  return new RegExp(`^${expression}$`, 'u').test(dependencyName);
 }
 
 function isMapping(value) {

@@ -9,6 +9,7 @@ import {
   validateReleaseAutomation,
   validateProviderRuntimeBoundary,
   validateProviderRuntimePolicy,
+  validateDependabotPolicy,
   validateToolchain,
   validateWorkspacePackageManifest,
 } from './lib/repository-policy.mjs';
@@ -134,6 +135,11 @@ failures.push(
     nodeVersion: readFileSync(resolve(repositoryRoot, '.node-version'), 'utf8'),
     packageJson,
   }),
+);
+failures.push(
+  ...validateDependabotPolicy(
+    readFileSync(resolve(repositoryRoot, '.github/dependabot.yml'), 'utf8'),
+  ),
 );
 if (providerRuntimePolicyFailures.length === 0) {
   failures.push(
