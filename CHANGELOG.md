@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0](https://github.com/yunfeizhu/harapter/compare/harapter-v0.1.3...harapter-v0.2.0) (2026-09-07)
+
+
+### Features
+
+* **dsh:** add Gateway Runtime session integration ([#119](https://github.com/yunfeizhu/harapter/issues/119)) ([768d5a1](https://github.com/yunfeizhu/harapter/commit/768d5a15c992fe3687c03123900df50ba92a54c8))
+* **providers:** add native session history operations ([#121](https://github.com/yunfeizhu/harapter/issues/121)) ([6c1d191](https://github.com/yunfeizhu/harapter/commit/6c1d1913b5131a3b5905c0515a7a799a358367a4))
+
 ## [0.1.3](https://github.com/yunfeizhu/harapter/compare/harapter-v0.1.2...harapter-v0.1.3) (2026-09-07)
 
 
