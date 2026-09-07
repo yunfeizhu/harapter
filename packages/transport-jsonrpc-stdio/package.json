@@ -1,6 +1,6 @@
 {
   "name": "@harapter/transport-jsonrpc-stdio",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Bounded bidirectional JSONL RPC transport for Harapter providers.",
   "keywords": [
     "agent",

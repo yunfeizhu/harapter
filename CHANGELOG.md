@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3](https://github.com/yunfeizhu/harapter/compare/harapter-v0.1.2...harapter-v0.1.3) (2026-09-07)
+
+
+### Bug Fixes
+
+* **release:** separate preparation and finalization ([#112](https://github.com/yunfeizhu/harapter/issues/112)) ([b9dc130](https://github.com/yunfeizhu/harapter/commit/b9dc130400fe41f4f7c02516aae6d0a8021e5dda))
+* **release:** use the default npm channel and link packages ([#116](https://github.com/yunfeizhu/harapter/issues/116)) ([218012c](https://github.com/yunfeizhu/harapter/commit/218012c5cf9a5b47644c09ded61d7a16d1f0dd64))
+
 ## [0.1.2](https://github.com/yunfeizhu/harapter/compare/harapter-v0.1.1...harapter-v0.1.2) (2026-09-07)
 
 
