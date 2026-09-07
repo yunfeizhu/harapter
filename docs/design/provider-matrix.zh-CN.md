@@ -149,6 +149,12 @@ Cursor 当前公开接口适合任务执行和进度展示，但不应默认宣�
 
 ### 4.8 DeepSeek Harness
 
+现已实现宿主管理的 Session v2 Gateway
+endpoint 策略，提供原生恢复、最近完整前缀分叉和 Session 范围取消；portable Run
+cancellation 仍不支持。具体配置、证据和边界由
+[DSH Adapter 文档](../../providers/dsh/README.zh-CN.md#gateway-endpoint-策略)
+维护。以下约束描述 SDK process 策略。
+
 首选官方 SDK 的 stdio
 JSON-RPC 接口。Adapter 连接宿主提供的 Runtime 命令和配置，不把 DSH
 SDK 或 Runtime 包加入默认 Workspace 依赖、不创建 Cordis 应用，也不复制 DSH Agent

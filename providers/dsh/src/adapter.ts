@@ -2,6 +2,8 @@ import { spawn, type ChildProcessByStdio } from 'node:child_process';
 import { resolve } from 'node:path';
 import type { Readable, Writable } from 'node:stream';
 import { pathToFileURL } from 'node:url';
+import { connectDshGateway } from './gateway-adapter.js';
+import type { DshProviderFactoryOptions } from './gateway-types.js';
 import {
   ExtensionRegistry,
   HarnessError,
@@ -61,10 +63,10 @@ import {
 
 const descriptor: ProviderDescriptor = {
   providerId: DSH_PROVIDER_ID,
-  displayName: 'DeepSeek Harness SDK Runtime',
-  connectionKinds: ['process'],
+  displayName: 'DeepSeek Harness',
+  connectionKinds: ['process', 'endpoint'],
   documentationUrl:
-    'https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/sdk',
+    'https://github.com/yunfeizhu/harapter/tree/main/providers/dsh',
 };
 
 const defaultMaxRunEvents = 128;
@@ -129,14 +131,19 @@ type PendingRunNotification =
   | { readonly kind: 'status'; readonly status: 'idle' | 'running' }
   | { readonly kind: 'raw'; readonly event: DshRawEvent };
 
-/** Create a fresh DeepSeek Harness SDK Runtime Adapter factory. */
-export function createDshProviderFactory(): ProviderAdapterFactory {
+/** Create a fresh DeepSeek Harness SDK process and Gateway Adapter factory. */
+export function createDshProviderFactory(
+  options: DshProviderFactoryOptions = {},
+): ProviderAdapterFactory {
   return {
     descriptor: () => ({
       ...descriptor,
       connectionKinds: [...descriptor.connectionKinds],
     }),
-    connect: async (profile) => connectDsh(profile),
+    connect: async (profile) =>
+      profile.connection.kind === 'endpoint'
+        ? connectDshGateway(profile, options)
+        : connectDsh(profile),
   };
 }
 

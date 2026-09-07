@@ -1,0 +1,13 @@
+{
+  "fixtureFormatVersion": 1,
+  "providerId": "deepseek.harness",
+  "interface": "DSH API Gateway HTTP and Remote mux, Session format v2",
+  "upstreamEvidence": {
+    "repository": "https://github.com/deepseek-ai/deepseek-harness",
+    "commit": "d347e703908d0406b7a7ef80e3a0e594d86b2215",
+    "sourcePackage": "@deepseek-ai/dsh-api-session-controller",
+    "sourcePackageVersion": "0.1.3-alpha.1"
+  },
+  "captureMethod": "Synthetic Session v2 events authored from the pinned official Session, Inbox, and Session Controller contracts; tests supply synthetic RPC and stream envelopes. No live capture is claimed.",
+  "redactionMethod": "Every message, identifier, path, timestamp, model, and accounting value is synthetic. Request placeholders are replaced only with test-generated identifiers. No credentials or provider traffic are captured."
+}

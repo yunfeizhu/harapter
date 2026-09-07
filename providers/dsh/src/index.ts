@@ -12,3 +12,11 @@ export {
   dshCompatibilityIdentity,
   type DshRawEvent,
 } from './protocol.js';
+export {
+  DSH_GATEWAY_PROTOCOL,
+  DSH_GATEWAY_SESSION_EXTENSION,
+  type DshGatewayProfileOptions,
+  type DshGatewaySessions,
+  type DshGatewayNativeClient,
+  type DshProviderFactoryOptions,
+} from './gateway-types.js';
