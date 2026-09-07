@@ -3,6 +3,14 @@ name: Release Please
 on:
   workflow_dispatch:
     inputs:
+      operation:
+        description: Prepare a release PR or finalize its merged release
+        required: true
+        type: choice
+        options:
+          - prepare
+          - finalize
+        default: prepare
       resume_release_tag:
         description: Existing Release Please draft tag to finalize
         required: false
@@ -38,6 +46,16 @@ jobs:
       issues: write
       pull-requests: write
     steps:
+      - name: Validate release operation
+        env:
+          RELEASE_OPERATION: ${{ inputs.operation }}
+          RESUME_RELEASE_TAG: ${{ inputs.resume_release_tag }}
+        run: |
+          [[ "$RELEASE_OPERATION" =~ ^(prepare|finalize)$ ]]
+          if [[ -n "$RESUME_RELEASE_TAG" ]]; then
+            test "$RELEASE_OPERATION" = 'finalize'
+          fi
+
       - name: Run Release Please
         id: release
         if: inputs.resume_release_tag == ''
@@ -46,6 +64,25 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
           target-branch: main
+          skip-github-release: ${{ inputs.operation == 'prepare' }}
+          skip-github-pull-request: ${{ inputs.operation == 'finalize' }}
+
+      - name: Verify Release Please outcome
+        if: inputs.resume_release_tag == ''
+        env:
+          RELEASE_CREATED:
+            ${{ steps.release.outputs.release_created || 'false' }}
+          RELEASE_OPERATION: ${{ inputs.operation }}
+          PRS_CREATED: ${{ steps.release.outputs.prs_created || 'false' }}
+        run: |
+          [[ "$RELEASE_CREATED" =~ ^(true|false)$ ]]
+          [[ "$PRS_CREATED" =~ ^(true|false)$ ]]
+          if [[ "$RELEASE_OPERATION" = 'prepare' ]]; then
+            test "$RELEASE_CREATED" = 'false'
+          else
+            test "$RELEASE_CREATED" = 'true'
+            test "$PRS_CREATED" = 'false'
+          fi
 
       - name: Resolve existing Release Please draft
         id: resume

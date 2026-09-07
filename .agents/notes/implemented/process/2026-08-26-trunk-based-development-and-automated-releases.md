@@ -51,22 +51,26 @@ portable contracts and provider adapters. Feature commits on `main` do not
 automatically create a release pull request. After a maintainer approves the
 first usable pre-alpha milestone, they explicitly enable Actions-created pull
 requests and dispatch the reviewed Release Please workflow from `main` to
-prepare the release pull request. After manually merging that pull request, they
-dispatch the workflow from `main` a second time. Release Please creates a draft
-Release, and an isolated finalizer builds and verifies its assets before
-publication creates the immutable tag. The release job rejects non-`main` refs,
-and the CI dispatch rejects a branch head that differs from the queried pull
-request head. Enabling an automatic `main` trigger is a separate reviewed
-repository-policy change. The first approved pre-alpha release is `0.1.0`.
-Release Please owns its generated changelog formatting and retains its default
-visible commit types. A user-visible addition or removal uses `feat`, `fix`, or
-a breaking-change marker; `refactor` is reserved for behavior-preserving work
-because making a normally hidden type visible can create an otherwise unintended
-patch release. Markdown and link validation remain in force, and repository
-metadata accepts both observed GitHub Actions bot login forms. The generated
-root `CHANGELOG.md` accepts Release Please's consecutive blank lines while every
-other Markdown file retains the standard blank-line rule, and its list markers
-follow the generator's asterisk style.
+prepare the release pull request with the `prepare` operation. After manually
+merging that pull request, they dispatch the workflow from `main` with the
+`finalize` operation. Preparation skips GitHub Release creation, while
+finalization skips release pull request creation and produces the draft Release
+for the isolated finalizer. This separation prevents a draft from being omitted
+from Release Please's published-release search while the same run constructs a
+duplicate next-version pull request. The finalizer builds and verifies every
+asset before publication creates the immutable tag. The release job rejects
+non-`main` refs, and the CI dispatch rejects a branch head that differs from the
+queried pull request head. Enabling an automatic `main` trigger is a separate
+reviewed repository-policy change. The first approved pre-alpha release is
+`0.1.0`. Release Please owns its generated changelog formatting and retains its
+default visible commit types. A user-visible addition or removal uses `feat`,
+`fix`, or a breaking-change marker; `refactor` is reserved for
+behavior-preserving work because making a normally hidden type visible can
+create an otherwise unintended patch release. Markdown and link validation
+remain in force, and repository metadata accepts both observed GitHub Actions
+bot login forms. The generated root `CHANGELOG.md` accepts Release Please's
+consecutive blank lines while every other Markdown file retains the standard
+blank-line rule, and its list markers follow the generator's asterisk style.
 
 Public Core, conformance, transport, and Provider Adapter packages use a single
 synchronized version before 1.0. The Workspace root and examples remain private.
@@ -160,6 +164,16 @@ ready. Keeping the workflow manual during initial development avoids presenting
 an incomplete foundation as a release while preserving the commit history that
 Release Please will evaluate at activation.
 
+### Create a Release and the next release pull request in one invocation
+
+Release Please normally attempts both operations in one invocation. A draft
+Release has no published tag yet, so the subsequent release search can miss the
+new version and construct a duplicate proposal from commits already released.
+The upstream action tracks this behavior in
+[googleapis/release-please-action#1206](https://github.com/googleapis/release-please-action/pull/1206),
+but Harapter keeps the two manual operations independent rather than depending
+on an unmerged upstream change.
+
 ### Version every public package independently
 
 Independent versions reduce updates for packages that did not change, but they
@@ -233,19 +247,22 @@ determines the eventual squash commit and release impact, while the metadata
 check rejects tool-specific or mismatched branch prefixes. Early feature work
 accumulates without creating release pull requests until a maintainer explicitly
 activates the first pre-alpha release. Release preparation and GitHub
-publication use two explicit workflow dispatches around the manual release pull
-request merge. npm publication adds a third, separately authorized dispatch from
-the immutable GitHub Release tag. Public packages share the generated version
-and Harapter publishes them with `next`; npm's initial `latest` tag remains
-explicitly outside the stable-channel decision. The publisher uses one bounded
-shared availability window for independent npm scans. The first publication has
-a documented one-time token bootstrap, while subsequent releases require OIDC.
-Maintainers preserve `Repository checks`, `Pull request metadata`, and
-`Dependency review` as required status checks. Local delivery retains one
-independent model review and test rerun while its termination rule prevents P2
-churn. Pull requests no longer wait for a second model review or permit
-automated review-comment repair. Eligible contributors explicitly enable native
-auto-merge, and GitHub waits for the deterministic requirements and resolved
-conversations. The migration first removes the synthetic `AI code review`
-required context while preserving strict updates and the three deterministic
-contexts, then deletes its workflow producer.
+publication use explicit `prepare` and `finalize` workflow dispatches around the
+manual release pull request merge. Their outcome checks reject a preparation
+that creates a Release or a finalization that creates a pull request. Draft
+recovery is accepted only with `finalize`. npm publication adds a third,
+separately authorized dispatch from the immutable GitHub Release tag. Public
+packages share the generated version and Harapter publishes them with `next`;
+npm's initial `latest` tag remains explicitly outside the stable-channel
+decision. The publisher uses one bounded shared availability window for
+independent npm scans. The first publication has a documented one-time token
+bootstrap, while subsequent releases require OIDC. Maintainers preserve
+`Repository checks`, `Pull request metadata`, and `Dependency review` as
+required status checks. Local delivery retains one independent model review and
+test rerun while its termination rule prevents P2 churn. Pull requests no longer
+wait for a second model review or permit automated review-comment repair.
+Eligible contributors explicitly enable native auto-merge, and GitHub waits for
+the deterministic requirements and resolved conversations. The migration first
+removes the synthetic `AI code review` required context while preserving strict
+updates and the three deterministic contexts, then deletes its workflow
+producer.

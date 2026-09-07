@@ -244,13 +244,12 @@ do not start Release Please; a maintainer enables Actions-created pull requests
 and manually dispatches the workflow. An automatic `main` trigger requires a
 separate repository-policy change.
 
-Maintainers merge the release pull request, then dispatch the workflow from
-`main` again. The first dispatch prepares versions and the changelog. The second
-creates a draft Release; an isolated finalizer checks the SHA, builds 12
-tarballs, an SPDX SBOM, and SHA-256 checksums, verifies the uploaded digests,
-then publishes the immutable Release. Do not create those artifacts manually.
-See [RELEASING.md](../RELEASING.md) for the activation and verification
-procedure.
+Maintainers dispatch `operation=prepare` from `main`, manually merge its release
+pull request, then dispatch `operation=finalize`. Preparation changes only the
+pull request; finalization creates only the draft Release. An isolated finalizer
+checks the SHA, builds 12 tarballs, an SPDX SBOM, and SHA-256 checksums,
+verifies their digests, then publishes the immutable Release. Do not create
+these artifacts manually. See [RELEASING.md](../RELEASING.md) for the procedure.
 
 Public packages share one pre-1.0 version and publish under `next`. npm's
 initial `latest` is not a stable Harapter channel and is not advanced during

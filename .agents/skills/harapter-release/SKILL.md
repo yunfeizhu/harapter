@@ -17,8 +17,8 @@ user's explicit authorization.
 
 1. Confirm the user explicitly authorized release preparation. Enable the
    repository setting for Actions-created pull requests only with authorization,
-   then dispatch `release-please.yml` with `--ref main`. Never dispatch the
-   write-capable workflow from another ref.
+   then dispatch `release-please.yml` with `--ref main -f operation=prepare`.
+   Never dispatch the write-capable workflow from another ref.
 2. Confirm the pull request is owned by Release Please and targets `main`.
 3. Inspect every releasable squash commit since the previous tag. Verify that
    `feat`, `fix`, and breaking-change markers produce the intended SemVer bump.
@@ -77,8 +77,8 @@ set.
 After explicit authorization, merge the release pull request through the normal
 protected flow. Because the workflow is manual-only during initial development,
 obtain authorization for publication and dispatch `release-please.yml` with
-`--ref main` a second time. Wait for both jobs, then verify the immutable tag,
-GitHub Release, 14 explicit assets, changelog, and target commit.
+`--ref main -f operation=finalize`. Wait for both jobs, then verify the
+immutable tag, GitHub Release, 14 explicit assets, changelog, and target commit.
 
 npm publication is a separate irreversible action and requires explicit
 authorization immediately before dispatch. Run `publish-npm.yml` from the exact
@@ -96,15 +96,16 @@ verifiable; inspect held packages before rerunning the immutable release.
 If a workflow fails, inspect existing tags, releases, assets, and job logs.
 Retry an operational finalizer failure in the same workflow run. If recovery
 requires a workflow fix, dispatch `release-please.yml` from `main` with
-`resume_release_tag` set to the exact existing Release Please draft tag; the
-workflow verifies ancestry and resumes that draft SHA. An immutable Release is
-only reverified. Recover partial npm publication by rerunning that job, or after
-reauthorization by dispatching the same immutable tag again. The publisher skips
-an existing package only after matching SHA-512, `next`, verified attestations,
-repository, workflow, builder, commit, and tarball. Stop on any conflict. Never
-delete, move, or recreate a published tag, replace a package version, or
-unpublish as an ordinary recovery step; deprecate a bad version and release a
-fix. Stop for an incident decision if immutable state conflicts.
+`operation=finalize` and `resume_release_tag` set to the exact existing Release
+Please draft tag; the workflow verifies ancestry and resumes that draft SHA. An
+immutable Release is only reverified. Recover partial npm publication by
+rerunning that job, or after reauthorization by dispatching the same immutable
+tag again. The publisher skips an existing package only after matching SHA-512,
+`next`, verified attestations, repository, workflow, builder, commit, and
+tarball. Stop on any conflict. Never delete, move, or recreate a published tag,
+replace a package version, or unpublish as an ordinary recovery step; deprecate
+a bad version and release a fix. Stop for an incident decision if immutable
+state conflicts.
 
 Read [RELEASING.md](../../../RELEASING.md) before the one-time bootstrap or any
 recovery operation.
