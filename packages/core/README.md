@@ -9,12 +9,11 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore/next?style=flat-square&amp;label=npm%20next" alt="npm next version"></a>
+  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore?style=flat-square&amp;label=npm" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/dm/%40harapter%2Fcore?style=flat-square" alt="npm downloads"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
-  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
 </p>
 
 <!-- markdownlint-enable MD033 -->
@@ -34,13 +33,13 @@ Provider identity.
 ## Installation
 
 ```bash
-pnpm add @harapter/core@next
+pnpm add @harapter/core
 ```
 
 The Provider-free example below also uses the deterministic test package:
 
 ```bash
-pnpm add -D @harapter/conformance@next
+pnpm add -D @harapter/conformance
 ```
 
 ## Public entrypoints
@@ -149,8 +148,26 @@ Registry, Client, Session, Run, Event, and Result flow stays the same.
   buffering, redaction, and terminal mapping.
 - Interaction, artifact, usage, resume, cancellation, and other optional
   behavior depend on the active Capability Manifest.
-- The public API remains pre-alpha. Published packages use the opt-in `next`
-  dist-tag and may contain breaking changes before 1.0.
+- Public packages use the default npm `latest` channel. The 0.x API may contain
+  breaking changes before 1.0.
 
 The complete target contract remains in the
 [API design](../../docs/design/api-design.md).
+
+## Related packages
+
+[All packages](../../README.md#packages-on-npm)
+
+| Package                                                                                                | Documentation                                 |
+| ------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [Guide](../transport-jsonrpc-stdio/README.md) |
+| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [Guide](../transport-jsonl-process/README.md) |
+| [`@harapter/transport-http-sse`](https://www.npmjs.com/package/@harapter/transport-http-sse)           | [Guide](../transport-http-sse/README.md)      |
+| [`@harapter/transport-acp`](https://www.npmjs.com/package/@harapter/transport-acp)                     | [Guide](../transport-acp/README.md)           |
+| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)                         | [Guide](../conformance/README.md)             |
+| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)                     | [Guide](../../providers/codex/README.md)      |
+| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)                         | [Guide](../../providers/dsh/README.md)        |
+| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)                   | [Guide](../../providers/hermes/README.md)     |
+| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw)               | [Guide](../../providers/openclaw/README.md)   |
+| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode)               | [Guide](../../providers/opencode/README.md)   |
+| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)                           | [Guide](../../providers/pi/README.md)         |

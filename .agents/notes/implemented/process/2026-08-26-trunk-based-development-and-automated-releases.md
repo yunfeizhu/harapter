@@ -74,19 +74,19 @@ blank-line rule, and its list markers follow the generator's asterisk style.
 
 Public Core, conformance, transport, and Provider Adapter packages use a single
 synchronized version before 1.0. The Workspace root and examples remain private.
-Harapter submits pre-alpha packages with the npm `next` dist-tag so consumers
-select the pre-alpha channel explicitly. The public registry also creates
-`latest` for a package's first version when publication selects another tag.
-Harapter treats that initial tag as registry bootstrap behavior rather than
-stable-channel approval and does not advance it during later pre-alpha
-publication. Registry publication is a separate manual workflow after an
-immutable GitHub Release exists. The workflow requires GitHub's
-immutable-release setting, accepts Release Please's `harapter-vX.Y.Z` tag
-format, requires that tag as its dispatch ref, resolves it exactly to the event
-commit, downloads the Release tarballs, reproduces each one, submits those exact
-files in dependency order with provenance, and uses a protected GitHub
-environment. It uses npm trusted publishing through GitHub Actions OIDC after
-bootstrap and stores no long-lived registry token.
+Harapter publishes public packages under npm `latest` so an ordinary install
+selects the current release. Root and package READMEs omit the pre-alpha badge,
+use suffix-free installation commands, and provide explicit npm package links
+alongside relative repository documentation links. The 0.x API may still change
+before 1.0; channel selection does not expand Provider compatibility claims.
+Registry publication is a separate manual workflow after an immutable GitHub
+Release exists. The workflow requires GitHub's immutable-release setting,
+accepts Release Please's `harapter-vX.Y.Z` tag format, requires that tag as its
+dispatch ref, resolves it exactly to the event commit, downloads the Release
+tarballs, reproduces each one, submits those exact files in dependency order
+with provenance, and uses a protected GitHub environment. It uses npm trusted
+publishing through GitHub Actions OIDC after bootstrap and stores no long-lived
+registry token.
 
 npm scans accepted packages before making their version metadata and contents
 available. Publication first uses a bounded availability window for versions
@@ -96,7 +96,7 @@ batch through a second bounded window. Each registry query receives a shorter
 timeout within its remaining monotonic deadline. The workflow timeout covers
 both windows plus evidence, packaging, provenance, and cleanup. Registry
 visibility does not establish success by itself: the publisher still requires
-the immutable SHA-512, `next`, and provenance checks for every package.
+the immutable SHA-512, `latest`, and provenance checks for every package.
 
 The Release finalizer runs repository evidence at the candidate SHA, packages
 all 12 public workspaces, creates a deterministic SPDX document bound to the
@@ -119,7 +119,7 @@ publication is `0.1.1` and permits one short-lived granular bootstrap token
 scoped to the protected environment. That token is revoked and removed after
 package creation and trusted-publisher setup. Later releases fail closed if OIDC
 is unavailable; the bootstrap path cannot publish another version. Registry
-recovery requires matching SHA-512 integrity, the `next` dist-tag,
+recovery requires matching SHA-512 integrity, the release policy dist-tag,
 cryptographically verified attestation bundles, and provenance that identifies
 the expected repository, workflow, builder, commit, and tarball. It stops on any
 mismatch. A retry uses the same immutable tag, so a later `main` commit cannot
@@ -182,6 +182,13 @@ to appear current. A synchronized train makes the supported source revision and
 dependency graph explicit while the contracts are still changing. Independent
 versioning can be reconsidered after stable package boundaries and real consumer
 upgrade data exist.
+
+### Keep current releases on an opt-in npm channel
+
+The previous `next` channel required consumers to select a tag while ordinary
+installs stayed on the initial release. The default `latest` channel makes the
+current reviewed release discoverable with normal npm installation. An explicit
+0.x API notice and Provider evidence boundaries retain the actual limitations.
 
 ### Publish npm packages from every GitHub Release automatically
 
@@ -252,17 +259,16 @@ manual release pull request merge. Their outcome checks reject a preparation
 that creates a Release or a finalization that creates a pull request. Draft
 recovery is accepted only with `finalize`. npm publication adds a third,
 separately authorized dispatch from the immutable GitHub Release tag. Public
-packages share the generated version and Harapter publishes them with `next`;
-npm's initial `latest` tag remains explicitly outside the stable-channel
-decision. The publisher uses one bounded shared availability window for
-independent npm scans. The first publication has a documented one-time token
-bootstrap, while subsequent releases require OIDC. Maintainers preserve
-`Repository checks`, `Pull request metadata`, and `Dependency review` as
-required status checks. Local delivery retains one independent model review and
-test rerun while its termination rule prevents P2 churn. Pull requests no longer
-wait for a second model review or permit automated review-comment repair.
-Eligible contributors explicitly enable native auto-merge, and GitHub waits for
-the deterministic requirements and resolved conversations. The migration first
-removes the synthetic `AI code review` required context while preserving strict
-updates and the three deterministic contexts, then deletes its workflow
-producer.
+packages share the generated version and Harapter publishes them with `latest`
+for ordinary npm installation. The publisher uses one bounded shared
+availability window for independent npm scans. The first publication has a
+documented one-time token bootstrap, while subsequent releases require OIDC.
+Maintainers preserve `Repository checks`, `Pull request metadata`, and
+`Dependency review` as required status checks. Local delivery retains one
+independent model review and test rerun while its termination rule prevents P2
+churn. Pull requests no longer wait for a second model review or permit
+automated review-comment repair. Eligible contributors explicitly enable native
+auto-merge, and GitHub waits for the deterministic requirements and resolved
+conversations. The migration first removes the synthetic `AI code review`
+required context while preserving strict updates and the three deterministic
+contexts, then deletes its workflow producer.

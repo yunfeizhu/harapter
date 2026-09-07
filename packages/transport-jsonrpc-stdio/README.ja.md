@@ -9,12 +9,11 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio"><img src="https://img.shields.io/npm/v/%40harapter%2Ftransport-jsonrpc-stdio/next?style=flat-square&amp;label=npm%20next" alt="npm next バージョン"></a>
+  <a href="https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio"><img src="https://img.shields.io/npm/v/%40harapter%2Ftransport-jsonrpc-stdio?style=flat-square&amp;label=npm" alt="npm バージョン"></a>
   <a href="https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio"><img src="https://img.shields.io/npm/dm/%40harapter%2Ftransport-jsonrpc-stdio?style=flat-square" alt="npm ダウンロード数"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI ステータス"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 以上">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 ライセンス"></a>
-  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha ステータス">
 </p>
 
 <!-- markdownlint-enable MD033 -->
@@ -27,7 +26,7 @@ method を解釈せず、Harapter の Session、Run、終端結果を生成し�
 ## インストール
 
 ```bash
-pnpm add @harapter/transport-jsonrpc-stdio@next
+pnpm add @harapter/transport-jsonrpc-stdio
 ```
 
 ## クイックスタート
@@ -90,3 +89,15 @@ data なので、記録や mapping の前に Adapter が検証・redact しま�
 
 このパッケージは process manager、Provider Adapter、retry layer、Agent
 Loop ではありません。全設定と制限は[英語の詳細ドキュメント](./README.md)を参照してください。
+
+## 関連パッケージ
+
+[すべてのパッケージ](../../README.ja.md#npm-パッケージ一覧)
+
+| パッケージ                                                                                             | ドキュメント                                      |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                                       | [ガイド](../core/README.ja.md)                    |
+| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [ガイド](../transport-jsonl-process/README.ja.md) |
+| [`@harapter/transport-http-sse`](https://www.npmjs.com/package/@harapter/transport-http-sse)           | [ガイド](../transport-http-sse/README.ja.md)      |
+| [`@harapter/transport-acp`](https://www.npmjs.com/package/@harapter/transport-acp)                     | [ガイド](../transport-acp/README.ja.md)           |
+| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)                         | [ガイド](../conformance/README.ja.md)             |

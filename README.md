@@ -21,13 +21,12 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore/next?style=flat-square&amp;label=npm%20next" alt="npm next version"></a>
+  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore?style=flat-square&amp;label=npm" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/dm/%40harapter%2Fcore?style=flat-square" alt="npm downloads"></a>
   <a href="https://github.com/yunfeizhu/harapter/releases"><img src="https://img.shields.io/github/v/release/yunfeizhu/harapter?display_name=tag&amp;include_prereleases&amp;sort=semver&amp;style=flat-square&amp;label=release" alt="GitHub Release"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
-  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
 </p>
 
 <!-- markdownlint-enable MD033 -->
@@ -42,17 +41,34 @@ It is infrastructure between an application and its chosen runtimes—not a new
 agent loop. The host still selects, installs, authenticates, and secures every
 runtime it uses.
 
+## Packages on npm
+
+| Package                                                                                                | Documentation                                         |
+| ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                                       | [Guide](./packages/core/README.md)                    |
+| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [Guide](./packages/transport-jsonrpc-stdio/README.md) |
+| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [Guide](./packages/transport-jsonl-process/README.md) |
+| [`@harapter/transport-http-sse`](https://www.npmjs.com/package/@harapter/transport-http-sse)           | [Guide](./packages/transport-http-sse/README.md)      |
+| [`@harapter/transport-acp`](https://www.npmjs.com/package/@harapter/transport-acp)                     | [Guide](./packages/transport-acp/README.md)           |
+| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)                         | [Guide](./packages/conformance/README.md)             |
+| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)                     | [Guide](./providers/codex/README.md)                  |
+| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)                         | [Guide](./providers/dsh/README.md)                    |
+| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)                   | [Guide](./providers/hermes/README.md)                 |
+| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw)               | [Guide](./providers/openclaw/README.md)               |
+| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode)               | [Guide](./providers/opencode/README.md)               |
+| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)                           | [Guide](./providers/pi/README.md)                     |
+
 ## Quick start
 
 ### 1. Install the published packages
 
-Harapter requires Node.js 24 or newer. Published pre-alpha packages use the
-opt-in `next` dist-tag. Install Core and one Adapter from npm:
+Harapter requires Node.js 24 or newer. Install Core and one Adapter from npm
+using the default `latest` channel:
 
 ```bash
-npm install @harapter/core@next @harapter/adapter-codex@next
-# or: pnpm add @harapter/core@next @harapter/adapter-codex@next
-# or: yarn add @harapter/core@next @harapter/adapter-codex@next
+npm install @harapter/core @harapter/adapter-codex
+# or: pnpm add @harapter/core @harapter/adapter-codex
+# or: yarn add @harapter/core @harapter/adapter-codex
 ```
 
 Choose the Adapter that matches the host-operated Runtime:
@@ -290,13 +306,12 @@ points run only when the host supplies an explicit runtime configuration.
 
 ## Project status
 
-Harapter is **pre-alpha**. The TypeScript implementation is available from this
-Workspace, and public-release candidates have reviewed manifests, tarball
-consumer checks, provenance, publishing, and rollback controls. Released
-pre-alpha npm packages use one synchronized version and the opt-in `next`
-dist-tag; check npm or the GitHub Releases page for current registry
-availability. The Workspace root and examples remain private, and Harapter does
-not publish a PyPI or standalone CLI distribution.
+Harapter uses synchronized **0.x** package versions and the default npm `latest`
+channel. Public packages have reviewed manifests, tarball consumer checks,
+provenance, publishing, and rollback controls. The API may change before 1.0;
+check npm or GitHub Releases for the currently published version. The Workspace
+root and examples remain private, and Harapter does not publish a PyPI or
+standalone CLI distribution.
 
 Current stabilization work focuses on consumer feedback, host-operated live
 evidence for experimental Adapters, and release readiness. Portable wire
@@ -346,7 +361,7 @@ deterministic implementation evidence.
 ### How are packages versioned and published?
 
 Public Core, conformance, transport, and Adapter packages move together on one
-pre-1.0 version and publish under `next`. The Workspace root and examples stay
+pre-1.0 version and publish under `latest`. The Workspace root and examples stay
 private. Release Please publishes 12 verified tarballs, an SPDX SBOM, and
 SHA-256 checksums in each immutable GitHub Release; a separately authorized
 workflow publishes those exact tarballs to npm with provenance.

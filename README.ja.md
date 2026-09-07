@@ -21,13 +21,12 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore/next?style=flat-square&amp;label=npm%20next" alt="npm next バージョン"></a>
+  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore?style=flat-square&amp;label=npm" alt="npm バージョン"></a>
   <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/dm/%40harapter%2Fcore?style=flat-square" alt="npm ダウンロード数"></a>
   <a href="https://github.com/yunfeizhu/harapter/releases"><img src="https://img.shields.io/github/v/release/yunfeizhu/harapter?display_name=tag&amp;include_prereleases&amp;sort=semver&amp;style=flat-square&amp;label=release" alt="GitHub Release"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI ステータス"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 以降">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 ライセンス"></a>
-  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha ステータス">
 </p>
 
 <!-- markdownlint-enable MD033 -->
@@ -39,17 +38,34 @@ Adapter が公式 SDK やマシンプロトコルへ変換します。
 これはアプリケーションと選択した Runtime の間に置く基盤であり、新しい Agent
 Loop ではありません。各 Runtime の選択、インストール、認証、セキュリティは引き続きホストが管理します。
 
+## npm パッケージ一覧
+
+| パッケージ                                                                                             | ドキュメント                                              |
+| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                                       | [ガイド](./packages/core/README.ja.md)                    |
+| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [ガイド](./packages/transport-jsonrpc-stdio/README.ja.md) |
+| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [ガイド](./packages/transport-jsonl-process/README.ja.md) |
+| [`@harapter/transport-http-sse`](https://www.npmjs.com/package/@harapter/transport-http-sse)           | [ガイド](./packages/transport-http-sse/README.ja.md)      |
+| [`@harapter/transport-acp`](https://www.npmjs.com/package/@harapter/transport-acp)                     | [ガイド](./packages/transport-acp/README.ja.md)           |
+| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)                         | [ガイド](./packages/conformance/README.ja.md)             |
+| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)                     | [ガイド](./providers/codex/README.ja.md)                  |
+| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)                         | [ガイド](./providers/dsh/README.ja.md)                    |
+| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)                   | [ガイド](./providers/hermes/README.ja.md)                 |
+| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw)               | [ガイド](./providers/openclaw/README.ja.md)               |
+| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode)               | [ガイド](./providers/opencode/README.ja.md)               |
+| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)                           | [ガイド](./providers/pi/README.ja.md)                     |
+
 ## クイックスタート
 
 ### 1. 公開済み Package をインストールする
 
-Harapter は Node.js 24 以降を必要とします。Pre-alpha Package は明示的に選ぶ
-`next` dist-tag で公開されています。npm から Core と一つの Adapter を入れます。
+Harapter は Node.js 24 以降を必要とします。npm の既定の `latest`
+チャネルから Core と一つの Adapter をインストールします。
 
 ```bash
-npm install @harapter/core@next @harapter/adapter-codex@next
-# または: pnpm add @harapter/core@next @harapter/adapter-codex@next
-# または: yarn add @harapter/core@next @harapter/adapter-codex@next
+npm install @harapter/core @harapter/adapter-codex
+# または: pnpm add @harapter/core @harapter/adapter-codex
+# または: yarn add @harapter/core @harapter/adapter-codex
 ```
 
 ホストが運用する Runtime に合う Adapter を選びます。
@@ -279,12 +295,10 @@ Entry Point が実行されます。
 
 ## プロジェクトの状態
 
-Harapter は現在 **pre-alpha**
-です。TypeScript 実装はこの Workspace から利用でき、公開リリース候補にはレビュー済みの Manifest、Tarball
-Consumer Check、Provenance、Publishing、Rollback
-Control があります。公開済みの pre-alpha npm
-Package は、同期した 1 つの Version と明示的に選択する `next`
-dist-tag を使用します。現在の Registry Availability は npm または GitHub
+Harapter は同期した **0.x** パッケージバージョンと npm の既定の `latest`
+チャネルを使用します。公開パッケージにはレビュー済みの Manifest、Tarball
+Consumer
+Check、Provenance、公開・ロールバック制御があります。API は 1.0 以前に変更される可能性があります。現在の公開バージョンは npm または GitHub
 Releases で確認してください。Workspace
 Root と Example は Private のままで、PyPI または Standalone CLI は公開しません。
 
@@ -331,7 +345,7 @@ Coverage、共通 Conformance、明示的な互換性境界が含まれます。
 ### Package の Versioning と Publishing はどのように行われますか？
 
 Public Core、Conformance、Transport、Adapter
-Package は 1.0 より前は同じ Version で進み、`next` に公開されます。Workspace
+Package は 1.0 より前は同じ Version で進み、`latest` に公開されます。Workspace
 Root と Example は Private のままです。Release Please が Version と GitHub
 Release を管理し、各 Immutable Release に検証済みの 12 個の Tarball、SPDX
 SBOM、SHA-256

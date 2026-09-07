@@ -2169,7 +2169,7 @@ assert.deepEqual(validateDependabotPolicy(checkedDependabotPolicy), []);
 
 const publicPackagePolicyFixture = {
   schemaVersion: 1,
-  distTag: 'next',
+  distTag: 'latest',
   registryAvailability: {
     timeoutSeconds: 1_200,
     pollIntervalSeconds: 15,
@@ -2241,7 +2241,7 @@ assert.deepEqual(
 assert.deepEqual(
   validatePublicPackagePolicy({
     schemaVersion: 2,
-    distTag: 'latest',
+    distTag: 'next',
     registryAvailability: {
       timeoutSeconds: 899,
       pollIntervalSeconds: 61,
@@ -2257,7 +2257,7 @@ assert.deepEqual(
   [
     'scripts/public-packages.json contains unknown key unexpected.',
     'scripts/public-packages.json schemaVersion must be 1.',
-    'scripts/public-packages.json distTag must be next.',
+    'scripts/public-packages.json distTag must be latest.',
     'scripts/public-packages.json registryAvailability contains unknown key unexpected.',
     'scripts/public-packages.json registryAvailability.timeoutSeconds must be an integer from 900 through 3600.',
     'scripts/public-packages.json registryAvailability.pollIntervalSeconds must be an integer from 5 through 60.',
@@ -2418,7 +2418,7 @@ const validPublicManifest = {
     access: 'public',
     provenance: true,
     registry: 'https://registry.npmjs.org/',
-    tag: 'next',
+    tag: 'latest',
   },
   scripts: { build: 'tsc --build' },
 };
@@ -2429,6 +2429,19 @@ assert.deepEqual(
     packageJson: validPublicManifest,
   }),
   [],
+);
+assert.deepEqual(
+  validatePublicPackageManifest({
+    entry: publicPackagePolicyFixture.packages[0],
+    knownPackageNames: new Set(['@harapter/core']),
+    packageJson: {
+      ...validPublicManifest,
+      publishConfig: { ...validPublicManifest.publishConfig, tag: 'next' },
+    },
+  }),
+  [
+    'packages/core/package.json publishConfig must require public latest releases with npm provenance.',
+  ],
 );
 assert.deepEqual(
   validatePublicPackageManifest({
@@ -2695,8 +2708,8 @@ assert.deepEqual(
 );
 assert.deepEqual(
   validateRegistryDistTag({
-    distTag: 'next',
-    distTags: { next: '0.1.0' },
+    distTag: 'latest',
+    distTags: { latest: '0.1.0' },
     name: '@harapter/core',
     version: '0.1.0',
   }),
@@ -2704,12 +2717,12 @@ assert.deepEqual(
 );
 assert.deepEqual(
   validateRegistryDistTag({
-    distTag: 'next',
-    distTags: { next: '0.2.0' },
+    distTag: 'latest',
+    distTags: { latest: '0.2.0', next: '0.1.0' },
     name: '@harapter/core',
     version: '0.1.0',
   }),
-  ['@harapter/core@0.1.0 must own the npm next dist-tag.'],
+  ['@harapter/core@0.1.0 must own the npm latest dist-tag.'],
 );
 
 const releaseCommit = 'c'.repeat(40);

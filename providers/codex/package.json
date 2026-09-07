@@ -40,7 +40,7 @@
     "access": "public",
     "provenance": true,
     "registry": "https://registry.npmjs.org/",
-    "tag": "next"
+    "tag": "latest"
   },
   "scripts": {
     "build": "tsc --project tsconfig.build.json"
