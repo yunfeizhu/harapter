@@ -5,6 +5,11 @@ tasks by Profile, consumes both event streams concurrently through one portable
 renderer, and returns Provider-bound Session references without rendering their
 opaque state.
 
+For the six-Provider **create → run → reconnect → resume → native fork/branch →
+continue → cancel → cleanup** flow, use the
+[Session workflow guide](session-workflow.md). It uses the public Harapter 0.2.0
+APIs and keeps the original concurrent, single-task entrypoint intact.
+
 [`src/index.ts`](src/index.ts) imports only `@harapter/core`. It does not branch
 on Provider identity. [`src/codex-opencode.ts`](src/codex-opencode.ts) is an
 explicit composition boundary for a Codex process and an externally managed

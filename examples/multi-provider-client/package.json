@@ -15,14 +15,27 @@
     "./codex-opencode": {
       "types": "./dist/codex-opencode.d.ts",
       "default": "./dist/codex-opencode.js"
+    },
+    "./session-workflow": {
+      "types": "./dist/session-workflow.d.ts",
+      "default": "./dist/session-workflow.js"
+    },
+    "./session-providers": {
+      "types": "./dist/session-providers.d.ts",
+      "default": "./dist/session-providers.js"
     }
   },
   "scripts": {
-    "build": "tsc --project tsconfig.build.json"
+    "build": "tsc --project tsconfig.build.json",
+    "session-workflow": "node dist/session-main.js"
   },
   "dependencies": {
     "@harapter/adapter-codex": "workspace:*",
+    "@harapter/adapter-dsh": "workspace:*",
+    "@harapter/adapter-hermes": "workspace:*",
+    "@harapter/adapter-openclaw": "workspace:*",
     "@harapter/adapter-opencode": "workspace:*",
+    "@harapter/adapter-pi": "workspace:*",
     "@harapter/core": "workspace:*"
   },
   "devDependencies": {

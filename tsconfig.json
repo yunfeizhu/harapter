@@ -8,7 +8,11 @@
     "noEmit": true,
     "paths": {
       "@harapter/adapter-codex": ["providers/codex/src/index.ts"],
+      "@harapter/adapter-dsh": ["providers/dsh/src/index.ts"],
+      "@harapter/adapter-hermes": ["providers/hermes/src/index.ts"],
+      "@harapter/adapter-openclaw": ["providers/openclaw/src/index.ts"],
       "@harapter/adapter-opencode": ["providers/opencode/src/index.ts"],
+      "@harapter/adapter-pi": ["providers/pi/src/index.ts"],
       "@harapter/transport-acp": ["packages/transport-acp/src/index.ts"],
       "@harapter/conformance": ["packages/conformance/src/index.ts"],
       "@harapter/core": ["packages/core/src/index.ts"],
