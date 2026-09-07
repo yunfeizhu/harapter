@@ -60,6 +60,14 @@ import {
   type MappedOpenClawEvent,
   type OpenClawRuntime,
 } from './protocol.js';
+import {
+  OPENCLAW_SESSION_EXTENSION,
+  assertOpenClawFork,
+  parseOpenClawForkSource,
+  requestOpenClawGateway,
+  type OpenClawGatewayBinding,
+  type OpenClawSessions,
+} from './sessions.js';
 
 const descriptor: ProviderDescriptor = {
   providerId: OPENCLAW_PROVIDER_ID,
@@ -138,20 +146,43 @@ interface PendingApproval {
 type OpenClawChildProcess = ChildProcessByStdio<Writable, Readable, null>;
 
 /** Create a fresh OpenClaw ACP Provider Adapter factory. */
-export function createOpenClawProviderFactory(): ProviderAdapterFactory {
+export function createOpenClawProviderFactory(
+  options: OpenClawProviderFactoryOptions = {},
+): ProviderAdapterFactory {
+  const gateway =
+    options.gateway === undefined
+      ? undefined
+      : {
+          profileId: options.gateway.profileId,
+          methods: [...options.gateway.methods],
+          request: options.gateway.request.bind(options.gateway),
+        };
   return {
     descriptor: () => ({
       ...descriptor,
       connectionKinds: [...descriptor.connectionKinds],
     }),
-    connect: async (profile) => connectOpenClaw(profile),
+    connect: async (profile) => connectOpenClaw(profile, gateway),
   };
+}
+
+/** Optional host-owned Gateway access supplements the ACP wire contract. */
+export interface OpenClawProviderFactoryOptions {
+  readonly gateway?: OpenClawGatewayBinding;
 }
 
 async function connectOpenClaw(
   profile: HarnessProfile,
+  gateway?: OpenClawGatewayBinding,
 ): Promise<HarnessClient> {
   validateProfile(profile);
+  if (gateway !== undefined && gateway.profileId !== profile.profileId) {
+    throw new HarnessError(
+      'invalid_request',
+      'OpenClaw Gateway binding belongs to another Profile.',
+      { retryable: false },
+    );
+  }
   const options = connectionOptions(profile.providerOptions, profile);
   let connected: OpenClawClient | undefined;
   let acp: AcpClient;
@@ -183,6 +214,7 @@ async function connectOpenClaw(
       acp,
       runtime,
       options,
+      gateway,
     );
     connected.startPump();
     return connected;
@@ -201,6 +233,8 @@ class OpenClawClient implements HarnessClient {
   private readonly unknownListeners = new Set<(event: unknown) => void>();
   private readonly sessions = new Map<string, OpenClawSession>();
   private readonly sessionReservations = new Set<ProviderSessionId>();
+  private readonly gatewayAbort = new AbortController();
+  private forking = false;
   private readonly pendingApprovals = new Map<string, PendingApproval>();
   private activeRun: OpenClawRun | undefined;
   private approvalObserved = false;
@@ -214,7 +248,27 @@ class OpenClawClient implements HarnessClient {
     private readonly acp: AcpClient,
     private readonly runtime: OpenClawRuntime,
     private readonly options: ResolvedConnectionOptions,
+    gateway?: OpenClawGatewayBinding,
   ) {
+    if (
+      gateway?.methods.includes('sessions.list') === true &&
+      gateway.methods.includes('sessions.create')
+    ) {
+      const sessions: OpenClawSessions = Object.freeze({
+        fork: (ref: SessionRef) => this.forkSession(ref, gateway),
+      });
+      this.extensionRegistry.register(
+        {
+          name: OPENCLAW_SESSION_EXTENSION,
+          providerId: OPENCLAW_PROVIDER_ID,
+          displayName: 'OpenClaw Gateway Session forks',
+          description:
+            'Forks stored Gateway history and attaches an isolated ACP child.',
+          stability: 'experimental',
+        },
+        sessions,
+      );
+    }
     const observer: OpenClawObservationExtension = Object.freeze({
       onObservation: (listener: (event: unknown) => void) => {
         this.observationListeners.add(listener);
@@ -273,6 +327,7 @@ class OpenClawClient implements HarnessClient {
 
   async createSession(input: CreateSessionInput = {}): Promise<HarnessSession> {
     this.assertOpen();
+    this.assertNotForking();
     const cwd = prepareSessionInput(input, this.profile);
     const sessionKey = `acp-bridge:harapter-${randomUUID()}`;
     try {
@@ -304,6 +359,7 @@ class OpenClawClient implements HarnessClient {
 
   async resumeSession(ref: SessionRef): Promise<HarnessSession> {
     this.assertOpen();
+    this.assertNotForking();
     assertSessionOwnership(ref, OPENCLAW_PROVIDER_ID, this.profile.profileId);
     assertSessionCompatibility(ref, OPENCLAW_SESSION_COMPATIBILITY_REF);
     const state = sessionStateFromRef(ref);
@@ -336,6 +392,106 @@ class OpenClawClient implements HarnessClient {
 
   extensions(): ExtensionRegistry {
     return this.extensionRegistry;
+  }
+
+  private async forkSession(
+    ref: SessionRef,
+    gateway: OpenClawGatewayBinding,
+  ): Promise<HarnessSession> {
+    this.assertOpen();
+    this.assertNotForking();
+    assertSessionOwnership(ref, OPENCLAW_PROVIDER_ID, this.profile.profileId);
+    assertSessionCompatibility(ref, OPENCLAW_SESSION_COMPATIBILITY_REF);
+    const state = sessionStateFromRef(ref);
+    if (this.hasActiveRun() || this.sessionReservations.size !== 0) {
+      throw new HarnessError(
+        'run_conflict',
+        'OpenClaw has an active Run or Session operation.',
+        { retryable: false },
+      );
+    }
+    this.forking = true;
+    let requested = false;
+    try {
+      const source = parseOpenClawForkSource(
+        await requestOpenClawGateway(
+          gateway,
+          'sessions.list',
+          {
+            search: state.sessionKey,
+            limit: 2,
+            includeUnknown: true,
+            includeGlobal: true,
+            includeDerivedTitles: false,
+            includeLastMessage: false,
+          },
+          this.gatewayAbort.signal,
+          this.options.operationTimeoutMs,
+        ),
+        state.sessionKey,
+      );
+      this.assertOpen();
+      const sessionKey = `acp-bridge:harapter-${randomUUID()}`;
+      requested = true;
+      const result = await requestOpenClawGateway(
+        gateway,
+        'sessions.create',
+        {
+          key: sessionKey,
+          parentSessionKey: source.key,
+          fork: true,
+          forkFrom: 'last-completed',
+          emitCommandHooks: false,
+          ...(source.permissionMode === undefined
+            ? {}
+            : { permissionMode: source.permissionMode }),
+          ...(source.spawnedCwd === undefined
+            ? {}
+            : { cwd: source.spawnedCwd }),
+        },
+        this.gatewayAbort.signal,
+        this.options.operationTimeoutMs,
+      );
+      this.assertOpen();
+      assertOpenClawFork(result, sessionKey, source);
+      const created = await this.acp.newSession(
+        {
+          cwd: state.cwd,
+          mcpServers: [],
+          _meta: { sessionKey, requireExisting: true },
+        },
+        { timeoutMs: this.options.operationTimeoutMs },
+      );
+      this.assertOpen();
+      const sessionId = providerSessionId(created.sessionId);
+      if (sessionId === ref.providerSessionId)
+        throw new HarnessError(
+          'provider_api_incompatible',
+          'OpenClaw fork reused its parent ACP identity.',
+          { retryable: false },
+        );
+      this.assertSessionReusable(sessionId);
+      const child = new OpenClawSession(this, sessionId, {
+        ...state,
+        sessionKey,
+      });
+      this.sessions.set(sessionId, child);
+      return child;
+    } catch (error) {
+      if (requested) this.abortConnection('session_fork_uncertain');
+      throw mapError(error, this.profile, 'fork Session');
+    } finally {
+      this.forking = false;
+    }
+  }
+
+  private assertNotForking(): void {
+    if (this.forking)
+      throw new HarnessError(
+        'run_conflict',
+        'OpenClaw has a pending Gateway fork.',
+        { retryable: false },
+      );
   }
 
   native<T = unknown>(guard?: (value: unknown) => value is T): T | undefined {
@@ -387,6 +543,7 @@ class OpenClawClient implements HarnessClient {
     options: RunOptions = {},
   ): Promise<HarnessRun> {
     this.assertOpen();
+    this.assertNotForking();
     if (this.activeRun !== undefined) {
       throw new HarnessError(
         'run_conflict',
@@ -462,6 +619,7 @@ class OpenClawClient implements HarnessClient {
   }
 
   async closeSession(session: OpenClawSession): Promise<void> {
+    this.assertNotForking();
     const sessionId = session.ref().providerSessionId;
     if (!this.sessions.has(sessionId)) return;
     if (this.hasActiveRun(sessionId)) {
@@ -576,6 +734,7 @@ class OpenClawClient implements HarnessClient {
   private abortConnection(reason: string): void {
     if (this.closed) return;
     this.closed = true;
+    this.gatewayAbort.abort();
     const active = this.activeRun;
     if (active !== undefined) {
       this.settleApprovals(active);
@@ -586,6 +745,7 @@ class OpenClawClient implements HarnessClient {
   }
 
   private async closeOnce(reason: string): Promise<void> {
+    this.gatewayAbort.abort();
     if (!this.closed) {
       this.closed = true;
       const active = this.activeRun;

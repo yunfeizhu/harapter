@@ -12,3 +12,7 @@ export {
   type OpenCodeNativePart,
   type OpenCodeRawEvent,
 } from './protocol.js';
+export {
+  OPENCODE_SESSION_EXTENSION,
+  type OpenCodeSessions,
+} from './sessions.js';

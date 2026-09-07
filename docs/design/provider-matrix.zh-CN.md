@@ -18,6 +18,10 @@ DeepSeek Harness、Hermes Agent 和 OpenClaw 的接口观察日期为 2026-08-31
 Agent 的接口观察日期为 2026-09-01。实际兼容范围由连接时探测、脱敏 Fixture、Conformance
 Test、真实 Runtime Test 和对应 Provider README 共同声明。
 
+现有 Codex、OpenCode、Hermes、OpenClaw 和 Pi
+Adapter 已接入有类型的原生会话历史操作，各自保留上游的父会话生命周期语义。[2026-09-07 验证记录](../provider-session-fork-evidence.md)
+链接到实际契约及固定官方运行时的证据。
+
 ## 2. 目标 Provider
 
 | Provider           | Provider ID          | 首选接入面                           | 预计公共覆盖 | 主要限制                                                               |

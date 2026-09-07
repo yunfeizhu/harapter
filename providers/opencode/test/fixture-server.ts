@@ -37,6 +37,10 @@ export interface OpenCodeFixtureServerOptions {
   readonly sessionCreateBody?: unknown;
   readonly sessionCreateStatus?: number;
   readonly sessionStatus?: 'busy' | 'idle' | 'retry';
+  readonly forkBody?: unknown;
+  readonly forkStatus?: number;
+  readonly forkDelayMs?: number;
+  readonly sourcePatch?: Readonly<Record<string, unknown>>;
   readonly sseConnectMode?: 'eof' | 'named' | 'normal' | 'wrong-type';
 }
 
@@ -200,8 +204,19 @@ export async function startOpenCodeFixtureServer(
         200,
         options.resumeMismatch
           ? { ...session, id: 'ses_mismatch', directory: '/other-workspace' }
-          : session,
+          : { ...session, ...options.sourcePatch },
       );
+      return;
+    }
+    if (method === 'POST' && suffix === '/fork') {
+      await readJson(request);
+      if (options.forkDelayMs !== undefined)
+        await new Promise((resolve) =>
+          setTimeout(resolve, options.forkDelayMs),
+        );
+      const child = { ...session, id: `ses_${String(++sessionSerial)}` };
+      sessions.set(child.id, child);
+      sendJson(response, options.forkStatus ?? 200, options.forkBody ?? child);
       return;
     }
     if (method === 'DELETE' && suffix === '') {

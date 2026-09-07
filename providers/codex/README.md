@@ -211,8 +211,8 @@ denied instead of changing state invisibly.
 The current stable Schema declares native Session creation and resume,
 streaming, Turn interrupt, text and image input, approvals, generic Provider
 interactions, and native client access. Session close, connection abort, and
-bounded raw observation are Adapter-controlled. Session fork, portable file
-input, and portable user input are explicitly unsupported.
+bounded raw observation are Adapter-controlled. Portable Session fork, portable
+file input, and portable user input are explicitly unsupported.
 
 Capability values are selected only after the stable App Server handshake is
 validated. They are not inferred from `openai.codex` identity.
@@ -279,9 +279,46 @@ then requires native interruption and an authoritative cancelled terminal for a
 second Turn. It fails if a tool or interaction event is observed and stores only
 Event type strings in the test.
 
-Experimental App Server APIs, Session fork, paginated history, direct account or
-authentication management, and host-owned process streams are not supported by
-this release.
+Experimental App Server APIs, portable Session fork, paginated history, direct
+account or authentication management, and host-owned process streams are not
+supported by this release.
+
+## Native Session history operations
+
+`openai.codex.sessions` exposes `CodexSessions.fork(ref)`. It reads the source
+Thread, requires persisted idle or unloaded state, then calls stable
+`thread/fork` without submitting a Turn. The child must have a distinct ID and
+matching `forkedFromId`. Ephemeral Threads are rejected. Native persisted
+execution settings remain owned by Codex; this extension does not accept
+override options. An uncertain mutation closes the connection; an authoritative
+RPC rejection leaves the source usable.
+
+Use this after the source Run has settled. The host must keep the source
+quiescent across every client and external writer; local reservations cannot
+lock another process. Child references retain Provider/Profile ownership.
+Portable `session.fork` remains unsupported: these typed native operations have
+different history and parent-lifecycle semantics.
+
+```ts
+import {
+  CODEX_SESSION_EXTENSION,
+  type CodexSessions,
+} from '@harapter/adapter-codex';
+
+const sessions = client
+  .extensions()
+  .get<CodexSessions>(CODEX_SESSION_EXTENSION);
+if (sessions === undefined)
+  throw new Error('Native Session extension unavailable.');
+const child = await sessions.fork(session.ref());
+// The child uses the normal HarnessSession lifecycle.
+await child.close();
+```
+
+Official-runtime and fixture evidence, tested versions, and reproduction
+commands are recorded in
+[Session fork evidence](../../docs/provider-session-fork-evidence.md). These
+tests use real runtimes with a local synthetic model, not a hosted model.
 
 ## Related packages
 

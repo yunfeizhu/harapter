@@ -141,6 +141,50 @@ lines.on('line', (line) => {
 
   if (message.method === 'initialized') return;
 
+  if (message.method === 'thread/read') {
+    send({
+      id: message.id,
+      result: {
+        thread: {
+          ...thread(message.params.threadId),
+          status: { type: mode === 'fork-busy' ? 'active' : 'idle' },
+        },
+      },
+    });
+    return;
+  }
+  if (message.method === 'thread/fork') {
+    if (mode === 'fork-reject') {
+      send({
+        id: message.id,
+        error: { code: -32000, message: 'Synthetic rejected fork.' },
+      });
+      return;
+    }
+    const id =
+      mode === 'fork-same-id'
+        ? message.params.threadId
+        : `synthetic-thread-${String(process.pid)}-${String(++threadSerial)}`;
+    const result = {
+      thread: {
+        ...thread(id),
+        turns:
+          mode === 'fork-large-history' && message.params.excludeTurns !== true
+            ? [{ items: [{ type: 'agentMessage', text: 'x'.repeat(2 ** 21) }] }]
+            : [],
+        forkedFromId:
+          mode === 'fork-wrong-parent'
+            ? 'synthetic-other-parent'
+            : message.params.threadId,
+      },
+    };
+    const respond = () => send({ id: message.id, result });
+    if (mode === 'fork-hold') return;
+    if (mode === 'fork-delay') setTimeout(respond, 40);
+    else respond();
+    return;
+  }
+
   if (message.method === 'thread/start') {
     if (message.params?.model === 'hold-model') return;
     if (message.params?.model === 'reject-model') {

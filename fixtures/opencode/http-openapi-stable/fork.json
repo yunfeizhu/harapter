@@ -1,0 +1,25 @@
+{
+  "source": {
+    "id": "ses_source",
+    "directory": "/synthetic-workspace",
+    "permission": [],
+    "projectID": "synthetic-project",
+    "title": "Synthetic session",
+    "time": {
+      "created": 1,
+      "updated": 1
+    },
+    "version": "1.18.29"
+  },
+  "child": {
+    "id": "ses_child",
+    "directory": "/synthetic-workspace",
+    "projectID": "synthetic-project",
+    "title": "Synthetic session",
+    "time": {
+      "created": 1,
+      "updated": 1
+    },
+    "version": "1.18.29"
+  }
+}

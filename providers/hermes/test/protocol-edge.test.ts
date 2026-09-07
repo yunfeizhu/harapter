@@ -78,6 +78,7 @@ describe('Hermes protocol negative boundaries', () => {
     expect(parseHermesCapabilities(capabilityDocument()).features).toEqual({
       approval: false,
       cancel: false,
+      fork: false,
     });
   });
 
@@ -85,7 +86,7 @@ describe('Hermes protocol negative boundaries', () => {
     const capabilities: HermesCapabilities = {
       authRequired: false,
       model: 'synthetic-model',
-      features: { approval: false, cancel: false },
+      features: { approval: false, cancel: false, fork: false },
       fingerprintSource: { nested: [{ z: 1, a: true }, null] },
     };
     expect(compatibilityFingerprint(capabilities)).toBe(

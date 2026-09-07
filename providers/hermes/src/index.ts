@@ -13,3 +13,4 @@ export {
   type HermesSubagentEvent,
   type HermesSubagentExtension,
 } from './protocol.js';
+export { HERMES_SESSION_EXTENSION, type HermesSessions } from './sessions.js';

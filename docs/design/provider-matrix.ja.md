@@ -23,6 +23,10 @@ Agent、OpenClaw のインターフェース観測日は 2026-08-31、Pi
 Agent は 2026-09-01 です。実際の互換性範囲は、接続時 Probe、Redaction 済み Fixture、Conformance
 Test、実 Runtime Test、対応する Provider README によって共同で表明されます。
 
+既存の Codex、OpenCode、Hermes、OpenClaw、Pi
+Adapter は型付きの原生 Session 履歴操作を提供し、それぞれの親ライフサイクルを保持します。
+[2026-09-07 の検証記録](../provider-session-fork-evidence.md)に実装済み契約と固定された公式 Runtime の証拠をまとめています。
+
 ## 2. 対象 Provider
 
 | Provider           | Provider ID          | 推奨インターフェース               | 想定 Portable Coverage | 主な制限                                                                                             |

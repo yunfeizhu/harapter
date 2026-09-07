@@ -54,6 +54,11 @@ import {
   type OpenCodeRawEvent,
   type OpenCodeSessionState,
 } from './protocol.js';
+import {
+  OPENCODE_SESSION_EXTENSION,
+  assertOpenCodeForkSource,
+  type OpenCodeSessions,
+} from './sessions.js';
 
 const descriptor: ProviderDescriptor = {
   providerId: OPENCODE_PROVIDER_ID,
@@ -199,6 +204,8 @@ async function connectOpenCode(
 
 class OpenCodeClient implements HarnessClient {
   private readonly activeBySession = new Map<string, OpenCodeRun>();
+  private readonly forkingSessions = new Set<string>();
+  private readonly knownSessions = new Set<string>();
   private readonly extensionRegistry = new ExtensionRegistry(
     OPENCODE_PROVIDER_ID,
   );
@@ -220,6 +227,19 @@ class OpenCodeClient implements HarnessClient {
     private readonly runtimeVersion: string,
     private readonly options: ResolvedConnectionOptions,
   ) {
+    const sessions: OpenCodeSessions = Object.freeze({
+      fork: (ref: SessionRef) => this.forkSession(ref),
+    });
+    this.extensionRegistry.register(
+      {
+        name: OPENCODE_SESSION_EXTENSION,
+        providerId: OPENCODE_PROVIDER_ID,
+        displayName: 'OpenCode native Session operations',
+        description: 'Forks an idle Session with owned prompt defaults.',
+        stability: 'stable',
+      },
+      sessions,
+    );
     this.nativeClient = Object.freeze({
       runtimeIdentity: this.runtimeIdentity(),
       request: <T>(
@@ -272,6 +292,7 @@ class OpenCodeClient implements HarnessClient {
       const session = parseOpenCodeSession(response);
       const sessionId = providerSessionId(session.id);
       this.assertSessionReusable(sessionId);
+      this.knownSessions.add(sessionId);
       return new OpenCodeSession(this, sessionId, {
         directory: session.directory,
         ...prepared.defaults,
@@ -315,6 +336,7 @@ class OpenCodeClient implements HarnessClient {
       ) {
         throw sessionMismatch(this.profile);
       }
+      this.knownSessions.add(session.id);
       return new OpenCodeSession(this, providerSessionId(session.id), state);
     } catch (error) {
       throw mapError(error, this.profile, 'resume Session');
@@ -323,6 +345,88 @@ class OpenCodeClient implements HarnessClient {
 
   extensions(): ExtensionRegistry {
     return this.extensionRegistry;
+  }
+
+  private async forkSession(ref: SessionRef): Promise<HarnessSession> {
+    this.assertOpen();
+    assertSessionOwnership(ref, OPENCODE_PROVIDER_ID, this.profile.profileId);
+    assertSessionCompatibility(ref, OPENCODE_SESSION_COMPATIBILITY_REF);
+    const sourceId = ref.providerSessionId;
+    this.assertSessionReusable(sourceId);
+    if (this.activeBySession.has(sourceId)) this.forkConflict();
+    const state = snapshotSessionState(sessionStateFromRef(ref));
+    this.forkingSessions.add(sourceId);
+    let requested = false;
+    try {
+      const status = parseOpenCodeSessionStatus(
+        await requestProviderJson(
+          this.transport,
+          withDirectory('session/status', state.directory),
+          {},
+          this.profile,
+          'fork source status',
+          'session',
+        ),
+        sourceId,
+      );
+      if (status !== 'idle') this.forkConflict();
+      const source = await requestProviderJson(
+        this.transport,
+        withDirectory(sessionPath(sourceId), state.directory),
+        {},
+        this.profile,
+        'fork source',
+        'session',
+      );
+      const parent = parseOpenCodeSession(source);
+      if (parent.id !== sourceId || parent.directory !== state.directory)
+        throw sessionMismatch(this.profile);
+      assertOpenCodeForkSource(source);
+      this.assertOpen();
+      requested = true;
+      const child = parseOpenCodeSession(
+        await requestProviderJson(
+          this.transport,
+          withDirectory(`${sessionPath(sourceId)}/fork`, state.directory),
+          { method: 'POST', headers: jsonHeaders, body: jsonBody({}) },
+          this.profile,
+          'fork Session',
+          'session',
+        ),
+      );
+      this.assertOpen();
+      if (
+        child.id === sourceId ||
+        this.knownSessions.has(child.id) ||
+        child.directory !== state.directory
+      )
+        throw sessionMismatch(this.profile);
+      this.knownSessions.add(child.id);
+      return new OpenCodeSession(this, providerSessionId(child.id), state);
+    } catch (error) {
+      const mapped = mapError(error, this.profile, 'fork Session');
+      if (
+        requested &&
+        !['400', '401', '403', '404'].includes(mapped.providerCode ?? '')
+      ) {
+        this.quarantinedSessions.add(sourceId);
+      }
+      throw mapped;
+    } finally {
+      this.forkingSessions.delete(sourceId);
+    }
+  }
+
+  private forkConflict(): never {
+    throw new HarnessError(
+      'run_conflict',
+      'OpenCode Session has active work or a pending fork.',
+      {
+        retryable: false,
+        providerId: OPENCODE_PROVIDER_ID,
+        profileId: this.profile.profileId,
+      },
+    );
   }
 
   native<T = unknown>(guard?: (value: unknown) => value is T): T | undefined {
@@ -596,6 +700,7 @@ class OpenCodeClient implements HarnessClient {
   }
 
   private assertSessionReusable(sessionId: ProviderSessionId): void {
+    if (this.forkingSessions.has(sessionId)) this.forkConflict();
     if (!this.quarantinedSessions.has(sessionId)) return;
     throw sessionUnsafe(this.profile);
   }
@@ -1098,6 +1203,11 @@ function openCodeCapabilities(
     capabilities: {
       'session.create': native,
       'session.resume': native,
+      'session.fork': {
+        mode: 'unsupported',
+        source: 'configuration',
+        reason: 'Native history forks are exposed through opencode.sessions.',
+      },
       'session.close': {
         mode: 'adapter_controlled',
         source: 'configuration',

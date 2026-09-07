@@ -1,0 +1,16 @@
+{
+  "source": {
+    "object": "hermes.session",
+    "session": {
+      "id": "source-synthetic"
+    }
+  },
+  "child": {
+    "object": "hermes.session",
+    "session": {
+      "id": "child-synthetic",
+      "parent_session_id": "source-synthetic",
+      "end_reason": null
+    }
+  }
+}

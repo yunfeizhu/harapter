@@ -250,6 +250,45 @@ Portable workspace selection, file and image input, Server lifecycle, Session
 deletion, automatic SSE reconnection, and strict child-Session capability claims
 are outside the current compatibility boundary.
 
+## Native Session history operations
+
+`nous.hermes-agent.sessions` exposes `HermesSessions.branch(ref)` only when
+`session_fork` and its exact endpoint are advertised. Hermes marks the parent
+`end_reason: branched`, then creates a child with copied messages and system
+context. Harapter retires the parent, including after reconnect, and returns an
+owned child. This operation is intentionally named `branch`: the parent cannot
+continue through Harapter. Stored model configuration is not copied upstream;
+`has_model_config` must explicitly be false before branching. Failure after
+dispatch quarantines the parent because retirement can precede an error
+response.
+
+Use this after the source Run has settled. The host must keep the source
+quiescent across every client and external writer; local reservations cannot
+lock another process. Child references retain Provider/Profile ownership.
+Portable `session.fork` remains unsupported: these typed native operations have
+different history and parent-lifecycle semantics.
+
+```ts
+import {
+  HERMES_SESSION_EXTENSION,
+  type HermesSessions,
+} from '@harapter/adapter-hermes';
+
+const sessions = client
+  .extensions()
+  .get<HermesSessions>(HERMES_SESSION_EXTENSION);
+if (sessions === undefined)
+  throw new Error('Native Session extension unavailable.');
+const child = await sessions.branch(session.ref());
+// The child uses the normal HarnessSession lifecycle.
+await child.close();
+```
+
+Official-runtime and fixture evidence, tested versions, and reproduction
+commands are recorded in
+[Session fork evidence](../../docs/provider-session-fork-evidence.md). These
+tests use real runtimes with a local synthetic model, not a hosted model.
+
 ## Related packages
 
 [All packages](../../README.md#packages-on-npm)

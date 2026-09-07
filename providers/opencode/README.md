@@ -183,6 +183,44 @@ The package does not claim support for experimental routes, automatic SSE
 reconnection, OpenCode process management, remote Session deletion through
 portable close, or commands and plugins as portable Core capabilities.
 
+## Native Session history operations
+
+`opencode.sessions` exposes `OpenCodeSessions.fork(ref)` through native
+`POST /session/{id}/fork`. It checks source status, identity and directory,
+copies stored history, and retains the same Harapter model/system defaults. The
+child has a distinct native ID. OpenCode does not copy per-Session permission
+rules or revert state, so sources with either are rejected before mutation. No
+message anchor is accepted: native unknown anchors can silently copy all
+history. An uncertain write quarantines the source; documented precondition HTTP
+rejections leave it usable.
+
+Use this after the source Run has settled. The host must keep the source
+quiescent across every client and external writer; local reservations cannot
+lock another process. Child references retain Provider/Profile ownership.
+Portable `session.fork` remains unsupported: these typed native operations have
+different history and parent-lifecycle semantics.
+
+```ts
+import {
+  OPENCODE_SESSION_EXTENSION,
+  type OpenCodeSessions,
+} from '@harapter/adapter-opencode';
+
+const sessions = client
+  .extensions()
+  .get<OpenCodeSessions>(OPENCODE_SESSION_EXTENSION);
+if (sessions === undefined)
+  throw new Error('Native Session extension unavailable.');
+const child = await sessions.fork(session.ref());
+// The child uses the normal HarnessSession lifecycle.
+await child.close();
+```
+
+Official-runtime and fixture evidence, tested versions, and reproduction
+commands are recorded in
+[Session fork evidence](../../docs/provider-session-fork-evidence.md). These
+tests use real runtimes with a local synthetic model, not a hosted model.
+
 ## Related packages
 
 [All packages](../../README.md#packages-on-npm)

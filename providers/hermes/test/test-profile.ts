@@ -51,6 +51,7 @@ const capabilities = {
     run_approval_response: true,
     approval_events: true,
     session_resources: true,
+    session_fork: true,
   },
   endpoints: {
     runs: { method: 'POST', path: '/v1/runs' },
@@ -60,6 +61,7 @@ const capabilities = {
     run_stop: { method: 'POST', path: '/v1/runs/{run_id}/stop' },
     session_create: { method: 'POST', path: '/api/sessions' },
     session: { method: 'GET', path: '/api/sessions/{session_id}' },
+    session_fork: { method: 'POST', path: '/api/sessions/{session_id}/fork' },
   },
 } as const;
 
@@ -76,6 +78,10 @@ export class HermesFixtureApi {
   capabilityDocument: unknown = structuredClone(capabilities);
   requireAuthorization = false;
   runStartDelayMs = 0;
+  forkDelayMs = 0;
+  forkStatus = 201;
+  forkPatch: Readonly<Record<string, unknown>> = {};
+  sourcePatch: Readonly<Record<string, unknown>> = {};
   private readonly runs = new Map<string, FixtureRun>();
   private readonly sessions = new Map<string, Record<string, unknown>>();
   private nextScenario: FixtureScenario = 'completed';
@@ -129,13 +135,38 @@ export class HermesFixtureApi {
       this.sessions.set(id, session);
       return jsonResponse({ object: 'hermes.session', session }, 201);
     }
+    const forkMatch = /^\/api\/sessions\/([^/]+)\/fork$/u.exec(url.pathname);
+    if (method === 'POST' && forkMatch !== null) {
+      if (this.forkDelayMs > 0)
+        await new Promise((resolve) => setTimeout(resolve, this.forkDelayMs));
+      const sourceId = decodeURIComponent(forkMatch[1] ?? '');
+      const parent = this.sessions.get(sourceId);
+      if (parent === undefined)
+        return jsonResponse({ error: { code: 'session_not_found' } }, 404);
+      parent['end_reason'] = 'branched';
+      const child = {
+        ...parent,
+        id: `session_fixture_${String(++this.sessionSerial)}`,
+        end_reason: null,
+        parent_session_id: sourceId,
+        ...this.forkPatch,
+      };
+      this.sessions.set(child.id, child);
+      return jsonResponse(
+        { object: 'hermes.session', session: child },
+        this.forkStatus,
+      );
+    }
     const sessionMatch = /^\/api\/sessions\/([^/]+)$/u.exec(url.pathname);
     if (method === 'GET' && sessionMatch !== null) {
       const id = decodeURIComponent(sessionMatch[1] ?? '');
       const session = this.sessions.get(id);
       return session === undefined
         ? jsonResponse({ error: { code: 'session_not_found' } }, 404)
-        : jsonResponse({ object: 'hermes.session', session });
+        : jsonResponse({
+            object: 'hermes.session',
+            session: { ...session, ...this.sourcePatch },
+          });
     }
     if (method === 'POST' && url.pathname === '/v1/runs') {
       if (this.runStartDelayMs > 0) {

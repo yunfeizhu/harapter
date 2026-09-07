@@ -1,0 +1,25 @@
+{
+  "source": {
+    "sessions": [
+      {
+        "key": "acp-bridge:harapter-source",
+        "sessionId": "source-synthetic",
+        "permissionMode": "read-only"
+      }
+    ]
+  },
+  "child": {
+    "ok": true,
+    "key": "acp-bridge:harapter-child",
+    "sessionId": "child-synthetic",
+    "runStarted": false,
+    "entry": {
+      "sessionId": "child-synthetic",
+      "permissionMode": "read-only",
+      "forkSource": {
+        "sessionKey": "acp-bridge:harapter-source",
+        "sessionId": "source-synthetic"
+      }
+    }
+  }
+}

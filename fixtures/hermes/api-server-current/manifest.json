@@ -9,5 +9,10 @@
     "license": "MIT"
   },
   "captureMethod": "The official API Server documentation, implementation, and tests were inspected at the recorded commit; fixture payloads are deterministic synthetic examples authored from that public interface.",
-  "redactionMethod": "All identifiers, text, commands, errors, model names, timestamps, and usage values are synthetic; no Provider traffic, credentials, authorization headers, environment values, user paths, or file bodies are stored."
+  "redactionMethod": "All identifiers, text, commands, errors, model names, timestamps, and usage values are synthetic; no Provider traffic, credentials, authorization headers, environment values, user paths, or file bodies are stored.",
+  "forkEvidence": {
+    "repository": "https://github.com/NousResearch/hermes-agent",
+    "commit": "c4a5deeffa959f8ebc891e02c5bcf767aff1dd2a",
+    "captureMethod": "Synthetic native fork receipts authored from the official machine contract; no provider traffic was captured."
+  }
 }

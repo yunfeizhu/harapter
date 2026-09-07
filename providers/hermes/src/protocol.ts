@@ -32,6 +32,7 @@ export interface HermesCapabilities {
   readonly features: {
     readonly approval: boolean;
     readonly cancel: boolean;
+    readonly fork: boolean;
   };
   readonly fingerprintSource: Readonly<Record<string, unknown>>;
 }
@@ -54,6 +55,7 @@ export interface PreparedHermesSession {
 export interface HermesSessionInfo {
   readonly id: string;
   readonly model?: string;
+  readonly branched?: true;
 }
 
 /** Acknowledgement returned when Hermes accepts a Run submission. */
@@ -134,6 +136,7 @@ const requiredEndpoints = {
 const optionalEndpoints = {
   run_approval: { method: 'POST', path: '/v1/runs/{run_id}/approval' },
   run_stop: { method: 'POST', path: '/v1/runs/{run_id}/stop' },
+  session_fork: { method: 'POST', path: '/api/sessions/{session_id}/fork' },
 } as const;
 
 const maximumIdentifierLength = 256;
@@ -246,10 +249,17 @@ export function parseHermesCapabilities(value: unknown): HermesCapabilities {
       optionalEndpoints.run_approval.method,
       optionalEndpoints.run_approval.path,
     );
+  const fork =
+    features['session_fork'] === true &&
+    endpointMatches(
+      endpoints['session_fork'],
+      optionalEndpoints.session_fork.method,
+      optionalEndpoints.session_fork.path,
+    );
   return {
     authRequired: auth['required'],
     model,
-    features: { approval, cancel },
+    features: { approval, cancel, fork },
     fingerprintSource: {
       object: document['object'],
       platform: document['platform'],
@@ -257,6 +267,7 @@ export function parseHermesCapabilities(value: unknown): HermesCapabilities {
       features: {
         approval,
         cancel,
+        fork,
         run_events_sse: true,
         run_status: true,
         run_submission: true,
@@ -266,6 +277,7 @@ export function parseHermesCapabilities(value: unknown): HermesCapabilities {
         ...requiredEndpoints,
         ...(approval ? { run_approval: optionalEndpoints.run_approval } : {}),
         ...(cancel ? { run_stop: optionalEndpoints.run_stop } : {}),
+        ...(fork ? { session_fork: optionalEndpoints.session_fork } : {}),
       },
     },
   };
@@ -401,7 +413,13 @@ export function parseHermesSession(value: unknown): HermesSessionInfo {
   const session = requiredRecord(response['session'], 'Session resource');
   const id = nativeIdentifier(session['id'], 'Session identifier');
   const model = optionalSelection(session['model'], 'Session model');
-  return { id, ...(model === undefined ? {} : { model }) };
+  return {
+    id,
+    ...(model === undefined ? {} : { model }),
+    ...(session['end_reason'] === 'branched'
+      ? { branched: true as const }
+      : {}),
+  };
 }
 
 /** Parse one accepted Run receipt. */

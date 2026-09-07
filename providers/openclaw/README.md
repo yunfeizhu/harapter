@@ -249,10 +249,61 @@ capability should run focused live evidence before production use.
 Shared Gateway session routing, history replay, per-Session MCP configuration,
 audio input, generic file input, filesystem or terminal client services,
 verified Gateway workspace execution, automatic process restart, and direct
-Gateway WebSocket access are outside the current compatibility boundary.
+Adapter-owned Gateway WebSocket transport are outside the current compatibility
+boundary.
 
 [openclaw-live-2026-09-03]:
   https://github.com/yunfeizhu/harapter/actions/runs/33740322290
+
+## Native Session history operations
+
+ACP does not advertise fork. To enable `openclaw.gateway.sessions`, supply
+`createOpenClawProviderFactory({ gateway })` with an `OpenClawGatewayBinding`:
+`profileId` must match the ACP Profile, `methods` must come from that Gateway
+hello, and `request(method, params, { signal })` calls its authenticated RPC.
+The host must bind the same Gateway/store as ACP and owns authentication,
+reconnection and disposal. Harapter never discovers or installs this connection.
+The extension appears only when `sessions.list` and `sessions.create` are
+observed.
+
+`OpenClawSessions.fork(ref)` finds the exact isolated route, checks source
+policy, and requests `sessions.create` with `fork: true`,
+`forkFrom: last-completed`, no initial input and no command hooks. It verifies
+native lineage, permission and directory preservation, then attaches the child
+through ACP with `requireExisting: true`. Worktree/session-root, remote
+execution, subagent ownership, per-Session `sendPolicy`, incognito and
+private-access state are rejected because their preservation is not established.
+A pending fork excludes new ACP operations; an uncertain write or attachment
+aborts the ACP Client. Each RPC is bounded by `operationTimeoutMs`, even if the
+host ignores its abort signal. The host-owned Gateway connection remains the
+host's responsibility.
+
+Use this after the source Run has settled. The host must keep the source
+quiescent across every client and external writer; local reservations cannot
+lock another process. Child references retain Provider/Profile ownership.
+Portable `session.fork` remains unsupported: these typed native operations have
+different history and parent-lifecycle semantics.
+
+```ts
+import {
+  OPENCLAW_SESSION_EXTENSION,
+  type OpenClawSessions,
+} from '@harapter/adapter-openclaw';
+
+const sessions = client
+  .extensions()
+  .get<OpenClawSessions>(OPENCLAW_SESSION_EXTENSION);
+if (sessions === undefined)
+  throw new Error('Native Session extension unavailable.');
+const child = await sessions.fork(session.ref());
+// The child uses the normal HarnessSession lifecycle.
+await child.close();
+```
+
+Official-runtime and fixture evidence, tested versions, and reproduction
+commands are recorded in
+[Session fork evidence](../../docs/provider-session-fork-evidence.md). These
+tests use real runtimes with a local synthetic model, not a hosted model.
 
 ## Related packages
 

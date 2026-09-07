@@ -26,7 +26,7 @@ if (args.includes('--version')) {
   }
 }
 const resumeIndex = args.indexOf('--session');
-const sessionId =
+let sessionId =
   resumeIndex === -1
     ? `synthetic-pi-session-${String(process.pid)}`
     : args[resumeIndex + 1];
@@ -51,6 +51,28 @@ if (mode === 'startup-event') {
 }
 
 function handle(command) {
+  if (command.type === 'clone') {
+    if (mode === 'clone-hold') return;
+    if (mode === 'clone-reject') {
+      sendResponse(command, false);
+      return;
+    }
+    if (mode === 'clone-cancel') {
+      sendResponse(command, true, { cancelled: true });
+      return;
+    }
+    if (mode === 'clone-malformed') {
+      sendResponse(command, true, {});
+      return;
+    }
+    if (mode === 'clone-same-id') {
+      sendResponse(command, true, { cancelled: false });
+      return;
+    }
+    sessionId = `synthetic-pi-clone-${String(process.pid)}`;
+    sendResponse(command, true, { cancelled: false });
+    return;
+  }
   if (command.type === 'get_state') {
     if (mode === 'state-reject') {
       sendResponse(command, false);
@@ -77,7 +99,10 @@ function handle(command) {
         sessionId: reportedSessionId,
         sessionFile: '/synthetic/private/session.jsonl',
         ...(mode === 'invalid-state' ? {} : { thinkingLevel: 'medium' }),
-        isStreaming: mode === 'busy-state',
+        isStreaming:
+          mode === 'busy-state' ||
+          (mode === 'clone-busy' &&
+            sessionId.startsWith('synthetic-pi-clone-')),
         isCompacting: false,
         steeringMode: 'one-at-a-time',
         followUpMode: 'one-at-a-time',

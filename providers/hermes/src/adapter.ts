@@ -60,6 +60,13 @@ import {
   type HermesSubagentExtension,
 } from './protocol.js';
 
+import {
+  HERMES_SESSION_EXTENSION,
+  assertHermesBranchSource,
+  parseHermesBranch,
+  type HermesSessions,
+} from './sessions.js';
+
 const descriptor: ProviderDescriptor = {
   providerId: HERMES_PROVIDER_ID,
   displayName: 'Hermes Agent',
@@ -217,6 +224,9 @@ async function connectHermes(
 
 class HermesClient implements HarnessClient {
   private readonly activeBySession = new Map<string, HermesRun>();
+  private readonly branchingSessions = new Set<string>();
+  private readonly knownSessions = new Set<string>();
+  private readonly retiredSessions = new Set<string>();
   private readonly startingBySession = new Map<string, StartingRun>();
   private readonly extensionRegistry = new ExtensionRegistry(
     HERMES_PROVIDER_ID,
@@ -243,6 +253,22 @@ class HermesClient implements HarnessClient {
     private readonly options: ResolvedConnectionOptions,
   ) {
     this.fingerprint = compatibilityFingerprint(observedCapabilities);
+    if (observedCapabilities.features.fork) {
+      const sessions: HermesSessions = Object.freeze({
+        branch: (ref: SessionRef) => this.branchSession(ref),
+      });
+      this.extensionRegistry.register(
+        {
+          name: HERMES_SESSION_EXTENSION,
+          providerId: HERMES_PROVIDER_ID,
+          displayName: 'Hermes native Session branching',
+          description:
+            'Ends the parent as branched and returns its persisted child.',
+          stability: 'experimental',
+        },
+        sessions,
+      );
+    }
     this.nativeClient = Object.freeze({
       runtimeIdentity: this.runtimeIdentity(),
       request: <T>(path: string, requestOptions?: HermesNativeRequestOptions) =>
@@ -316,6 +342,7 @@ class HermesClient implements HarnessClient {
       const session = parseHermesSession(response);
       const sessionId = providerSessionId(session.id);
       this.assertSessionReusable(sessionId);
+      this.knownSessions.add(sessionId);
       if (
         prepared.state.model !== undefined &&
         session.model !== undefined &&
@@ -354,6 +381,11 @@ class HermesClient implements HarnessClient {
       ) {
         throw sessionMismatch(this.profile);
       }
+      if (session.branched === true) {
+        this.retiredSessions.add(ref.providerSessionId);
+        this.assertSessionReusable(ref.providerSessionId);
+      }
+      this.knownSessions.add(session.id);
       return new HermesSession(this, providerSessionId(session.id), state);
     } catch (error) {
       throw mapError(error, this.profile, 'resume Session');
@@ -362,6 +394,84 @@ class HermesClient implements HarnessClient {
 
   extensions(): ExtensionRegistry {
     return this.extensionRegistry;
+  }
+
+  private async branchSession(ref: SessionRef): Promise<HarnessSession> {
+    this.assertOpen();
+    assertSessionOwnership(ref, HERMES_PROVIDER_ID, this.profile.profileId);
+    assertSessionCompatibility(ref, HERMES_SESSION_COMPATIBILITY_REF);
+    const sourceId = ref.providerSessionId;
+    this.assertSessionReusable(sourceId);
+    if (
+      this.activeBySession.has(sourceId) ||
+      this.startingBySession.has(sourceId)
+    )
+      this.branchConflict();
+    const state = sessionStateFromRef(ref);
+    this.branchingSessions.add(sourceId);
+    let requested = false;
+    try {
+      const source = await requestProviderJson(
+        this.transport,
+        sessionPath(sourceId),
+        {},
+        this.profile,
+        'branch source',
+        'session',
+      );
+      const parent = parseHermesSession(source);
+      assertHermesBranchSource(source);
+      if (
+        parent.id !== sourceId ||
+        parent.branched === true ||
+        (state.model !== undefined &&
+          parent.model !== undefined &&
+          state.model !== parent.model)
+      ) {
+        throw sessionMismatch(this.profile);
+      }
+      this.assertOpen();
+      requested = true;
+      const response = await requestProviderJson(
+        this.transport,
+        `${sessionPath(sourceId)}/fork`,
+        { method: 'POST', headers: jsonHeaders, body: jsonBody({}) },
+        this.profile,
+        'branch Session',
+        'session',
+      );
+      this.assertOpen();
+      const childId = parseHermesBranch(response, sourceId);
+      const child = parseHermesSession(response);
+      if (
+        this.knownSessions.has(childId) ||
+        (state.model !== undefined &&
+          child.model !== undefined &&
+          state.model !== child.model)
+      ) {
+        throw sessionMismatch(this.profile);
+      }
+      this.retiredSessions.add(sourceId);
+      this.knownSessions.add(childId);
+      return new HermesSession(this, providerSessionId(childId), state);
+    } catch (error) {
+      if (requested) this.quarantinedSessions.add(sourceId);
+      throw mapError(error, this.profile, 'branch Session');
+    } finally {
+      this.branchingSessions.delete(sourceId);
+    }
+  }
+
+  private branchConflict(): never {
+    throw new HarnessError(
+      'run_conflict',
+      'Hermes Session has active work or a pending branch.',
+      {
+        retryable: false,
+        providerId: HERMES_PROVIDER_ID,
+        profileId: this.profile.profileId,
+      },
+    );
   }
 
   native<T = unknown>(guard?: (value: unknown) => value is T): T | undefined {
@@ -724,6 +834,18 @@ class HermesClient implements HarnessClient {
   }
 
   private assertSessionReusable(sessionId: ProviderSessionId): void {
+    if (this.branchingSessions.has(sessionId)) this.branchConflict();
+    if (this.retiredSessions.has(sessionId)) {
+      throw new HarnessError(
+        'session_not_found',
+        'The Hermes parent Session has been branched; use its child.',
+        {
+          retryable: false,
+          providerId: HERMES_PROVIDER_ID,
+          profileId: this.profile.profileId,
+        },
+      );
+    }
     if (!this.quarantinedSessions.has(sessionId)) return;
     throw sessionUnsafe(this.profile);
   }
@@ -1326,6 +1448,12 @@ function hermesCapabilityManifest(
     capabilities: {
       'session.create': native,
       'session.resume': native,
+      'session.fork': {
+        mode: 'unsupported',
+        source: 'configuration',
+        reason:
+          'Native parent-ending branching uses nous.hermes-agent.sessions.',
+      },
       'session.close': {
         mode: 'adapter_controlled',
         source: 'configuration',

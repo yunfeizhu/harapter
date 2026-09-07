@@ -106,6 +106,39 @@ Portable Workspace、remote Session delete、automatic SSE
 reconnect、未宣言 Route は対象外です。全 options、Approval、Native Client、live
 test、検証 Version は [英語の詳細ドキュメント](./README.md)を参照してください。
 
+## 原生 Session 履歴操作
+
+`session_fork` と正確な endpoint が広告された場合のみ、
+`nous.hermes-agent.sessions` の `HermesSessions.branch(ref)`
+を公開します。Hermesは親を `end_reason: branched`
+にしてから、メッセージと system
+context を継承する子を作ります。Harapter は再接続後も親の継続を拒否するため、操作名は明示的に
+`branch` です。上流が保存済みモデル設定をコピーしないため、事前に
+`has_model_config`
+が false であることを確認します。送信後の失敗では、親の終了がエラー応答より先に起きる可能性があるため親を隔離します。
+
+親 Run の終了後に呼び出してください。別 Client や外部 writer も含め、親を同時変更しないことをホストが保証します。ローカル予約は別プロセスをロックしません。子参照は同じ Provider／Profile に属します。履歴範囲と親のライフサイクルが異なるため、portable
+`session.fork` は引き続き非対応です。
+
+```ts
+import {
+  HERMES_SESSION_EXTENSION,
+  type HermesSessions,
+} from '@harapter/adapter-hermes';
+
+const sessions = client
+  .extensions()
+  .get<HermesSessions>(HERMES_SESSION_EXTENSION);
+if (sessions === undefined)
+  throw new Error('Native Session extension unavailable.');
+const child = await sessions.branch(session.ref());
+// The child uses the normal HarnessSession lifecycle.
+await child.close();
+```
+
+公式 Runtime、fixture、検証バージョンと再現コマンドは
+[Session fork の証拠](../../docs/provider-session-fork-evidence.md)を参照してください。実 Runtime とローカル合成モデルを使用した検証であり、ホスト型モデルサービスの検証ではありません。
+
 ## 関連パッケージ
 
 [すべてのパッケージ](../../README.ja.md#npm-パッケージ一覧)

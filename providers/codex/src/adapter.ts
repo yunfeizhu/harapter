@@ -55,6 +55,12 @@ import {
   type MappedCodexEvent,
   type MappedCodexServerRequest,
 } from './protocol.js';
+import {
+  CODEX_SESSION_EXTENSION,
+  assertCodexForkSource,
+  parseCodexFork,
+  type CodexSessions,
+} from './sessions.js';
 
 const descriptor: ProviderDescriptor = {
   providerId: CODEX_PROVIDER_ID,
@@ -173,6 +179,8 @@ class CodexClient implements HarnessClient {
   private readonly activeByThread = new Map<string, CodexRun>();
   private readonly activeByTurn = new Map<string, CodexRun>();
   private readonly ephemeralThreads = new Set<string>();
+  private readonly forkingThreads = new Set<string>();
+  private readonly knownThreads = new Set<string>();
   private readonly extensionRegistry = new ExtensionRegistry(CODEX_PROVIDER_ID);
   private readonly nativeClient: CodexNativeClient;
   private readonly pendingByLocalId = new Map<string, PendingInteraction>();
@@ -192,6 +200,19 @@ class CodexClient implements HarnessClient {
     private readonly cancelSettlementTimeoutMs: number,
     private readonly maxRunEvents: number,
   ) {
+    const sessions: CodexSessions = Object.freeze({
+      fork: (ref: SessionRef) => this.forkSession(ref),
+    });
+    this.extensionRegistry.register(
+      {
+        name: CODEX_SESSION_EXTENSION,
+        providerId: CODEX_PROVIDER_ID,
+        displayName: 'Codex native Thread operations',
+        description: 'Forks persisted history into a distinct owned Thread.',
+        stability: 'stable',
+      },
+      sessions,
+    );
     this.nativeClient = Object.freeze({
       runtimeIdentity: this.runtimeIdentity(),
       request: <TResult>(
@@ -239,6 +260,7 @@ class CodexClient implements HarnessClient {
     try {
       const response = await this.transport.request('thread/start', params);
       const threadId = parseCodexThreadResponse(response);
+      this.knownThreads.add(threadId);
       if (params['ephemeral'] === true) this.ephemeralThreads.add(threadId);
       return new CodexSession(
         this,
@@ -275,6 +297,7 @@ class CodexClient implements HarnessClient {
       );
     }
     assertSessionCompatibility(ref, CODEX_SESSION_COMPATIBILITY_REF);
+    if (this.forkingThreads.has(ref.providerSessionId)) this.forkConflict();
     try {
       const response = await this.transport.request('thread/resume', {
         threadId: ref.providerSessionId,
@@ -291,6 +314,7 @@ class CodexClient implements HarnessClient {
           },
         );
       }
+      this.knownThreads.add(threadId);
       return new CodexSession(this, providerSessionId(threadId), true);
     } catch (error) {
       throw mapError(
@@ -305,6 +329,75 @@ class CodexClient implements HarnessClient {
 
   extensions(): ExtensionRegistry {
     return this.extensionRegistry;
+  }
+
+  private async forkSession(ref: SessionRef): Promise<HarnessSession> {
+    this.assertOpen();
+    assertSessionOwnership(ref, CODEX_PROVIDER_ID, this.profile.profileId);
+    assertSessionCompatibility(ref, CODEX_SESSION_COMPATIBILITY_REF);
+    const sourceId = ref.providerSessionId;
+    if (this.ephemeralThreads.has(sourceId) || isEphemeralSessionRef(ref)) {
+      throw new HarnessError(
+        'unsupported_capability',
+        'Ephemeral Codex Threads cannot be forked by this extension.',
+        {
+          retryable: false,
+          providerId: CODEX_PROVIDER_ID,
+          profileId: this.profile.profileId,
+        },
+      );
+    }
+    if (this.hasActiveRun(sourceId)) this.forkConflict();
+    this.forkingThreads.add(sourceId);
+    let requested = false;
+    try {
+      assertCodexForkSource(
+        await this.transport.request('thread/read', {
+          threadId: sourceId,
+          includeTurns: false,
+        }),
+        sourceId,
+      );
+      this.assertOpen();
+      requested = true;
+      const response = await this.transport.request('thread/fork', {
+        threadId: sourceId,
+        excludeTurns: true,
+      });
+      this.assertOpen();
+      const childId = parseCodexFork(response, sourceId);
+      if (this.knownThreads.has(childId)) {
+        throw new HarnessError(
+          'provider_api_incompatible',
+          'Codex reused an existing Thread for a fork.',
+          {
+            retryable: false,
+            providerId: CODEX_PROVIDER_ID,
+            profileId: this.profile.profileId,
+          },
+        );
+      }
+      this.knownThreads.add(childId);
+      return new CodexSession(this, providerSessionId(childId), true);
+    } catch (error) {
+      if (requested && !(error instanceof JsonRpcRemoteError))
+        this.abortConnection();
+      throw mapError(error, this.profile, 'thread/fork', false, this.transport);
+    } finally {
+      this.forkingThreads.delete(sourceId);
+    }
+  }
+
+  private forkConflict(): never {
+    throw new HarnessError(
+      'run_conflict',
+      'The Codex Thread has an active Run or fork operation.',
+      {
+        retryable: false,
+        providerId: CODEX_PROVIDER_ID,
+        profileId: this.profile.profileId,
+      },
+    );
   }
 
   native<T = unknown>(guard?: (value: unknown) => value is T): T | undefined {
@@ -336,7 +429,9 @@ class CodexClient implements HarnessClient {
 
   hasActiveRun(threadId: string): boolean {
     return (
-      this.activeByThread.has(threadId) || this.startingByThread.has(threadId)
+      this.activeByThread.has(threadId) ||
+      this.startingByThread.has(threadId) ||
+      this.forkingThreads.has(threadId)
     );
   }
 
