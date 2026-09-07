@@ -203,6 +203,15 @@ try {
     .join('\n');
   writeFileSync(resolve(consumerRoot, 'smoke.ts'), `${typeSmoke}\n`);
 
+  // Reuse only the package cache: the consumer still installs fresh tarballs
+  // with no workspace links or lifecycle scripts. Runtime dependencies must
+  // already be available from the repository's frozen dependency install.
+  const dependencyStore = run(
+    pnpmCommand(),
+    ['store', 'path', '--silent'],
+    repositoryRoot,
+    'installed dependency store lookup',
+  ).stdout.trim();
   run(
     pnpmCommand(),
     [
@@ -211,7 +220,7 @@ try {
       '--ignore-scripts',
       '--lockfile=false',
       '--store-dir',
-      resolve(fixtureRoot, 'store'),
+      dependencyStore,
     ],
     consumerRoot,
     'tarball consumer install',

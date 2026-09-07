@@ -33,10 +33,10 @@ describe('DeepSeek Harness Provider Adapter', () => {
     (first.connectionKinds as string[]).push('endpoint');
     expect(factory.descriptor()).toEqual({
       providerId: DSH_PROVIDER_ID,
-      displayName: 'DeepSeek Harness SDK Runtime',
-      connectionKinds: ['process'],
+      displayName: 'DeepSeek Harness',
+      connectionKinds: ['process', 'endpoint'],
       documentationUrl:
-        'https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/sdk',
+        'https://github.com/yunfeizhu/harapter/tree/main/providers/dsh',
     });
 
     const client = await connect();

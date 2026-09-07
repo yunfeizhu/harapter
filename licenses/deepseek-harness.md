@@ -3,8 +3,8 @@
 - Upstream: [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
 - License:
   [MIT License](https://github.com/deepseek-ai/deepseek-harness/blob/master/LICENSE)
-- Harapter use: documented SDK stdio JSON-RPC protocol for
-  `@harapter/adapter-dsh`
+- Harapter use: documented SDK stdio JSON-RPC and Gateway HTTP/WebSocket
+  protocols for `@harapter/adapter-dsh`
 - Redistribution: Harapter does not redistribute the DeepSeek Harness Runtime,
   CLI, SDK packages, Cordis application, plugins, or model adapters. Users or
   hosts install, configure, and authenticate them separately.

@@ -54,7 +54,14 @@ versions, topological publication order, and the exact npm tarball file set.
 Every tarball is then installed into an isolated consumer with internal
 Workspace dependencies overridden by the just-built tarballs. Runtime imports
 and strict TypeScript imports must resolve without source-tree access. The gate
-stays offline for Harapter dependencies and does not install Provider runtimes.
+stays offline for every dependency and does not install Provider runtimes. The
+consumer reuses the dependency store populated by the repository's frozen
+install, while keeping a fresh consumer directory, tarball overrides, and
+`--ignore-scripts`. This supports the Gateway Adapter's external `ws` runtime
+dependency without a network-enabled check or source-tree links. An empty store
+correctly fails when an external dependency is absent; the installed cache must
+supply it. Both the missing-cache failure and the successful clean consumer
+install are exercised by the Gateway change.
 
 This baseline adopts the flat ESLint and explicit build/test/coverage split used
 by the

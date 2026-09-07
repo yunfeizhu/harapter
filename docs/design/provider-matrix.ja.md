@@ -168,6 +168,12 @@ JSON Event がない場合、Adapter は Exit Code と Standard Error から `ru
 
 ### 4.8 DeepSeek Harness
 
+ホスト管理の Session v2 Gateway
+endpoint 戦略も実装され、ネイティブ再開、最新の完了 prefix の fork、Session 単位の取消を提供します。Portable
+Run cancellation は unsupported のままです。詳細は
+[DSH Adapter 契約](../../providers/dsh/README.ja.md#gateway-endpoint-戦略)
+を参照してください。以下は SDK process 戦略の制約です。
+
 公式 SDK の stdio JSON-RPC
 Interface を優先します。Adapter は Host が用意した Runtime
 Command と Configuration に接続します。既定 Workspace 依存に DSH SDK や Runtime

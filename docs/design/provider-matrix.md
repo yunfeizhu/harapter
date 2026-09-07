@@ -171,6 +171,12 @@ Official references: [Cursor Headless](https://docs.cursor.com/en/cli/headless),
 
 ### 4.8 DeepSeek Harness
 
+Gateway endpoint is also implemented for host-managed Session v2 Runtime
+composition: native resume and latest-prefix fork, plus Session-scoped
+cancellation, remain separate from portable Run cancellation. See the owning
+[DSH Adapter contract](../../providers/dsh/README.md#gateway-endpoint-strategy).
+The following constraints describe the SDK process strategy.
+
 Prefer the official SDK's stdio JSON-RPC interface. The Adapter connects to a
 Runtime command and configuration supplied by the host. It does not add the DSH
 SDK or Runtime package to the default Workspace dependencies, create a Cordis
