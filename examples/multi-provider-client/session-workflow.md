@@ -219,9 +219,12 @@ Abrupt process termination requires host cleanup as well. A failed fork may have
 mutated upstream state; Hermes can retire its parent before a later error. Do
 not blindly rerun against an existing Session.
 
-The focused workflow, binding, and CLI tests exercise composition with synthetic
+The focused workflow and binding tests exercise composition with synthetic
 Providers, including reconnect ownership, retired parents, cancellation races,
-redaction, and cleanup. Public-consumer validation builds against released npm
-0.2.0 exports. These checks do not add live-runtime evidence; the existing
+redaction, and cleanup. Before building, development checks resolve all six
+Providers from source. After building, the package consumer checker runs four
+CLI cases against freshly packed and installed public packages. Separate
+public-consumer validation builds against released npm 0.2.0 exports. These
+checks do not add live-runtime evidence; the existing
 [Provider history evidence](../../docs/provider-session-fork-evidence.md) and
 each Provider README remain the authority for actual runtime compatibility.

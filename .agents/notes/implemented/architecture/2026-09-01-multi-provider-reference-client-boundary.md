@@ -139,6 +139,10 @@ observed mode while hiding `unsupported` and `unknown` operations.
   history. Local cleanup does not delete that history, undo a retired Hermes
   parent, stop external services, or prove uncertain native work stopped.
 - Focused tests exercise the real workflow, six guarded bindings, cancellation
-  races, safe rendering, and command cleanup with synthetic Providers. A public
-  npm 0.2.0 consumer build checks exports without Workspace source aliases.
-  These are application-composition evidence, not new live-runtime evidence.
+  races, and safe rendering with synthetic Providers. Development type checks
+  and Vitest resolve all six Providers from source before the Workspace build.
+  The existing post-build package checker runs CLI invocation, redaction, and
+  cleanup cases against freshly installed public tarballs. CLI subprocess tests
+  must not depend on stale Workspace `dist` directories before the build stage.
+  A separate npm 0.2.0 consumer build checks the released exports. These are
+  application-composition evidence, not new live-runtime evidence.
