@@ -161,6 +161,16 @@ const releaseWorkflow = readFileSync(
 const releasePlease = load(releaseWorkflow, { schema: JSON_SCHEMA });
 assert.ok(isObject(releasePlease));
 assert.deepEqual(
+  releasePlease['on']['workflow_dispatch']['inputs']['operation'],
+  {
+    description: 'Prepare a release PR or finalize its merged release',
+    required: true,
+    type: 'choice',
+    options: ['prepare', 'finalize'],
+    default: 'prepare',
+  },
+);
+assert.deepEqual(
   releasePlease['on']['workflow_dispatch']['inputs']['resume_release_tag'],
   {
     description: 'Existing Release Please draft tag to finalize',
@@ -174,6 +184,18 @@ assert.deepEqual(Object.keys(releasePlease['jobs']).sort(), [
   'release-please',
 ]);
 const releasePleaseJob = requiredJob(releasePlease['jobs'], 'release-please');
+const validateReleaseOperation = requiredStep(
+  releasePleaseJob,
+  'Validate release operation',
+);
+assert.match(
+  validateReleaseOperation['run'],
+  /\[\[ "\$RELEASE_OPERATION" =~ \^\(prepare\|finalize\)\$ \]\]/u,
+);
+assert.match(
+  validateReleaseOperation['run'],
+  /test "\$RELEASE_OPERATION" = 'finalize'/u,
+);
 assert.equal(
   releasePleaseJob['outputs']['release-created'],
   '${{ steps.release.outputs.release_created || steps.resume.outputs.release_created }}',
@@ -194,9 +216,31 @@ assert.equal(
   releasePleaseJob['outputs']['release-resumed'],
   "${{ steps.resume.outputs.release_resumed || 'false' }}",
 );
+const runReleasePlease = requiredStep(releasePleaseJob, 'Run Release Please');
+assert.equal(runReleasePlease['if'], "inputs.resume_release_tag == ''");
 assert.equal(
-  requiredStep(releasePleaseJob, 'Run Release Please')['if'],
+  runReleasePlease['with']['skip-github-release'],
+  "${{ inputs.operation == 'prepare' }}",
+);
+assert.equal(
+  runReleasePlease['with']['skip-github-pull-request'],
+  "${{ inputs.operation == 'finalize' }}",
+);
+const verifyReleasePleaseOutcome = requiredStep(
+  releasePleaseJob,
+  'Verify Release Please outcome',
+);
+assert.equal(
+  verifyReleasePleaseOutcome['if'],
   "inputs.resume_release_tag == ''",
+);
+assert.match(
+  verifyReleasePleaseOutcome['run'],
+  /if \[\[ "\$RELEASE_OPERATION" = 'prepare' \]\]; then\n\s+test "\$RELEASE_CREATED" = 'false'/u,
+);
+assert.match(
+  verifyReleasePleaseOutcome['run'],
+  /test "\$RELEASE_CREATED" = 'true'\n\s+test "\$PRS_CREATED" = 'false'/u,
 );
 const resumeRelease = requiredStep(
   releasePleaseJob,

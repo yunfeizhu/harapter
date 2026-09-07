@@ -17,25 +17,25 @@ advances that tag as stable. `feat` produces a minor release, `fix` a patch, and
 
 ## GitHub release flow
 
-Release Please is manual-only and runs from `main`:
+Release Please is manual-only:
 
 ```bash
-gh workflow run release-please.yml --ref main
+gh workflow run release-please.yml --ref main -f operation=prepare
+# After manually merging the release pull request:
+gh workflow run release-please.yml --ref main -f operation=finalize
 ```
 
 1. Squash-merge eligible Conventional Commit pull requests into `main`.
-2. With release authorization, dispatch Release Please from `main`.
+2. With release authorization, dispatch `prepare` from `main`.
 3. Use the [Harapter release skill](./.agents/skills/harapter-release/SKILL.md)
-   to verify that every version artifact and the changelog agree.
-4. Require every applicable check on the exact release pull request head.
-5. Manually merge the release pull request after maintainer review. Release
-   Please pull requests do not use auto-merge.
-6. Keep GitHub immutable releases enabled; they protect only releases created
-   after activation.
-7. With publication authorization, dispatch Release Please from `main` again. It
-   creates a draft; the finalizer checks the exact release commit, builds and
-   uploads assets, verifies GitHub digests, then publishes the immutable
-   Release.
+   to verify the generated version artifacts and changelog.
+4. Require all checks on the exact head, then manually merge after review;
+   release pull requests never use auto-merge.
+5. Keep GitHub immutable releases enabled.
+6. With publication authorization, dispatch `finalize`. It creates only the
+   draft Release; the finalizer verifies the commit and assets before publishing
+   it. `prepare` cannot create a Release, and `finalize` cannot create a pull
+   request.
 
 Each Release contains 12 tarballs, `harapter-X.Y.Z.spdx.json`, and
 `SHA256SUMS.txt`. The deterministic SPDX SBOM binds the commit, artifacts, and
@@ -43,10 +43,10 @@ internal dependencies. Release Please owns `CHANGELOG.md`.
 
 ## npm publication flow
 
-`publish-npm.yml` resolves a `harapter-vX.Y.Z` Release tag to its immutable
-commit, verifies and reproduces its complete asset set, then publishes the exact
-tarballs in dependency order with provenance. Its dispatch ref must match the
-tag; branch heads and local artifacts are rejected.
+`publish-npm.yml` resolves a `harapter-vX.Y.Z` tag to its immutable commit,
+reproduces its assets, then publishes the exact tarballs in dependency order
+with provenance. The dispatch ref must match; branches and local artifacts are
+rejected.
 
 The protected `npm` environment gates publication. Normal releases use GitHub
 Actions OIDC without a long-lived token.
@@ -54,19 +54,20 @@ Actions OIDC without a long-lived token.
 After the GitHub Release exists, an authorized maintainer dispatches:
 
 ```bash
+release_tag=harapter-vX.Y.Z
 gh workflow run publish-npm.yml \
-  --ref harapter-v0.1.1 \
-  -f release_tag=harapter-v0.1.1 \
-  -f bootstrap=true
+  --ref "$release_tag" \
+  -f release_tag="$release_tag" \
+  -f bootstrap=false
 ```
 
-Replace the tag as needed. Use `bootstrap=false` after the first publication.
+Replace `X.Y.Z` with the approved version.
 
-The publisher submits missing tarballs in dependency order, then polls them
-together every 15 seconds for up to 20 minutes. This covers npm's documented
+The publisher submits missing tarballs, then polls the batch for up to 20
+minutes. This covers npm's documented
 [publish-time scanning delay](https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata/)
-without serializing 12 scans. SHA-512, `next`, provenance, timeout, and conflict
-checks remain fail-closed.
+without serializing scans. SHA-512, `next`, provenance, timeout, and conflicts
+remain fail-closed.
 
 ## One-time npm bootstrap
 
@@ -106,10 +107,16 @@ GitHub-hosted runner. Do not advance the registry-created initial `latest`.
 
 ## Recovery and rollback
 
-Inspect before retrying. A workflow fix resumes a verified draft SHA through
-`resume_release_tag`; partial npm publication resumes from its immutable tag
-after reauthorization. Recovery may use one scan window before new writes and
-one afterward; the job timeout covers both plus verification.
+Inspect before retrying. Resume a verified draft with `finalize` and
+`resume_release_tag`. Resume partial npm publication from its immutable tag
+after reauthorization; its timeout covers pre-write and post-write scans.
+
+```bash
+gh workflow run release-please.yml \
+  --ref main \
+  -f operation=finalize \
+  -f resume_release_tag=harapter-vX.Y.Z
+```
 
 Published versions are immutable. Ordinary recovery deprecates a broken version
 and releases a fix; it never unpublishes, retags, or replaces one. Incident
