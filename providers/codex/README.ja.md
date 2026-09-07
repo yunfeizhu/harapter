@@ -113,6 +113,35 @@ stable App Server には Fixture、mapping test、shared conformance、live Runt
 Evidence があります。正確な compatibility、options、live test、制限は
 [英語の詳細ドキュメント](./README.md)を参照してください。
 
+## 原生 Session 履歴操作
+
+`openai.codex.sessions` は `CodexSessions.fork(ref)`
+を提供します。永続化済みで idle または未ロードの親 Thread を確認し、新しい Turn を送らずに安定版
+`thread/fork` を呼び出します。子 ID は親と異なり、`forkedFromId`
+が一致する必要があります。一時 Thread と設定の上書きは対象外です。永続設定の継承は Codex が管理します。変更結果が不明な場合は接続を閉じ、明確な RPC 拒否では親を再利用できます。
+
+親 Run の終了後に呼び出してください。別 Client や外部 writer も含め、親を同時変更しないことをホストが保証します。ローカル予約は別プロセスをロックしません。子参照は同じ Provider／Profile に属します。履歴範囲と親のライフサイクルが異なるため、portable
+`session.fork` は引き続き非対応です。
+
+```ts
+import {
+  CODEX_SESSION_EXTENSION,
+  type CodexSessions,
+} from '@harapter/adapter-codex';
+
+const sessions = client
+  .extensions()
+  .get<CodexSessions>(CODEX_SESSION_EXTENSION);
+if (sessions === undefined)
+  throw new Error('Native Session extension unavailable.');
+const child = await sessions.fork(session.ref());
+// The child uses the normal HarnessSession lifecycle.
+await child.close();
+```
+
+公式 Runtime、fixture、検証バージョンと再現コマンドは
+[Session fork の証拠](../../docs/provider-session-fork-evidence.md)を参照してください。実 Runtime とローカル合成モデルを使用した検証であり、ホスト型モデルサービスの検証ではありません。
+
 ## 関連パッケージ
 
 [すべてのパッケージ](../../README.ja.md#npm-パッケージ一覧)

@@ -103,6 +103,30 @@ Extension/Skill、shared Process、Session multiplex、auto restart、Session
 File、任意 native mutation は対象外です。全 options、live test、検証 Version は
 [英語の詳細ドキュメント](./README.md)を参照してください。
 
+## 原生 Session 履歴操作
+
+永続化が有効な場合、`pi.agent.sessions` は `PiSessions.fork(ref)`
+を公開します。別の Adapter 所有 RPC プロセスで正確な親 Session を開き、idle を確認して原生
+`clone` を実行し、`get_state`
+で別の idle な子を確認します。親プロセスの Session は切り替えません。コピー対象は現在の活動分岐であり、ファイル内の全分岐ではありません。拒否・キャンセル・不正応答・タイムアウトでは試行中の子プロセスだけを破棄します。実行設定は同じホスト Profile に属します。
+
+親 Run の終了後に呼び出してください。別 Client や外部 writer も含め、親を同時変更しないことをホストが保証します。ローカル予約は別プロセスをロックしません。子参照は同じ Provider／Profile に属します。履歴範囲と親のライフサイクルが異なるため、portable
+`session.fork` は引き続き非対応です。
+
+```ts
+import { PI_SESSION_EXTENSION, type PiSessions } from '@harapter/adapter-pi';
+
+const sessions = client.extensions().get<PiSessions>(PI_SESSION_EXTENSION);
+if (sessions === undefined)
+  throw new Error('Native Session extension unavailable.');
+const child = await sessions.fork(session.ref());
+// The child uses the normal HarnessSession lifecycle.
+await child.close();
+```
+
+公式 Runtime、fixture、検証バージョンと再現コマンドは
+[Session fork の証拠](../../docs/provider-session-fork-evidence.md)を参照してください。実 Runtime とローカル合成モデルを使用した検証であり、ホスト型モデルサービスの検証ではありません。
+
 ## 関連パッケージ
 
 [すべてのパッケージ](../../README.ja.md#npm-パッケージ一覧)

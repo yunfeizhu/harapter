@@ -107,6 +107,34 @@ Channel 保持可观察。
 Evidence。精确兼容范围、Provider Options、Live Test 和未支持能力见
 [英文详细文档](./README.md)。
 
+## 原生会话历史操作
+
+`openai.codex.sessions` 提供
+`CodexSessions.fork(ref)`。Adapter 先读取父 Thread，确认它已持久化且空闲或未加载，再调用稳定的
+`thread/fork`，不提交新 Turn。子 Thread 必须具有不同的 ID 和匹配的
+`forkedFromId`。不接受临时 Thread，也不提供运行配置覆盖选项；持久化设置由 Codex 原生继承。修改结果不确定时关闭连接；明确的 RPC 拒绝不会使父会话失效。
+
+请在父 Run 已结束后调用。宿主必须保证所有 Client 和外部写入方都不会同时修改父会话；本地预留不能锁住其他进程。子引用仍绑定原 Provider／Profile。portable
+`session.fork` 保持不支持，因为这些原生操作的历史范围和父生命周期不同。
+
+```ts
+import {
+  CODEX_SESSION_EXTENSION,
+  type CodexSessions,
+} from '@harapter/adapter-codex';
+
+const sessions = client
+  .extensions()
+  .get<CodexSessions>(CODEX_SESSION_EXTENSION);
+if (sessions === undefined)
+  throw new Error('Native Session extension unavailable.');
+const child = await sessions.fork(session.ref());
+// The child uses the normal HarnessSession lifecycle.
+await child.close();
+```
+
+官方运行时、fixture、测试版本和复现命令见[会话分叉证据](../../docs/provider-session-fork-evidence.md)。测试使用真实 Runtime 和本机合成模型，不代表已调用托管模型服务。
+
 ## 相关包
 
 [全部包](../../README.zh-CN.md#npm-包导航)

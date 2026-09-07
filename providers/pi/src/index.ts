@@ -20,3 +20,4 @@ export {
   type PiAssistantOutcome,
   type PiSessionState,
 } from './protocol.js';
+export { PI_SESSION_EXTENSION, type PiSessions } from './sessions.js';

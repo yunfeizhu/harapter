@@ -253,6 +253,38 @@ skills, prompt templates, shared-process Session multiplexing, automatic process
 restart, Session-file access, arbitrary native mutations, and live authenticated
 extension-interaction evidence are outside the current compatibility boundary.
 
+## Native Session history operations
+
+When persistence is enabled, `pi.agent.sessions` exposes `PiSessions.fork(ref)`.
+A separate adapter-owned RPC process opens the exact source Session, verifies it
+is idle, calls native `clone`, then verifies a distinct idle child through
+`get_state`. The original process never switches Session. Clone copies the
+active branch, not every branch in the source file. A rejected, cancelled,
+malformed or timed-out clone disposes only the attempted child process; it does
+not rebind the parent. Run configuration still comes from the same host Profile.
+
+Use this after the source Run has settled. The host must keep the source
+quiescent across every client and external writer; local reservations cannot
+lock another process. Child references retain Provider/Profile ownership.
+Portable `session.fork` remains unsupported: these typed native operations have
+different history and parent-lifecycle semantics.
+
+```ts
+import { PI_SESSION_EXTENSION, type PiSessions } from '@harapter/adapter-pi';
+
+const sessions = client.extensions().get<PiSessions>(PI_SESSION_EXTENSION);
+if (sessions === undefined)
+  throw new Error('Native Session extension unavailable.');
+const child = await sessions.fork(session.ref());
+// The child uses the normal HarnessSession lifecycle.
+await child.close();
+```
+
+Official-runtime and fixture evidence, tested versions, and reproduction
+commands are recorded in
+[Session fork evidence](../../docs/provider-session-fork-evidence.md). These
+tests use real runtimes with a local synthetic model, not a hosted model.
+
 ## Related packages
 
 [All packages](../../README.md#packages-on-npm)

@@ -100,9 +100,50 @@ conformance、real completion、cross-Client Resume、Native
 Cancellation の evidence があります。
 
 shared Gateway routing、History Replay、Session MCP、Audio、Generic
-File、Filesystem/ Terminal Client Service、自動 Process Restart、直接 Gateway
+File、Filesystem/ Terminal Client Service、自動 Process
+Restart、Adapter 所有の Gateway
 WebSocket は対象外です。Workspace は ACP に渡しますが Tool の実行 Directory は
 `unknown` です。詳細は [英語のドキュメント](./README.md)を参照してください。
+
+## 原生 Session 履歴操作
+
+ACP は fork を広告しません。`createOpenClawProviderFactory({ gateway })` に
+`OpenClawGatewayBinding` を明示的に渡してください。`profileId` は ACP
+Profile と一致し、`methods`
+は同じ Gateway の hello、`request(method, params, { signal })`
+は認証済み RPC に対応します。ACP と同じ Gateway／ストアへの接続、認証、再接続、破棄はホストが管理します。Harapter は接続を自動検出・インストールしません。
+`sessions.list` と `sessions.create` を観測した場合のみ拡張を公開します。
+
+`OpenClawSessions.fork(ref)` は正確な隔離ルートと親のポリシーを確認し、
+`fork: true`、`forkFrom: last-completed` で `sessions.create`
+を呼び出します。入力と command
+hooks は送信しません。系譜・権限・ディレクトリを検証後、 `requireExisting: true`
+で ACP に子を接続します。継承を保証できない worktree／session-root、リモート実行、子 Agent 所有、Session 単位の
+`sendPolicy`、incognito、非公開アクセスは拒否します。処理中は新規 ACP 操作を拒否し、不確かな変更・接続では ACP
+Client を閉じます。ホストが AbortSignal を無視しても各 RPC は
+`operationTimeoutMs` で終了します。Gateway 接続の管理責任はホストに残ります。
+
+親 Run の終了後に呼び出してください。別 Client や外部 writer も含め、親を同時変更しないことをホストが保証します。ローカル予約は別プロセスをロックしません。子参照は同じ Provider／Profile に属します。履歴範囲と親のライフサイクルが異なるため、portable
+`session.fork` は引き続き非対応です。
+
+```ts
+import {
+  OPENCLAW_SESSION_EXTENSION,
+  type OpenClawSessions,
+} from '@harapter/adapter-openclaw';
+
+const sessions = client
+  .extensions()
+  .get<OpenClawSessions>(OPENCLAW_SESSION_EXTENSION);
+if (sessions === undefined)
+  throw new Error('Native Session extension unavailable.');
+const child = await sessions.fork(session.ref());
+// The child uses the normal HarnessSession lifecycle.
+await child.close();
+```
+
+公式 Runtime、fixture、検証バージョンと再現コマンドは
+[Session fork の証拠](../../docs/provider-session-fork-evidence.md)を参照してください。実 Runtime とローカル合成モデルを使用した検証であり、ホスト型モデルサービスの検証ではありません。
 
 ## 関連パッケージ
 

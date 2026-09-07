@@ -100,6 +100,44 @@ WebSocket。Workspace 会传给 ACP，但 Tool 实际执行目录仍为
 `unknown`。完整 Evidence、Live Test、安全隔离与 Native
 Extension 见[英文详细文档](./README.md)。
 
+## 原生会话历史操作
+
+ACP 不声明分叉。需要在 `createOpenClawProviderFactory({ gateway })` 中显式提供
+`OpenClawGatewayBinding`：`profileId` 必须与 ACP Profile 一致，`methods`
+来自该 Gateway 的 hello，`request(method, params, { signal })`
+调用它已认证的 RPC。宿主必须保证它和 ACP 连接同一个 Gateway／存储，并负责认证、重连和销毁。Harapter 不自动发现或安装连接；只有观察到
+`sessions.list` 和 `sessions.create` 时才公开 `openclaw.gateway.sessions`。
+
+`OpenClawSessions.fork(ref)` 检查准确的隔离路由和父策略，以 `fork: true`、
+`forkFrom: last-completed` 调用
+`sessions.create`，不提交输入、不触发命令 hooks。验证原生血缘、权限和目录继承后，用
+`requireExisting: true`
+把子会话接到 ACP。无法证明完整继承的 worktree/session-root、远程执行、子 Agent 所有权、会话级
+`sendPolicy`、无痕和私有访问状态会被拒绝。分叉期间拒绝新的 ACP 操作；写入或接入结果不确定时关闭 ACP
+Client。每次 RPC 都受 `operationTimeoutMs`
+限制，即使宿主忽略 AbortSignal；宿主仍负责自己的 Gateway 连接。
+
+请在父 Run 已结束后调用。宿主必须保证所有 Client 和外部写入方都不会同时修改父会话；本地预留不能锁住其他进程。子引用仍绑定原 Provider／Profile。portable
+`session.fork` 保持不支持，因为这些原生操作的历史范围和父生命周期不同。
+
+```ts
+import {
+  OPENCLAW_SESSION_EXTENSION,
+  type OpenClawSessions,
+} from '@harapter/adapter-openclaw';
+
+const sessions = client
+  .extensions()
+  .get<OpenClawSessions>(OPENCLAW_SESSION_EXTENSION);
+if (sessions === undefined)
+  throw new Error('Native Session extension unavailable.');
+const child = await sessions.fork(session.ref());
+// The child uses the normal HarnessSession lifecycle.
+await child.close();
+```
+
+官方运行时、fixture、测试版本和复现命令见[会话分叉证据](../../docs/provider-session-fork-evidence.md)。测试使用真实 Runtime 和本机合成模型，不代表已调用托管模型服务。
+
 ## 相关包
 
 [全部包](../../README.zh-CN.md#npm-包导航)

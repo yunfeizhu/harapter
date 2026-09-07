@@ -54,6 +54,11 @@ import {
   type MappedPiEvent,
   type PiAssistantOutcome,
 } from './protocol.js';
+import {
+  PI_SESSION_EXTENSION,
+  assertPiCloneAccepted,
+  type PiSessions,
+} from './sessions.js';
 
 const descriptor: ProviderDescriptor = {
   providerId: PI_PROVIDER_ID,
@@ -223,6 +228,7 @@ async function connectPi(profile: HarnessProfile): Promise<HarnessClient> {
 }
 
 class PiClient implements HarnessClient {
+  private readonly forkingSessions = new Set<string>();
   private readonly extensionRegistry = new ExtensionRegistry(PI_PROVIDER_ID);
   private readonly observationListeners = new Set<(event: unknown) => void>();
   private readonly openingSessions = new Map<
@@ -241,6 +247,22 @@ class PiClient implements HarnessClient {
     private readonly runtimeVersion: string,
     private readonly options: ResolvedOptions,
   ) {
+    if (options.persistSessions) {
+      const sessions: PiSessions = Object.freeze({
+        fork: (ref: SessionRef) => this.forkSession(ref),
+      });
+      this.extensionRegistry.register(
+        {
+          name: PI_SESSION_EXTENSION,
+          providerId: PI_PROVIDER_ID,
+          displayName: 'Pi native Session branch cloning',
+          description:
+            'Clones the persisted active branch in a separate owned process.',
+          stability: 'experimental',
+        },
+        sessions,
+      );
+    }
     const observer: PiObservationExtension = Object.freeze({
       onObservation: (listener: (event: unknown) => void) => {
         this.observationListeners.add(listener);
@@ -323,6 +345,7 @@ class PiClient implements HarnessClient {
     }
     assertSessionOwnership(ref, PI_PROVIDER_ID, this.profile.profileId);
     assertSessionCompatibility(ref, PI_SESSION_COMPATIBILITY_REF);
+    this.assertNotForking(ref.providerSessionId);
     const state = sessionStateFromRef(ref);
     if (!state.persisted) {
       throw unsupported(
@@ -336,6 +359,42 @@ class PiClient implements HarnessClient {
 
   extensions(): ExtensionRegistry {
     return this.extensionRegistry;
+  }
+
+  private async forkSession(ref: SessionRef): Promise<HarnessSession> {
+    this.assertOpen();
+    assertSessionOwnership(ref, PI_PROVIDER_ID, this.profile.profileId);
+    assertSessionCompatibility(ref, PI_SESSION_COMPATIBILITY_REF);
+    const sourceId = ref.providerSessionId;
+    const state = sessionStateFromRef(ref);
+    if (!state.persisted)
+      throw unsupported(
+        this.profile,
+        'session.fork',
+        'Pi forks require a persisted source Session.',
+      );
+    this.assertNotForking(sourceId);
+    this.sessions.get(sourceId)?.assertForkable();
+    this.forkingSessions.add(sourceId);
+    try {
+      return await this.openSession(state, sourceId, true);
+    } finally {
+      this.forkingSessions.delete(sourceId);
+    }
+  }
+
+  assertNotForking(sessionId: ProviderSessionId): void {
+    if (this.forkingSessions.has(sessionId)) {
+      throw new HarnessError(
+        'run_conflict',
+        'The Pi Session has a pending fork.',
+        {
+          retryable: false,
+          providerId: PI_PROVIDER_ID,
+          profileId: this.profile.profileId,
+        },
+      );
+    }
   }
 
   native<T = unknown>(guard?: (value: unknown) => value is T): T | undefined {
@@ -384,9 +443,15 @@ class PiClient implements HarnessClient {
   private openSession(
     state: PiSessionRefState,
     resumeId?: ProviderSessionId,
+    fork = false,
   ): Promise<PiProcessSession> {
     const controller = new AbortController();
-    const opening = this.openSessionOnce(state, resumeId, controller.signal);
+    const opening = this.openSessionOnce(
+      state,
+      resumeId,
+      controller.signal,
+      fork,
+    );
     this.openingSessions.set(opening, controller);
     void opening.then(
       () => this.openingSessions.delete(opening),
@@ -403,6 +468,7 @@ class PiClient implements HarnessClient {
     state: PiSessionRefState,
     resumeId: ProviderSessionId | undefined,
     signal: AbortSignal,
+    fork: boolean,
   ): Promise<PiProcessSession> {
     let peer: PiRpcPeer | undefined;
     try {
@@ -419,7 +485,7 @@ class PiClient implements HarnessClient {
         { type: 'get_state' },
         { signal, timeoutMs: this.options.operationTimeoutMs },
       );
-      const nativeState = parsePiSessionState(response);
+      let nativeState = parsePiSessionState(response);
       this.assertOpen();
       if (nativeState.isStreaming || nativeState.isCompacting) {
         throw new HarnessError(
@@ -432,7 +498,7 @@ class PiClient implements HarnessClient {
           },
         );
       }
-      const sessionId = providerSessionId(nativeState.sessionId);
+      let sessionId = providerSessionId(nativeState.sessionId);
       if (resumeId !== undefined && sessionId !== resumeId) {
         throw new HarnessError(
           'session_provider_mismatch',
@@ -443,6 +509,37 @@ class PiClient implements HarnessClient {
             profileId: this.profile.profileId,
           },
         );
+      }
+      if (fork) {
+        assertPiCloneAccepted(
+          await peer.request(
+            { type: 'clone' },
+            { signal, timeoutMs: this.options.operationTimeoutMs },
+          ),
+        );
+        nativeState = parsePiSessionState(
+          await peer.request(
+            { type: 'get_state' },
+            { signal, timeoutMs: this.options.operationTimeoutMs },
+          ),
+        );
+        this.assertOpen();
+        sessionId = providerSessionId(nativeState.sessionId);
+        if (
+          sessionId === resumeId ||
+          nativeState.isStreaming ||
+          nativeState.isCompacting
+        ) {
+          throw new HarnessError(
+            'provider_api_incompatible',
+            'Pi clone did not establish a distinct idle Session.',
+            {
+              retryable: false,
+              providerId: PI_PROVIDER_ID,
+              profileId: this.profile.profileId,
+            },
+          );
+        }
       }
       if (this.sessions.has(sessionId)) {
         throw new HarnessError(
@@ -579,6 +676,21 @@ class PiProcessSession implements HarnessSession {
     return Promise.resolve(this.client.capabilityManifest());
   }
 
+  assertForkable(): void {
+    this.assertOpen();
+    if (this.activeRun !== undefined) {
+      throw new HarnessError(
+        'run_conflict',
+        'The source Pi Session has an active Run.',
+        {
+          retryable: false,
+          providerId: PI_PROVIDER_ID,
+          profileId: this.profile.profileId,
+        },
+      );
+    }
+  }
+
   start(input: HarnessInput, options: RunOptions = {}): Promise<HarnessRun> {
     try {
       return Promise.resolve(this.startOnce(input, options));
@@ -597,6 +709,7 @@ class PiProcessSession implements HarnessSession {
 
   private startOnce(input: HarnessInput, options: RunOptions): HarnessRun {
     this.assertOpen();
+    this.client.assertNotForking(this.sessionId);
     if (this.activeRun !== undefined) {
       throw new HarnessError(
         'run_conflict',
@@ -674,6 +787,21 @@ class PiProcessSession implements HarnessSession {
 
   close(): Promise<void> {
     if (this.closePromise) return this.closePromise;
+    try {
+      this.client.assertNotForking(this.sessionId);
+    } catch {
+      return Promise.reject(
+        new HarnessError(
+          'run_conflict',
+          'Cannot close a Pi Session while its fork is pending.',
+          {
+            retryable: false,
+            providerId: PI_PROVIDER_ID,
+            profileId: this.profile.profileId,
+          },
+        ),
+      );
+    }
     this.lifecycleState = 'closing';
     const attempt = this.closeOnce();
     this.closePromise = attempt;

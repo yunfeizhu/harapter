@@ -10,5 +10,10 @@
     "license": "MIT"
   },
   "captureMethod": "The official ACP bridge documentation and source were inspected at the recorded commit; fixtures are deterministic synthetic examples authored from the public ACP surface.",
-  "redactionMethod": "All identifiers, content, paths, failures, and usage values are synthetic; no OpenClaw traffic, Gateway credentials, environment values, account data, or host paths are stored."
+  "redactionMethod": "All identifiers, content, paths, failures, and usage values are synthetic; no OpenClaw traffic, Gateway credentials, environment values, account data, or host paths are stored.",
+  "forkEvidence": {
+    "repository": "https://github.com/openclaw/openclaw",
+    "commit": "66381fba99d081329c86e2e9ed2c9bd27d98799d",
+    "captureMethod": "Synthetic native fork receipts authored from the official machine contract; no provider traffic was captured."
+  }
 }

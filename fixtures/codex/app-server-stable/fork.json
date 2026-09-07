@@ -1,0 +1,18 @@
+{
+  "source": {
+    "thread": {
+      "id": "source-synthetic",
+      "ephemeral": false,
+      "status": {
+        "type": "idle"
+      }
+    }
+  },
+  "child": {
+    "thread": {
+      "id": "child-synthetic",
+      "ephemeral": false,
+      "forkedFromId": "source-synthetic"
+    }
+  }
+}

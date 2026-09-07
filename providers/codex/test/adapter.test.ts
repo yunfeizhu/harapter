@@ -81,7 +81,9 @@ describe('Codex App Server adapter', () => {
         typeof value === 'object' && value !== null && 'missing' in value,
     );
     expect(rejectedNative).toBeUndefined();
-    expect(client.extensions().list()).toEqual([]);
+    expect(client.extensions().list()).toMatchObject([
+      { name: 'openai.codex.sessions' },
+    ]);
     const session = await client.createSession();
     expect(session.ref()).toMatchObject({
       compatibilityRef: 'openai.codex;app-server=stable',

@@ -3,6 +3,7 @@ export {
   type OpenClawNativeClient,
   type OpenClawObservationExtension,
   type OpenClawProfileOptions,
+  type OpenClawProviderFactoryOptions,
 } from './adapter.js';
 export {
   OPENCLAW_OBSERVATION_EXTENSION,
@@ -16,3 +17,8 @@ export {
   type MappedOpenClawEvent,
   type OpenClawRuntime,
 } from './protocol.js';
+export {
+  OPENCLAW_SESSION_EXTENSION,
+  type OpenClawGatewayBinding,
+  type OpenClawSessions,
+} from './sessions.js';

@@ -94,6 +94,32 @@ Evidence。不支持自动 SSE 重连、OpenCode Process 管理、Portable
 Close 删除远端 Session，以及把 Command 或 Plugin 宣称为 Core
 Capability。详细选项、证据版本和 Native Client 见 [英文详细文档](./README.md)。
 
+## 原生会话历史操作
+
+`opencode.sessions` 提供 `OpenCodeSessions.fork(ref)`，调用原生
+`POST /session/{id}/fork`。先检查状态、身份和目录，再复制历史；子会话使用不同的原生 ID，并保留 Harapter 的模型及 system 默认值。上游不会复制会话权限规则或 revert 状态，因此存在这些状态时会在修改前拒绝分叉。不接受消息锚点，避免上游遇到未知锚点时静默复制全部历史。写入结果不确定时隔离父会话；明确的前置条件 HTTP 拒绝仍允许继续使用。
+
+请在父 Run 已结束后调用。宿主必须保证所有 Client 和外部写入方都不会同时修改父会话；本地预留不能锁住其他进程。子引用仍绑定原 Provider／Profile。portable
+`session.fork` 保持不支持，因为这些原生操作的历史范围和父生命周期不同。
+
+```ts
+import {
+  OPENCODE_SESSION_EXTENSION,
+  type OpenCodeSessions,
+} from '@harapter/adapter-opencode';
+
+const sessions = client
+  .extensions()
+  .get<OpenCodeSessions>(OPENCODE_SESSION_EXTENSION);
+if (sessions === undefined)
+  throw new Error('Native Session extension unavailable.');
+const child = await sessions.fork(session.ref());
+// The child uses the normal HarnessSession lifecycle.
+await child.close();
+```
+
+官方运行时、fixture、测试版本和复现命令见[会话分叉证据](../../docs/provider-session-fork-evidence.md)。测试使用真实 Runtime 和本机合成模型，不代表已调用托管模型服务。
+
 ## 相关包
 
 [全部包](../../README.zh-CN.md#npm-包导航)

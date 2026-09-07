@@ -7,5 +7,10 @@
     "bundleSha256": "f3dec1e031d99a420b137b903f02196d4325eece57620c925bb7130b25f168d2"
   },
   "captureMethod": "The current stable Schema is generated locally; the initialize response and JSONL traces are deterministic synthetic protocol examples authored from that Schema and the documented client-originator behavior.",
-  "redactionMethod": "All trace identifiers, text, paths, errors, and usage values are synthetic; no Provider traffic is stored."
+  "redactionMethod": "All trace identifiers, text, paths, errors, and usage values are synthetic; no Provider traffic is stored.",
+  "forkEvidence": {
+    "repository": "https://github.com/openai/codex",
+    "commit": "5ecb3afd1bf405149e2159bfda50093b0c1b5fab",
+    "captureMethod": "Synthetic native fork receipts authored from the official machine contract; no provider traffic was captured."
+  }
 }

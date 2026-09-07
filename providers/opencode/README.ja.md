@@ -105,6 +105,34 @@ close による remote deletion、Command/Plugin の Core
 Capability 化は対象外です。詳細は
 [英語のドキュメント](./README.md)を参照してください。
 
+## 原生 Session 履歴操作
+
+`opencode.sessions` の `OpenCodeSessions.fork(ref)`
+は、状態・ID・ディレクトリを確認して原生 `POST /session/{id}/fork`
+を呼び出します。履歴をコピーし、別の子 ID と同じ Harapter モデル／system 既定値を保持します。上流がコピーしない Session 権限規則または revert 状態がある場合は変更前に拒否します。未知のメッセージ位置で全履歴をコピーする上流の動作を避けるため、位置指定は受け付けません。不確かな書き込みでは親を隔離し、明確な前提条件の HTTP 拒否では再利用できます。
+
+親 Run の終了後に呼び出してください。別 Client や外部 writer も含め、親を同時変更しないことをホストが保証します。ローカル予約は別プロセスをロックしません。子参照は同じ Provider／Profile に属します。履歴範囲と親のライフサイクルが異なるため、portable
+`session.fork` は引き続き非対応です。
+
+```ts
+import {
+  OPENCODE_SESSION_EXTENSION,
+  type OpenCodeSessions,
+} from '@harapter/adapter-opencode';
+
+const sessions = client
+  .extensions()
+  .get<OpenCodeSessions>(OPENCODE_SESSION_EXTENSION);
+if (sessions === undefined)
+  throw new Error('Native Session extension unavailable.');
+const child = await sessions.fork(session.ref());
+// The child uses the normal HarnessSession lifecycle.
+await child.close();
+```
+
+公式 Runtime、fixture、検証バージョンと再現コマンドは
+[Session fork の証拠](../../docs/provider-session-fork-evidence.md)を参照してください。実 Runtime とローカル合成モデルを使用した検証であり、ホスト型モデルサービスの検証ではありません。
+
 ## 関連パッケージ
 
 [すべてのパッケージ](../../README.ja.md#npm-パッケージ一覧)

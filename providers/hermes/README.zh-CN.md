@@ -99,6 +99,37 @@ Evidence，新版本默认尝试并在不兼容结构处 fail closed。
 Reconnect 或未声明 Route。完整 Provider Options、Approval、Native Client、Live
 Test 和最后验证版本见 [英文详细文档](./README.md)。
 
+## 原生会话历史操作
+
+只有上游声明 `session_fork` 及其准确 endpoint 时，才提供
+`nous.hermes-agent.sessions` 的
+`HermesSessions.branch(ref)`。Hermes 会先把父会话标为
+`end_reason: branched`，再创建继承消息及 system
+context 的子会话。Harapter 会停用父会话，重新连接后也不允许继续使用父会话，所以方法明确命名为
+`branch`。上游不会复制已存储的模型配置；分支前要求 `has_model_config`
+明确为 false。请求发送后失败会隔离父会话，因为即使返回错误，父会话也可能已经被原生 API 停用。
+
+请在父 Run 已结束后调用。宿主必须保证所有 Client 和外部写入方都不会同时修改父会话；本地预留不能锁住其他进程。子引用仍绑定原 Provider／Profile。portable
+`session.fork` 保持不支持，因为这些原生操作的历史范围和父生命周期不同。
+
+```ts
+import {
+  HERMES_SESSION_EXTENSION,
+  type HermesSessions,
+} from '@harapter/adapter-hermes';
+
+const sessions = client
+  .extensions()
+  .get<HermesSessions>(HERMES_SESSION_EXTENSION);
+if (sessions === undefined)
+  throw new Error('Native Session extension unavailable.');
+const child = await sessions.branch(session.ref());
+// The child uses the normal HarnessSession lifecycle.
+await child.close();
+```
+
+官方运行时、fixture、测试版本和复现命令见[会话分叉证据](../../docs/provider-session-fork-evidence.md)。测试使用真实 Runtime 和本机合成模型，不代表已调用托管模型服务。
+
 ## 相关包
 
 [全部包](../../README.zh-CN.md#npm-包导航)

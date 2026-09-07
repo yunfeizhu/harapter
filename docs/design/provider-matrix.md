@@ -26,6 +26,11 @@ compatibility range is declared jointly by connection-time probes, redacted
 Fixtures, Conformance Tests, real-Runtime Tests, and the corresponding Provider
 README.
 
+The existing Codex, OpenCode, Hermes, OpenClaw and Pi Adapters gained typed
+native Session history operations with separate parent-lifecycle semantics. The
+[2026-09-07 verification record](../provider-session-fork-evidence.md) links
+their implemented contracts and fixed official-runtime evidence.
+
 ## 2. Target Providers
 
 | Provider           | Provider ID          | Preferred interface                   | Expected portable coverage | Main limitation                                                                                    |

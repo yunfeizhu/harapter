@@ -100,6 +100,29 @@ Extension/Skill、共享 Process、多 Session Multiplex、自动重启、Sessio
 Access 或任意 Native Mutation。完整 Options、Live Test 和最后验证版本见
 [英文详细文档](./README.md)。
 
+## 原生会话历史操作
+
+启用持久化时，`pi.agent.sessions` 提供
+`PiSessions.fork(ref)`。Adapter 使用独立的受管 RPC 进程打开准确的父会话，确认空闲后调用原生
+`clone`，再通过 `get_state`
+确认不同且空闲的子会话。父进程始终绑定原来的会话。克隆只复制当前活动分支，不复制源文件内的全部分支。拒绝、取消、畸形回执或超时只清理这次尝试的子进程，不会切换父会话。运行配置仍来自同一个宿主 Profile。
+
+请在父 Run 已结束后调用。宿主必须保证所有 Client 和外部写入方都不会同时修改父会话；本地预留不能锁住其他进程。子引用仍绑定原 Provider／Profile。portable
+`session.fork` 保持不支持，因为这些原生操作的历史范围和父生命周期不同。
+
+```ts
+import { PI_SESSION_EXTENSION, type PiSessions } from '@harapter/adapter-pi';
+
+const sessions = client.extensions().get<PiSessions>(PI_SESSION_EXTENSION);
+if (sessions === undefined)
+  throw new Error('Native Session extension unavailable.');
+const child = await sessions.fork(session.ref());
+// The child uses the normal HarnessSession lifecycle.
+await child.close();
+```
+
+官方运行时、fixture、测试版本和复现命令见[会话分叉证据](../../docs/provider-session-fork-evidence.md)。测试使用真实 Runtime 和本机合成模型，不代表已调用托管模型服务。
+
 ## 相关包
 
 [全部包](../../README.zh-CN.md#npm-包导航)

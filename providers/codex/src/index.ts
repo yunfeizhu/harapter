@@ -10,3 +10,4 @@ export {
   type CodexRawEvent,
   type CodexUserInput,
 } from './protocol.js';
+export { CODEX_SESSION_EXTENSION, type CodexSessions } from './sessions.js';
