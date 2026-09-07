@@ -14,9 +14,10 @@ updates:
         update-types:
           - minor
           - patch
-    labels:
-      - dependencies
-      - javascript
+    ignore:
+      - dependency-name: '@types/node'
+        update-types:
+          - version-update:semver-major
     commit-message:
       prefix: chore
       include: scope
@@ -32,9 +33,6 @@ updates:
       github-actions:
         patterns:
           - '*'
-    labels:
-      - dependencies
-      - github-actions
     commit-message:
       prefix: chore
       include: scope
