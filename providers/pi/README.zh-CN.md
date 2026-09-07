@@ -9,12 +9,11 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/adapter-pi"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-pi/next?style=flat-square&amp;label=npm%20next" alt="npm next 版本"></a>
+  <a href="https://www.npmjs.com/package/@harapter/adapter-pi"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-pi?style=flat-square&amp;label=npm" alt="npm 版本"></a>
   <a href="https://www.npmjs.com/package/@harapter/adapter-pi"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-pi?style=flat-square" alt="npm 下载量"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI 状态"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 或更高版本">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 许可证"></a>
-  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha 状态">
 </p>
 
 <!-- markdownlint-enable MD033 -->
@@ -30,7 +29,7 @@ Agent，选择模型和绝对可执行文件路径。Harapter 不读取 Session
 File、不管理 Credential，也不会安装 Runtime。
 
 ```bash
-pnpm add @harapter/core@next @harapter/adapter-pi@next
+pnpm add @harapter/core @harapter/adapter-pi
 ```
 
 ## 快速开始
@@ -100,3 +99,17 @@ Cancel 与清理 Evidence。
 Extension/Skill、共享 Process、多 Session Multiplex、自动重启、Session File
 Access 或任意 Native Mutation。完整 Options、Live Test 和最后验证版本见
 [英文详细文档](./README.md)。
+
+## 相关包
+
+[全部包](../../README.zh-CN.md#npm-包导航)
+
+| 包                                                                                       | 文档                                                   |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                         | [使用指南](../../packages/core/README.zh-CN.md)        |
+| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)           | [使用指南](../../packages/conformance/README.zh-CN.md) |
+| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)       | [使用指南](../codex/README.zh-CN.md)                   |
+| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)           | [使用指南](../dsh/README.zh-CN.md)                     |
+| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)     | [使用指南](../hermes/README.zh-CN.md)                  |
+| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw) | [使用指南](../openclaw/README.zh-CN.md)                |
+| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode) | [使用指南](../opencode/README.zh-CN.md)                |

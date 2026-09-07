@@ -9,12 +9,11 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/adapter-openclaw"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-openclaw/next?style=flat-square&amp;label=npm%20next" alt="npm next version"></a>
+  <a href="https://www.npmjs.com/package/@harapter/adapter-openclaw"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-openclaw?style=flat-square&amp;label=npm" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/@harapter/adapter-openclaw"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-openclaw?style=flat-square" alt="npm downloads"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
-  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
 </p>
 
 <!-- markdownlint-enable MD033 -->
@@ -38,7 +37,7 @@ tools, manage Gateway credentials, or change host security policy.
 ## Installation
 
 ```bash
-pnpm add @harapter/core@next @harapter/adapter-openclaw@next
+pnpm add @harapter/core @harapter/adapter-openclaw
 ```
 
 ## Runtime prerequisites and compatibility
@@ -254,3 +253,17 @@ Gateway WebSocket access are outside the current compatibility boundary.
 
 [openclaw-live-2026-09-03]:
   https://github.com/yunfeizhu/harapter/actions/runs/33740322290
+
+## Related packages
+
+[All packages](../../README.md#packages-on-npm)
+
+| Package                                                                                  | Documentation                                 |
+| ---------------------------------------------------------------------------------------- | --------------------------------------------- |
+| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                         | [Guide](../../packages/core/README.md)        |
+| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)           | [Guide](../../packages/conformance/README.md) |
+| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)       | [Guide](../codex/README.md)                   |
+| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)           | [Guide](../dsh/README.md)                     |
+| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)     | [Guide](../hermes/README.md)                  |
+| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode) | [Guide](../opencode/README.md)                |
+| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)             | [Guide](../pi/README.md)                      |

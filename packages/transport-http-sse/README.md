@@ -9,12 +9,11 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/transport-http-sse"><img src="https://img.shields.io/npm/v/%40harapter%2Ftransport-http-sse/next?style=flat-square&amp;label=npm%20next" alt="npm next version"></a>
+  <a href="https://www.npmjs.com/package/@harapter/transport-http-sse"><img src="https://img.shields.io/npm/v/%40harapter%2Ftransport-http-sse?style=flat-square&amp;label=npm" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/@harapter/transport-http-sse"><img src="https://img.shields.io/npm/dm/%40harapter%2Ftransport-http-sse?style=flat-square" alt="npm downloads"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
-  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha status">
 </p>
 
 <!-- markdownlint-enable MD033 -->
@@ -38,7 +37,7 @@ interaction, error, or cancellation meaning to upstream routes and payloads.
 ## Installation
 
 ```bash
-pnpm add @harapter/transport-http-sse@next
+pnpm add @harapter/transport-http-sse
 ```
 
 ## Public entrypoints
@@ -167,3 +166,15 @@ await events;
 - No Provider support claim follows from this transport. A Provider still needs
   an implementation, redacted fixtures, conformance evidence, a declared
   compatibility range, and applicable live-runtime evidence.
+
+## Related packages
+
+[All packages](../../README.md#packages-on-npm)
+
+| Package                                                                                                | Documentation                                 |
+| ------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                                       | [Guide](../core/README.md)                    |
+| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [Guide](../transport-jsonrpc-stdio/README.md) |
+| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [Guide](../transport-jsonl-process/README.md) |
+| [`@harapter/transport-acp`](https://www.npmjs.com/package/@harapter/transport-acp)                     | [Guide](../transport-acp/README.md)           |
+| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)                         | [Guide](../conformance/README.md)             |

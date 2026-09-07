@@ -9,12 +9,11 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/adapter-pi"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-pi/next?style=flat-square&amp;label=npm%20next" alt="npm next バージョン"></a>
+  <a href="https://www.npmjs.com/package/@harapter/adapter-pi"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-pi?style=flat-square&amp;label=npm" alt="npm バージョン"></a>
   <a href="https://www.npmjs.com/package/@harapter/adapter-pi"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-pi?style=flat-square" alt="npm ダウンロード数"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI ステータス"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 以上">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 ライセンス"></a>
-  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha ステータス">
 </p>
 
 <!-- markdownlint-enable MD033 -->
@@ -31,7 +30,7 @@ path はホストが所有します。Harapter は Session
 File や Credential を読み取らず Runtime を導入しません。
 
 ```bash
-pnpm add @harapter/core@next @harapter/adapter-pi@next
+pnpm add @harapter/core @harapter/adapter-pi
 ```
 
 ## クイックスタート
@@ -103,3 +102,17 @@ Image/File、Portable Model、Workspace、generic Approval、Runtime
 Extension/Skill、shared Process、Session multiplex、auto restart、Session
 File、任意 native mutation は対象外です。全 options、live test、検証 Version は
 [英語の詳細ドキュメント](./README.md)を参照してください。
+
+## 関連パッケージ
+
+[すべてのパッケージ](../../README.ja.md#npm-パッケージ一覧)
+
+| パッケージ                                                                               | ドキュメント                                      |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                         | [ガイド](../../packages/core/README.ja.md)        |
+| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)           | [ガイド](../../packages/conformance/README.ja.md) |
+| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)       | [ガイド](../codex/README.ja.md)                   |
+| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)           | [ガイド](../dsh/README.ja.md)                     |
+| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)     | [ガイド](../hermes/README.ja.md)                  |
+| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw) | [ガイド](../openclaw/README.ja.md)                |
+| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode) | [ガイド](../opencode/README.ja.md)                |

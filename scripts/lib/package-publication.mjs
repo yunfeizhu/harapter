@@ -21,8 +21,8 @@ export function validatePublicPackagePolicy(policy) {
   if (policy.schemaVersion !== 1) {
     failures.push('scripts/public-packages.json schemaVersion must be 1.');
   }
-  if (policy.distTag !== 'next') {
-    failures.push('scripts/public-packages.json distTag must be next.');
+  if (policy.distTag !== 'latest') {
+    failures.push('scripts/public-packages.json distTag must be latest.');
   }
   validateRegistryAvailabilityPolicy(policy.registryAvailability, failures);
   if (!Array.isArray(policy.packages) || policy.packages.length === 0) {
@@ -293,10 +293,10 @@ export function validatePublicPackageManifest({
     publishConfig.access !== 'public' ||
     publishConfig.provenance !== true ||
     publishConfig.registry !== registryUrl ||
-    publishConfig.tag !== 'next'
+    publishConfig.tag !== 'latest'
   ) {
     failures.push(
-      `${manifestPath} publishConfig must require public next releases with npm provenance.`,
+      `${manifestPath} publishConfig must require public latest releases with npm provenance.`,
     );
   }
   for (const section of [

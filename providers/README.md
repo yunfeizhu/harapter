@@ -18,8 +18,8 @@ share Harapter's synchronized pre-1.0 release version.
 
 “Supported in source” means implementation, redacted fixtures, Provider
 negatives, shared conformance, a declared compatibility range, and recorded
-live-runtime evidence exist. Published pre-alpha packages use the opt-in npm
-`next` dist-tag.
+live-runtime evidence exist. Public packages use the default npm `latest`
+dist-tag.
 
 “Experimental in source” has implementation, redacted fixtures, Provider
 negatives, shared conformance, and an explicit compatibility boundary, but

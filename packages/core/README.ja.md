@@ -9,12 +9,11 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore/next?style=flat-square&amp;label=npm%20next" alt="npm next バージョン"></a>
+  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore?style=flat-square&amp;label=npm" alt="npm バージョン"></a>
   <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/dm/%40harapter%2Fcore?style=flat-square" alt="npm ダウンロード数"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI ステータス"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 以上">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 ライセンス"></a>
-  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha ステータス">
 </p>
 
 <!-- markdownlint-enable MD033 -->
@@ -31,16 +30,16 @@ SDK を import せず、名前から機能を推測しません。
 
 ## インストール
 
-プレリリースは `next` タグで配布されます。
+npm の既定の `latest` チャネルからインストールします。
 
 ```bash
-pnpm add @harapter/core@next
+pnpm add @harapter/core
 ```
 
 次の Provider-free example では test package も追加します。
 
 ```bash
-pnpm add -D @harapter/conformance@next
+pnpm add -D @harapter/conformance
 ```
 
 Node.js 24 以上が必要です。Core は Harness Runtime の導入や認証を行いません。
@@ -131,7 +130,25 @@ Capability が許す場合だけ `session.ref()`
 - raw
   Event、`providerState`、`providerResult`、Prompt、認証情報を既定で記録しないでください；
 - resume、cancel、interaction、artifact、usage は現在の Capability に依存します；
-- API は pre-alpha で、1.0 以前に破壊的変更が入る可能性があります。
+- API は 0.x で、1.0 以前に破壊的変更が入る可能性があります。
 
 正確な契約は[英語の詳細ドキュメント](./README.md)と
 [API 設計](../../docs/design/api-design.ja.md)を参照してください。
+
+## 関連パッケージ
+
+[すべてのパッケージ](../../README.ja.md#npm-パッケージ一覧)
+
+| パッケージ                                                                                             | ドキュメント                                      |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [ガイド](../transport-jsonrpc-stdio/README.ja.md) |
+| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [ガイド](../transport-jsonl-process/README.ja.md) |
+| [`@harapter/transport-http-sse`](https://www.npmjs.com/package/@harapter/transport-http-sse)           | [ガイド](../transport-http-sse/README.ja.md)      |
+| [`@harapter/transport-acp`](https://www.npmjs.com/package/@harapter/transport-acp)                     | [ガイド](../transport-acp/README.ja.md)           |
+| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)                         | [ガイド](../conformance/README.ja.md)             |
+| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)                     | [ガイド](../../providers/codex/README.ja.md)      |
+| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)                         | [ガイド](../../providers/dsh/README.ja.md)        |
+| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)                   | [ガイド](../../providers/hermes/README.ja.md)     |
+| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw)               | [ガイド](../../providers/openclaw/README.ja.md)   |
+| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode)               | [ガイド](../../providers/opencode/README.ja.md)   |
+| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)                           | [ガイド](../../providers/pi/README.ja.md)         |

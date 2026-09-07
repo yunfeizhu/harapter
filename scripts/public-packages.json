@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "distTag": "next",
+  "distTag": "latest",
   "registryAvailability": {
     "timeoutSeconds": 1200,
     "pollIntervalSeconds": 15,

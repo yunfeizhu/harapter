@@ -9,12 +9,11 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/transport-acp"><img src="https://img.shields.io/npm/v/%40harapter%2Ftransport-acp/next?style=flat-square&amp;label=npm%20next" alt="npm next 版本"></a>
+  <a href="https://www.npmjs.com/package/@harapter/transport-acp"><img src="https://img.shields.io/npm/v/%40harapter%2Ftransport-acp?style=flat-square&amp;label=npm" alt="npm 版本"></a>
   <a href="https://www.npmjs.com/package/@harapter/transport-acp"><img src="https://img.shields.io/npm/dm/%40harapter%2Ftransport-acp?style=flat-square" alt="npm 下载量"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI 状态"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 或更高版本">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 许可证"></a>
-  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha 状态">
 </p>
 
 <!-- markdownlint-enable MD033 -->
@@ -27,7 +26,7 @@ Event 映射成 Harapter Event。
 ## 安装
 
 ```bash
-pnpm add @harapter/transport-acp@next
+pnpm add @harapter/transport-acp
 ```
 
 ## 快速开始
@@ -92,3 +91,15 @@ Service 不能被伪装成已支持能力。
 扩展回调、Permission Payload、Tool Raw Input/Output 和 Remote
 Error 是显式不脱敏边界，调用方必须自行执行数据策略。完整协议范围与竞态语义见
 [英文详细文档](./README.md)。
+
+## 相关包
+
+[全部包](../../README.zh-CN.md#npm-包导航)
+
+| 包                                                                                                     | 文档                                                   |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                                       | [使用指南](../core/README.zh-CN.md)                    |
+| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [使用指南](../transport-jsonrpc-stdio/README.zh-CN.md) |
+| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [使用指南](../transport-jsonl-process/README.zh-CN.md) |
+| [`@harapter/transport-http-sse`](https://www.npmjs.com/package/@harapter/transport-http-sse)           | [使用指南](../transport-http-sse/README.zh-CN.md)      |
+| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)                         | [使用指南](../conformance/README.zh-CN.md)             |

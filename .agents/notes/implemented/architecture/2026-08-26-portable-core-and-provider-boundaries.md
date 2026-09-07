@@ -72,6 +72,6 @@ remain bound to their creating Provider and Profile.
 - Core states event and terminal obligations but does not infer Provider
   outcomes or own transport buffering and redaction. Adapters and transports
   must implement and verify those behaviors.
-- Public packages remain pre-alpha and use the opt-in npm `next` dist-tag. Their
+- Public packages use 0.x versions and the default npm `latest` dist-tag. Their
   synchronized release train includes Core, conformance, transports, and the
   semantically different Provider Adapters that exercise the portable contract.

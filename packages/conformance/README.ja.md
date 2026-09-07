@@ -9,12 +9,11 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/conformance"><img src="https://img.shields.io/npm/v/%40harapter%2Fconformance/next?style=flat-square&amp;label=npm%20next" alt="npm next バージョン"></a>
+  <a href="https://www.npmjs.com/package/@harapter/conformance"><img src="https://img.shields.io/npm/v/%40harapter%2Fconformance?style=flat-square&amp;label=npm" alt="npm バージョン"></a>
   <a href="https://www.npmjs.com/package/@harapter/conformance"><img src="https://img.shields.io/npm/dm/%40harapter%2Fconformance?style=flat-square" alt="npm ダウンロード数"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI ステータス"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 以上">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 ライセンス"></a>
-  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha ステータス">
 </p>
 
 <!-- markdownlint-enable MD033 -->
@@ -26,7 +25,7 @@ Provider を提供します。共有スイートの成功は可搬契約の証�
 ## インストール
 
 ```bash
-pnpm add -D @harapter/conformance@next vitest@^4.1.11
+pnpm add -D @harapter/conformance vitest@^4.1.11
 ```
 
 ## Adapter テストで使う
@@ -98,3 +97,21 @@ mapping テストで sequence の単調性、終端の一意性、Event と `Run
   evidence を置き換えません。
 
 全テスト項目と設定は[英語の詳細ドキュメント](./README.md)を参照してください。
+
+## 関連パッケージ
+
+[すべてのパッケージ](../../README.ja.md#npm-パッケージ一覧)
+
+| パッケージ                                                                                             | ドキュメント                                      |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                                       | [ガイド](../core/README.ja.md)                    |
+| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [ガイド](../transport-jsonrpc-stdio/README.ja.md) |
+| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [ガイド](../transport-jsonl-process/README.ja.md) |
+| [`@harapter/transport-http-sse`](https://www.npmjs.com/package/@harapter/transport-http-sse)           | [ガイド](../transport-http-sse/README.ja.md)      |
+| [`@harapter/transport-acp`](https://www.npmjs.com/package/@harapter/transport-acp)                     | [ガイド](../transport-acp/README.ja.md)           |
+| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)                     | [ガイド](../../providers/codex/README.ja.md)      |
+| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)                         | [ガイド](../../providers/dsh/README.ja.md)        |
+| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)                   | [ガイド](../../providers/hermes/README.ja.md)     |
+| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw)               | [ガイド](../../providers/openclaw/README.ja.md)   |
+| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode)               | [ガイド](../../providers/opencode/README.ja.md)   |
+| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)                           | [ガイド](../../providers/pi/README.ja.md)         |

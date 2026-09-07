@@ -10,10 +10,10 @@ The Workspace root and examples stay private. The public packages listed in
 synchronized pre-1.0 version. Internal `workspace:*` dependencies become exact
 versions in npm tarballs.
 
-Pre-alpha packages publish under `next`; consumers select `@next`. npm also
-creates `latest` for a new package's first version. Harapter neither treats nor
-advances that tag as stable. `feat` produces a minor release, `fix` a patch, and
-`!` or `BREAKING CHANGE` a major release.
+Public packages publish under `latest`; consumers install without a tag suffix.
+The default channel does not imply a 1.0 API stability guarantee. `feat`
+produces a minor release, `fix` a patch, and `!` or `BREAKING CHANGE` a major
+release.
 
 ## GitHub release flow
 
@@ -66,7 +66,7 @@ Replace `X.Y.Z` with the approved version.
 The publisher submits missing tarballs, then polls the batch for up to 20
 minutes. This covers npm's documented
 [publish-time scanning delay](https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata/)
-without serializing scans. SHA-512, `next`, provenance, timeout, and conflicts
+without serializing scans. SHA-512, `latest`, provenance, timeout, and conflicts
 remain fail-closed.
 
 ## One-time npm bootstrap
@@ -84,8 +84,8 @@ one-time `0.1.1` bootstrap:
    flow.
 4. With explicit publication authorization, dispatch `publish-npm.yml` for
    `harapter-v0.1.1` with `bootstrap=true`.
-5. Verify every package, `next` dist-tag, provenance attestation, and content.
-   The registry-created initial `latest` tag is not a stable-channel decision.
+5. Verify every package, its release-channel dist-tag, provenance, and content.
+   The historical `0.1.1` bootstrap used `next`; new releases use `latest`.
 6. Delete `NPM_BOOTSTRAP_TOKEN` from GitHub and revoke it on npm.
 7. Configure each published package's trusted publisher for repository
    `yunfeizhu/harapter`, workflow `publish-npm.yml`, and environment `npm`.
@@ -103,7 +103,7 @@ release assets, and an isolated TypeScript consumer.
 After publication, use
 `npm view <name>@<version> version dist-tags dist.integrity` for every policy
 package. Confirm provenance identifies the repository, workflow, tag commit, and
-GitHub-hosted runner. Do not advance the registry-created initial `latest`.
+GitHub-hosted runner. Verify `latest` identifies the approved release.
 
 ## Recovery and rollback
 
@@ -118,9 +118,9 @@ gh workflow run release-please.yml \
   -f resume_release_tag=harapter-vX.Y.Z
 ```
 
-Published versions are immutable. Ordinary recovery deprecates a broken version
-and releases a fix; it never unpublishes, retags, or replaces one. Incident
-unpublishing requires a separate documented maintainer decision.
+Published versions and Git tags are immutable. Ordinary recovery deprecates a
+broken version and releases a fix; it never replaces or unpublishes one.
+Incident unpublishing requires a separate documented maintainer decision.
 
 Authoritative platform behavior is documented by
 [Release Please](https://github.com/googleapis/release-please),
@@ -128,5 +128,5 @@ Authoritative platform behavior is documented by
 [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/),
 [npm provenance](https://docs.npmjs.com/generating-provenance-statements/),
 [npm trusted-publisher management](https://docs.npmjs.com/cli/v11/commands/npm-trust/),
-[npm's observed initial `latest` behavior](https://github.com/npm/cli/issues/6408),
+[npm distribution tags](https://docs.npmjs.com/cli/v11/commands/npm-dist-tag/),
 and [pnpm Workspace publishing](https://pnpm.io/workspaces).

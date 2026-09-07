@@ -150,7 +150,7 @@ applicable. A passing command is evidence only for the surface it exercises.
   GitHub Release tag, with explicit authorization, package evidence, provenance
   or trusted publishing, and the documented rollback policy.
 
-## Pre-alpha policy
+## Pre-1.0 policy
 
 Before the first stable public contract, prefer a coherent foundation over
 permanent compatibility layers. Breaking design changes still require an Agent

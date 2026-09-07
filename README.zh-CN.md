@@ -21,13 +21,12 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore/next?style=flat-square&amp;label=npm%20next" alt="npm next 版本"></a>
+  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore?style=flat-square&amp;label=npm" alt="npm 版本"></a>
   <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/dm/%40harapter%2Fcore?style=flat-square" alt="npm 下载量"></a>
   <a href="https://github.com/yunfeizhu/harapter/releases"><img src="https://img.shields.io/github/v/release/yunfeizhu/harapter?display_name=tag&amp;include_prereleases&amp;sort=semver&amp;style=flat-square&amp;label=release" alt="GitHub Release"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI 状态"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 或更高版本">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 许可证"></a>
-  <img src="https://img.shields.io/badge/status-pre--alpha-EA580C?style=flat-square" alt="Pre-alpha 状态">
 </p>
 
 <!-- markdownlint-enable MD033 -->
@@ -39,17 +38,34 @@ Adapter 将这些契约转换到官方 SDK 和机器协议。
 它位于应用与所选 Runtime 之间，是基础设施，而不是新的 Agent
 Loop。每个 Runtime 仍由宿主选择、安装、认证并实施安全策略。
 
+## npm 包导航
+
+| 包                                                                                                     | 文档                                                           |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                                       | [使用指南](./packages/core/README.zh-CN.md)                    |
+| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [使用指南](./packages/transport-jsonrpc-stdio/README.zh-CN.md) |
+| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [使用指南](./packages/transport-jsonl-process/README.zh-CN.md) |
+| [`@harapter/transport-http-sse`](https://www.npmjs.com/package/@harapter/transport-http-sse)           | [使用指南](./packages/transport-http-sse/README.zh-CN.md)      |
+| [`@harapter/transport-acp`](https://www.npmjs.com/package/@harapter/transport-acp)                     | [使用指南](./packages/transport-acp/README.zh-CN.md)           |
+| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)                         | [使用指南](./packages/conformance/README.zh-CN.md)             |
+| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)                     | [使用指南](./providers/codex/README.zh-CN.md)                  |
+| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)                         | [使用指南](./providers/dsh/README.zh-CN.md)                    |
+| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)                   | [使用指南](./providers/hermes/README.zh-CN.md)                 |
+| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw)               | [使用指南](./providers/openclaw/README.zh-CN.md)               |
+| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode)               | [使用指南](./providers/opencode/README.zh-CN.md)               |
+| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)                           | [使用指南](./providers/pi/README.zh-CN.md)                     |
+
 ## 快速上手
 
 ### 1. 安装已经发布的 Package
 
-Harapter 需要 Node.js 24 或更高版本。Pre-alpha Package 使用需要显式选择的 `next`
-dist-tag。从 npm 安装 Core 和一个 Adapter：
+Harapter 需要 Node.js 24 或更高版本。从 npm 默认的 `latest`
+渠道安装 Core 和一个 Adapter：
 
 ```bash
-npm install @harapter/core@next @harapter/adapter-codex@next
-# 或：pnpm add @harapter/core@next @harapter/adapter-codex@next
-# 或：yarn add @harapter/core@next @harapter/adapter-codex@next
+npm install @harapter/core @harapter/adapter-codex
+# 或：pnpm add @harapter/core @harapter/adapter-codex
+# 或：yarn add @harapter/core @harapter/adapter-codex
 ```
 
 根据宿主运行的 Runtime 选择 Adapter：
@@ -271,10 +287,8 @@ README。
 
 ## 项目状态
 
-Harapter 当前处于
-**pre-alpha**。TypeScript 实现可以从本 Workspace 使用；公开发布候选已具备经过审查的 Manifest、Tarball 消费测试、Provenance、发布与回滚控制。已发布的 pre-alpha
-npm Package 使用同一同步版本和需要显式选择的 `next`
-dist-tag；当前 Registry 可用性以 npm 或 GitHub
+Harapter 使用同步的 **0.x** 包版本和 npm 默认的 `latest`
+渠道。公共包具备经过审查的 Manifest、Tarball 消费测试、Provenance、发布与回滚控制。API 在 1.0 前仍可能变化；当前已发布版本以 npm 或 GitHub
 Releases 页面为准。Workspace 根目录与示例仍保持 Private，Harapter 不发布 PyPI 或独立 CLI 发行物。
 
 当前稳定化工作聚焦于消费者反馈、由宿主运行的实验 Adapter Live
@@ -318,7 +332,7 @@ Abort 与 Provider 确认的 Cancellation 是不同的生命周期结果。
 
 公开的 Core、Conformance、Transport 和 Adapter
 Package 在 1.0 前使用同一版本，并发布到
-`next`。Workspace 根目录和示例保持 Private。Release Please 管理版本和 GitHub
+`latest`。Workspace 根目录和示例保持 Private。Release Please 管理版本和 GitHub
 Release；每个不可变 Release 都包含 12 个已验证 Tarball、SPDX
 SBOM 和 SHA-256 校验文件。另一个需要单独授权的 Workflow 使用 Provenance 将这些相同 Tarball 发布到 npm。
 
