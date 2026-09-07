@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2](https://github.com/yunfeizhu/harapter/compare/harapter-v0.1.1...harapter-v0.1.2) (2026-09-07)
+
+
+### Bug Fixes
+
+* **release:** discover draft releases by ID ([#102](https://github.com/yunfeizhu/harapter/issues/102)) ([d0e80f3](https://github.com/yunfeizhu/harapter/commit/d0e80f3d7f4833f95cc57652a3c906b1a1eb5152))
+* **release:** resume existing draft finalization ([#103](https://github.com/yunfeizhu/harapter/issues/103)) ([a15c4c0](https://github.com/yunfeizhu/harapter/commit/a15c4c04b13da3bb3242f6758bc24fcd1ec71345))
+* **release:** tolerate npm publication scan latency ([#105](https://github.com/yunfeizhu/harapter/issues/105)) ([00108db](https://github.com/yunfeizhu/harapter/commit/00108db42f57dd3fa5c7f85637a6226ba45799af))
+
 ## [0.1.1](https://github.com/yunfeizhu/harapter/compare/harapter-v0.1.0...harapter-v0.1.1) (2026-09-04)
 
 
