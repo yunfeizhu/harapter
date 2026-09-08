@@ -13,7 +13,8 @@ is injected, and no hosted model credential is required.
 
 Local evidence on 2026-09-08 uses the following official installations. The
 versions identify observations, not an admission allowlist or a newly negotiated
-compatibility range.
+compatibility range. Separate [Actions results](#recorded-actions-results) below
+record the installations and Harapter revisions used on trusted runners.
 
 | Provider | Official Runtime                                                         | Exercised interface                            | Cases |
 | -------- | ------------------------------------------------------------------------ | ---------------------------------------------- | ----- |
@@ -97,16 +98,47 @@ permissions are read-only, and no model Secrets enter the interaction jobs. The
 original credential-backed no-tools lifecycle jobs remain separate.
 
 The interaction jobs install the current official npm releases, or the current
-Hermes GitHub release into an isolated Python environment. They record resolved
-package versions, Hermes source revision, Harapter revision and the selected
-suite's result. Installation and execution have job deadlines; the test command
-also has a 240-second process deadline. No Runtime home, traffic or log artifact
-is uploaded. An installation or selected test failure fails the job.
+Hermes GitHub release as an editable source installation in an isolated Python
+environment. They record resolved package versions, Hermes source revision,
+Harapter revision and the selected suite's result. Installation and execution
+have job deadlines; the test command also has a 240-second process deadline. No
+Runtime home, traffic or log artifact is uploaded. An installation or selected
+test failure fails the job.
 
-The recorded results above are local Runtime evidence. This change's trusted
-Actions execution remains pending until the workflow is delivered to the default
-branch and a selected run succeeds. Neither fixture CI nor local success is a
-substitute for that Actions result.
+### Recorded Actions results
+
+On 2026-09-08, five manual runs from `main` passed both the selected official
+Runtime interaction job and its separate credential-backed lifecycle job. The 36
+interaction cases use the synthetic model service described above; the lifecycle
+suite counts are separate. Each lifecycle suite's two passing tests consist of
+one credential-backed Runtime lifecycle test and one offline safety-guard test.
+Versions and test counts below were read from the linked Actions summaries.
+Unselected, skipped jobs are not passing evidence.
+
+| Provider | Interaction Runtime                      | Interaction cases passed | Lifecycle suite tests passed | Harapter revision | Actions                                                                       |
+| -------- | ---------------------------------------- | ------------------------ | ---------------------------- | ----------------- | ----------------------------------------------------------------------------- |
+| Codex    | `@openai/codex` 0.153.4                  | 6                        | 2                            | `2a9bac0`         | [34196266283](https://github.com/yunfeizhu/harapter/actions/runs/34196266283) |
+| OpenCode | `opencode-ai` 1.18.29                    | 6                        | 2                            | `2a9bac0`         | [34196346230](https://github.com/yunfeizhu/harapter/actions/runs/34196346230) |
+| Hermes   | `hermes-agent` 0.21.1                    | 6                        | 2                            | `b55db3e`         | [34198210659](https://github.com/yunfeizhu/harapter/actions/runs/34198210659) |
+| OpenClaw | `openclaw` 2026.9.2                      | 6                        | 2                            | `2a9bac0`         | [34196680068](https://github.com/yunfeizhu/harapter/actions/runs/34196680068) |
+| Pi       | `@earendil-works/pi-coding-agent` 0.85.1 | 12                       | 2                            | `2a9bac0`         | [34196866951](https://github.com/yunfeizhu/harapter/actions/runs/34196866951) |
+
+The full Harapter revisions are `2a9bac0d088b775124b6de5336170fd9ef49fc11` and
+`b55db3e49baf628e71dc54efe1f2bd45ed2d1541`. Between them, only the Hermes
+installation mode, its policy checks and the owning Agent Note changed. The four
+earlier Provider results are retained with their original revision; only Hermes
+was rerun at `b55db3e`.
+
+The Hermes interaction job used official source revision
+`2237be355906fbe6065ce1815711eee52b2d646e`. Its separate lifecycle job used
+`nousresearch/hermes-agent@sha256:5aa20e4fd299c4f0b3e5de91992fba8d677aa9625feb544a83cfb76fe2b1d7f8`.
+These cloud identities are distinct from the local Hermes observation above.
+
+The Pi limitation in the recorded scope also applies to its Actions result:
+passing the interrupted-confirmation cases verifies their expected failure and
+connection-abort outcomes, without establishing native cancellation for that
+path. These dated results cover the exercised paths and recorded installations;
+they do not expand capability declarations or guarantee later Runtime releases.
 
 ## Official interface references
 
