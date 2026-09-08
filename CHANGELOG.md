@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0](https://github.com/yunfeizhu/harapter/compare/harapter-v0.2.0...harapter-v0.3.0) (2026-09-08)
+
+
+### Features
+
+* add host interaction workflows and conformance ([#126](https://github.com/yunfeizhu/harapter/issues/126)) ([1ef6fd2](https://github.com/yunfeizhu/harapter/commit/1ef6fd29fcc1dd63ef14c5eb07244c537a6247af))
+* **examples:** add six-provider session workflow ([#124](https://github.com/yunfeizhu/harapter/issues/124)) ([aeb4e4d](https://github.com/yunfeizhu/harapter/commit/aeb4e4d55429ea411267b1703fb8c7989e2f6810))
+
 ## [0.2.0](https://github.com/yunfeizhu/harapter/compare/harapter-v0.1.3...harapter-v0.2.0) (2026-09-07)
 
 
