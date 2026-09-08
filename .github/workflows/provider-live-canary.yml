@@ -847,7 +847,7 @@ jobs:
               hermes_source="$RUNNER_TEMP/harapter-hermes-source"
               git clone --quiet --depth 1 --branch "$hermes_tag" https://github.com/NousResearch/hermes-agent.git "$hermes_source"
               python3 -m venv "$RUNNER_TEMP/harapter-hermes-venv"
-              "$RUNNER_TEMP/harapter-hermes-venv/bin/pip" install "$hermes_source[messaging]"
+              "$RUNNER_TEMP/harapter-hermes-venv/bin/pip" install --editable "$hermes_source[messaging]"
               printf '%s\n' "HARAPTER_INTERACTION_LIVE_COMMAND=$RUNNER_TEMP/harapter-hermes-venv/bin/hermes" >> "$GITHUB_ENV"
               printf '%s\n' "- Hermes source revision: $(git -C "$hermes_source" rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
               "$RUNNER_TEMP/harapter-hermes-venv/bin/python" -c 'from importlib.metadata import version; print("- Hermes package: " + version("hermes-agent"))' >> "$GITHUB_STEP_SUMMARY"

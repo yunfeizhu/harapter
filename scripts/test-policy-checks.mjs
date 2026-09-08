@@ -691,6 +691,16 @@ for (const weaken of [
     requiredStep(job, 'Check out trusted default branch').with.ref =
       '${{ github.head_ref }}';
   },
+  (job) => {
+    const step = requiredStep(
+      job,
+      'Install and record official interaction runtime',
+    );
+    step.run = step.run.replace('pip" install --editable', 'pip" install');
+  },
+  (job) => {
+    job.env = { HERMES_NIX_BUILD: '1' };
+  },
 ]) {
   const weakened = structuredClone(interactionJob);
   weaken(weakened);
@@ -741,6 +751,11 @@ function assertInteractionWorkflow(job) {
     '${{ fromJSON(needs.selection.outputs.interactions) }}',
   );
   assert.equal(JSON.stringify(job).includes('${{ secrets.'), false);
+  assert.doesNotMatch(JSON.stringify(job), /HERMES_NIX_BUILD/u);
+  assert.match(
+    requiredStep(job, 'Install and record official interaction runtime').run,
+    /pip" install --editable "\$hermes_source\[messaging\]"/u,
+  );
   const checkout = requiredStep(job, 'Check out trusted default branch').with;
   assert.equal(checkout.ref, '${{ github.sha }}');
   assert.equal(checkout['persist-credentials'], false);

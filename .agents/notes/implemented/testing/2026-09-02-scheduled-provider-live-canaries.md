@@ -177,6 +177,14 @@ also need an actual execution of the YAML-decoded shell with isolated command
 substitutes before the trusted run; syntax-only checks do not establish that
 nested command substitutions and heredoc boundaries execute correctly.
 
+Hermes uses an editable installation against the retained official release
+checkout. Its
+[upstream build guard](https://github.com/NousResearch/hermes-agent/blob/2237be355906fbe6065ce1815711eee52b2d646e/setup.py)
+rejects ordinary wheel builds because runtime assets depend on the source
+layout. The checkout and virtual environment therefore remain together for the
+whole job; the canary does not impersonate a Nix build to bypass that guard.
+Policy tests reject a non-editable install or a build-guard override.
+
 ## Alternatives considered
 
 ### Pin every Runtime to one exact version
