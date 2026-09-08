@@ -105,3 +105,10 @@ existing isolated runtime configuration remains authoritative; a no-tools Run
 may never produce an interaction. The shared interaction suite uses synthetic
 protocol fixtures for the five existing response-capable adapters. It does not
 extend their declared runtime compatibility ranges or replace live evidence.
+
+The
+[official Runtime interaction suite](../../docs/provider-interaction-evidence.md)
+adds separate evidence for approval, native Pi dialogs, duplicate/late answers,
+and terminal cleanup with a synthetic loopback model. It records the observed Pi
+interruption limitation and distinguishes local results from trusted Actions
+execution.

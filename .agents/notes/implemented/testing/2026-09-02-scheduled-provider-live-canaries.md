@@ -101,8 +101,8 @@ starts the Server through its absolute installed command, removes the credential
 and model-service URL from the test process after Server readiness, stores only
 Event type strings, and keeps failure diagnostics free of response and native
 Session values. Permission translation remains covered by redacted fixtures and
-Conformance Tests; the live canary does not enable tools merely to induce a
-permission request.
+Conformance Tests; this credential-backed lifecycle does not enable tools merely
+to induce a permission request.
 
 The Hermes Agent lifecycle applies the same exact completed-Run boundary, then
 closes the first local handle, resumes the same native Session, and requires a
@@ -147,6 +147,28 @@ synthetic text Prompt only after both the public inventory and the complete
 Agent-side tool resolver pass their fail-closed checks. It retains no container,
 data volume, logs, Prompt, response, or Provider traffic artifact.
 
+A separate interaction matrix reuses the trusted selection gate and Provider
+flags. Its official Runtimes receive only a synthetic loopback model endpoint
+and fixed dummy credentials. This separation allows explicit test-owned tool
+approvals without weakening the no-tools policy for credential-backed runs. The
+local model emits a fixed command targeting a newly created empty directory;
+tests prove it cannot execute before approval or after a denied/late answer. Pi
+instead loads one fixed extension through a host-owned executable wrapper, while
+automatic extension discovery stays disabled. That setup does not add a Runtime
+extension-loading option to the Adapter.
+
+The
+[interaction evidence guide](../../../../docs/provider-interaction-evidence.md)
+owns versions, commands and observed limitations. The matrix exercises normal
+answers, duplicate/late responses, waiting-state cancellation, timeout and
+Client disposal. Pi's observed error terminal during interrupted confirmation
+remains a failed Run, not native cancellation. The suite asserts actual terminal
+semantics and never promotes a requested abort to a successful cancellation.
+Current official release installs detect drift; identity and test results are
+retained, but Runtime logs, state and model bodies are not uploaded. Local
+success and a configured workflow are explicitly distinct from a passing trusted
+Actions execution.
+
 ## Alternatives considered
 
 ### Pin every Runtime to one exact version
@@ -160,6 +182,13 @@ production-host choice, not as Harapter's runtime admission rule.
 This would expose Secrets to code under review or require a privileged workflow
 to execute an untrusted head. Deterministic fixtures and conformance remain the
 pull request gate; live canaries run only from the trusted default branch.
+
+### Use a hosted model to induce interactive tools
+
+Model choices would make the requested tool nondeterministic and place a real
+credential in a tool-capable Runtime. A fixed loopback model preserves real
+Runtime approvals and machine interfaces with no model Secret or model cost. It
+cannot replace authenticated model-service evidence, so both jobs remain.
 
 ### Treat every successful canary as full Provider support
 

@@ -38,6 +38,7 @@ jobs:
       openclaw: ${{ steps.providers.outputs.openclaw }}
       opencode: ${{ steps.providers.outputs.opencode }}
       pi: ${{ steps.providers.outputs.pi }}
+      interactions: ${{ steps.providers.outputs.interactions }}
     steps:
       - name: Verify trusted default branch
         env:
@@ -114,6 +115,12 @@ jobs:
           echo "openclaw=$openclaw" >> "$GITHUB_OUTPUT"
           echo "opencode=$opencode" >> "$GITHUB_OUTPUT"
           echo "pi=$pi" >> "$GITHUB_OUTPUT"
+          node --input-type=module - "$codex" "$opencode" "$hermes" "$openclaw" "$pi" <<'NODE'
+          import { appendFileSync } from 'node:fs';
+          const names = ['codex', 'opencode', 'hermes', 'openclaw', 'pi'];
+          const selected = names.filter((_, index) => process.argv[index + 2] === 'true');
+          appendFileSync(process.env.GITHUB_OUTPUT, `interactions=${JSON.stringify(selected)}\n`);
+          NODE
 
   codex:
     name: Codex latest live lifecycle
@@ -790,3 +797,86 @@ jobs:
           printf '%s\n' '- Native cancellation: passed' >> "$GITHUB_STEP_SUMMARY"
           printf '%s\n' '- Authoritative terminals: run.completed, run.cancelled' >> "$GITHUB_STEP_SUMMARY"
           printf '%s\n' '- Model tools enabled: no' >> "$GITHUB_STEP_SUMMARY"
+
+  interactions:
+    name: ${{ matrix.provider }} official runtime interactions
+    needs: selection
+    if: needs.selection.outputs.interactions != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: ${{ fromJSON(needs.selection.outputs.interactions) }}
+    steps:
+      - name: Check out trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Harapter dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install and record official interaction runtime
+        env:
+          INTERACTION_PROVIDER: ${{ matrix.provider }}
+        run: |
+          set -eu
+          printf '%s\n' '### Official Runtime interactions (synthetic loopback model)' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "- Harapter revision: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          case "$INTERACTION_PROVIDER" in
+            codex) package=@openai/codex ;;
+            opencode) package=opencode-ai ;;
+            openclaw) package=openclaw ;;
+            pi) package=@earendil-works/pi-coding-agent ;;
+            hermes)
+              curl --fail --silent --show-error --retry 3 --max-time 30 \
+                https://api.github.com/repos/NousResearch/hermes-agent/releases/latest \
+                --output "$RUNNER_TEMP/hermes-release.json"
+              hermes_tag=$(node --input-type=module - "$RUNNER_TEMP/hermes-release.json" <<'NODE'
+              import { readFileSync } from 'node:fs';
+              const tag = JSON.parse(readFileSync(process.argv[2], 'utf8')).tag_name;
+              if (typeof tag !== 'string' || !/^v[0-9][0-9A-Za-z.-]*$/.test(tag)) throw new Error('Invalid official Hermes release tag.');
+              process.stdout.write(tag);
+              NODE
+              )
+              hermes_source="$RUNNER_TEMP/harapter-hermes-source"
+              git clone --quiet --depth 1 --branch "$hermes_tag" https://github.com/NousResearch/hermes-agent.git "$hermes_source"
+              python3 -m venv "$RUNNER_TEMP/harapter-hermes-venv"
+              "$RUNNER_TEMP/harapter-hermes-venv/bin/pip" install "$hermes_source[messaging]"
+              printf '%s\n' "HARAPTER_INTERACTION_LIVE_COMMAND=$RUNNER_TEMP/harapter-hermes-venv/bin/hermes" >> "$GITHUB_ENV"
+              printf '%s\n' "- Hermes source revision: $(git -C "$hermes_source" rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+              "$RUNNER_TEMP/harapter-hermes-venv/bin/python" -c 'from importlib.metadata import version; print("- Hermes package: " + version("hermes-agent"))' >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+              ;;
+            *) echo '::error::Unknown interaction runtime.'; exit 1 ;;
+          esac
+          case "$INTERACTION_PROVIDER" in
+            openclaw|pi) npm install --global --ignore-scripts "$package@latest" ;;
+            *) npm install --global "$package@latest" ;;
+          esac
+          node scripts/prepare-live-canary.mjs record-global-package Runtime "$package"
+          runtime_command=$(command -v "$INTERACTION_PROVIDER")
+          case "$runtime_command" in
+            /*) ;;
+            *) echo '::error::Runtime command must be absolute.'; exit 1 ;;
+          esac
+          printf '%s\n' "HARAPTER_INTERACTION_LIVE_COMMAND=$runtime_command" >> "$GITHUB_ENV"
+
+      - name: Run official runtime interactions
+        env:
+          HARAPTER_INTERACTION_LIVE_PROVIDER: ${{ matrix.provider }}
+        run: |
+          set -eu
+          timeout --signal=TERM --kill-after=10s 240s pnpm vitest run tests/provider-interaction-live.test.ts
+          printf '%s\n' '- Selected official Runtime interaction suite: passed.' >> "$GITHUB_STEP_SUMMARY"

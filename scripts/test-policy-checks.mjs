@@ -564,6 +564,7 @@ assert.deepEqual(Object.keys(liveJobs).sort(), [
   'codex',
   'dsh',
   'hermes',
+  'interactions',
   'openclaw',
   'opencode',
   'pi',
@@ -673,6 +674,91 @@ for (const [provider, expectation] of Object.entries(providerJobExpectations)) {
     assert.ok(safetyIndex >= 0 && safetyIndex < firstSecretIndex);
   }
 }
+const interactionJob = requiredJob(liveJobs, 'interactions');
+assertInteractionWorkflow(interactionJob);
+for (const weaken of [
+  (job) => {
+    job.needs = [];
+  },
+  (job) => {
+    job.env = { KEY: '${{ secrets.MODEL_KEY }}' };
+  },
+  (job) => {
+    delete requiredStep(job, 'Run official runtime interactions').env
+      .HARAPTER_INTERACTION_LIVE_PROVIDER;
+  },
+  (job) => {
+    requiredStep(job, 'Check out trusted default branch').with.ref =
+      '${{ github.head_ref }}';
+  },
+]) {
+  const weakened = structuredClone(interactionJob);
+  weaken(weakened);
+  assert.throws(() => assertInteractionWorkflow(weakened));
+}
+
+// Execute the workflow's Node matrix selection on every development platform;
+// no shell, Runtime, credential or GitHub API is required by this policy test.
+const selectionRun = requiredStep(selection, 'Select provider jobs').run;
+const selectionProgram = /<<'NODE'\n([\s\S]+?)\nNODE/u.exec(selectionRun)?.[1];
+assert.ok(selectionProgram);
+for (const [flags, expected] of [
+  [
+    ['true', 'true', 'true', 'true', 'true'],
+    ['codex', 'opencode', 'hermes', 'openclaw', 'pi'],
+  ],
+  [['false', 'false', 'false', 'false', 'true'], ['pi']],
+  [['false', 'false', 'false', 'false', 'false'], []],
+  [
+    ['true', 'false', 'true', 'false', 'false'],
+    ['codex', 'hermes'],
+  ],
+]) {
+  const output = join(fixtureRoot, 'interaction-selection-output');
+  writeFileSync(output, '');
+  const selectedRun = spawnSync(
+    process.execPath,
+    ['--input-type=module', '-', ...flags],
+    {
+      input: selectionProgram,
+      encoding: 'utf8',
+      timeout: 10_000,
+      env: { GITHUB_OUTPUT: output },
+    },
+  );
+  assert.equal(selectedRun.status, 0);
+  const row = readFileSync(output, 'utf8')
+    .split('\n')
+    .find((line) => line.startsWith('interactions='));
+  assert.deepEqual(JSON.parse(row.slice('interactions='.length)), expected);
+}
+
+function assertInteractionWorkflow(job) {
+  assert.equal(job.needs, 'selection');
+  assert.equal(job.if, "needs.selection.outputs.interactions != '[]'");
+  assert.equal(
+    job.strategy.matrix.provider,
+    '${{ fromJSON(needs.selection.outputs.interactions) }}',
+  );
+  assert.equal(JSON.stringify(job).includes('${{ secrets.'), false);
+  const checkout = requiredStep(job, 'Check out trusted default branch').with;
+  assert.equal(checkout.ref, '${{ github.sha }}');
+  assert.equal(checkout['persist-credentials'], false);
+  const step = requiredStep(job, 'Run official runtime interactions');
+  assert.equal(
+    step.env.HARAPTER_INTERACTION_LIVE_PROVIDER,
+    '${{ matrix.provider }}',
+  );
+  assert.match(
+    step.run,
+    /timeout --signal=TERM --kill-after=10s 240s pnpm vitest run tests\/provider-interaction-live\.test\.ts/u,
+  );
+  assert.equal(
+    Number.isInteger(job['timeout-minutes']) && job['timeout-minutes'] <= 25,
+    true,
+  );
+}
+
 const codexJob = requiredJob(liveJobs, 'codex');
 assertCodexWorkflowEvidence(codexJob);
 const weakenedCodexJob = structuredClone(codexJob);

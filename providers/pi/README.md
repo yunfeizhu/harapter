@@ -303,3 +303,11 @@ tests use real runtimes with a local synthetic model, not a hosted model.
 | [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)     | [Guide](../hermes/README.md)                  |
 | [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw) | [Guide](../openclaw/README.md)                |
 | [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode) | [Guide](../opencode/README.md)                |
+
+Official Runtime 0.85.1 also has
+[synthetic-model interaction evidence](../../docs/provider-interaction-evidence.md)
+for all four UI methods using a host-owned executable with one explicit test
+extension. Interrupting its pending confirmation currently returns `failed` with
+`stopReason: error`, and `run.cancel()` reports `already_terminal`; this path
+does not establish native cancellation. It does not add Adapter
+extension-loading support or authenticated extension evidence.

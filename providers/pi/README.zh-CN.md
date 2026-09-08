@@ -138,3 +138,8 @@ await child.close();
 | [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)     | [使用指南](../hermes/README.zh-CN.md)                  |
 | [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw) | [使用指南](../openclaw/README.zh-CN.md)                |
 | [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode) | [使用指南](../opencode/README.zh-CN.md)                |
+
+官方 Runtime
+0.85.1 已有[合成模型交互证据](../../docs/provider-interaction-evidence.md)，通过宿主自有可执行文件显式加载一个测试扩展，覆盖四种 UI 方法。中断等待中的确认时，当前返回
+`failed` 和 `stopReason: error`，`run.cancel()` 返回
+`already_terminal`；该路径不构成原生取消证据，也不新增 Adapter 扩展加载能力或已认证的扩展证据。
