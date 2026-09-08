@@ -1,4 +1,8 @@
 export {
+  defineInteractionConformanceSuite,
+  type InteractionConformanceOptions,
+} from './interactions.js';
+export {
   FAKE_PROFILE_ID,
   FAKE_PROVIDER_ID,
   createFakeProfile,

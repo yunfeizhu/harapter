@@ -58,6 +58,13 @@ identifiers. Client and Session close fail when bounded child termination cannot
 confirm process exit, and Client ownership records remain until cleanup
 succeeds.
 
+A valid interaction response reserves its request before awaiting the transport
+write. Concurrent host submissions therefore cannot write the same native
+response twice. Invalid input does not reserve the request, so correction is
+possible; a failed write retains the existing fail-closed connection-abort path.
+The shared interaction conformance suite reproduces the concurrent submission
+case and checks one resolution through the public Session API.
+
 ## Alternatives considered
 
 ### Import the Pi coding-agent package directly

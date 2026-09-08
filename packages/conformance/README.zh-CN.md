@@ -95,6 +95,52 @@ access，以及一个经过限制的未知 Provider 事件，适合验证宿主�
 
 完整测试项与配置选项见[英文详细文档](./README.md)。
 
+## 共享交互套件
+
+`defineInteractionConformanceSuite()` 按需启用。提供全新的 Factory/Profile、合成
+`input`、交互 `kind`，以及非空的有效 `responses`
+数组。Fixture 每次 Run 必须请求一次交互，并在响应后结束；支持审批时应同时测试允许和拒绝。每个用例使用两秒 Run 截止时间，并始终关闭 Client。
+
+共享测试验证观察到的能力、事件所有权、单次解决、重复与跨 Session 响应拒绝、取消强度及断连后的请求失效。取消允许与权威终态竞争；原生畸形输入、过期、传输确认和协议顺序仍由 Provider 专项测试负责。Codex、OpenCode、Hermes、OpenClaw 和 Pi 已使用各自的合成协议 Fixture 接入；Pi 使用
+`kind: 'provider'`，DSH 当前没有宿主响应接口，因此不启用该套件。
+
+```ts
+import { defineInteractionConformanceSuite } from '@harapter/conformance';
+
+defineInteractionConformanceSuite({
+  name: 'Example approval fixture',
+  createFactory: createApprovalFixtureFactory,
+  createProfile: createApprovalFixtureProfile,
+  input: { parts: [{ type: 'text', text: 'synthetic approval input' }] },
+  kind: 'approval',
+  responses: [
+    { kind: 'approval', decision: 'approve' },
+    { kind: 'approval', decision: 'deny' },
+  ],
+});
+```
+
+示例中的两个 Fixture 创建函数由 Adapter 测试提供。
+
+## 在 Vitest 外使用 Fake 交互
+
+公共子路径 `@harapter/conformance/fake` 导出 `createFakeProfile`、
+`createFakeProviderFactory`、默认身份和
+`FakeProviderOptions`，不导入 Vitest，可用于离线 Node 演示。原包入口仍为 Vitest 使用者导出这些符号。
+
+设置 `interaction: { kind: 'approval' }`，或使用 `user_input` /
+`provider`，即可让每个 Fake
+Run 发出一次请求并等待明确回答。其他可选请求字段必须是合成 Fixture 数据。不设置时仍为不支持交互的普通回显行为。Run 身份在 Factory 内唯一，只有启动 Run 的 Session 句柄能回答；类型不符、重复、跨 Session、关闭或过期后的回答都会失败。
+
+观察到的 `run.timeout` 模式为 `adapter_controlled`。
+
+拒绝审批会解决当前请求并正常结束合成 Run，不等于取消 Run。Fake 用户输入接受非空的文本片段数组；原生响应保留明确的 Provider 值。`RunOptions.timeoutMs`
+接受不超过 2,147,483,647 的正安全整数。超时先发出 `interaction.resolved`，再发出
+`connection.aborted`，释放等待者并清除计时器；原生取消仍为 `run.cancelled`。
+
+[离线交互示例](../../examples/multi-provider-client/interactions.md)
+可以实际体验该流程，不调用真实工具、Runtime 或模型。
+
 ## 相关包
 
 [全部包](../../README.zh-CN.md#npm-包导航)

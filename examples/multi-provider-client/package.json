@@ -8,6 +8,10 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
+    "./interactions": {
+      "types": "./dist/interactions.d.ts",
+      "default": "./dist/interactions.js"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
@@ -26,6 +30,7 @@
     }
   },
   "scripts": {
+    "interaction-demo": "node dist/interaction-main.js",
     "build": "tsc --project tsconfig.build.json",
     "session-workflow": "node dist/session-main.js"
   },

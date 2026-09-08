@@ -14,6 +14,9 @@ const hasExecutableSource = sourcePatterns.some((pattern) =>
 export default defineConfig({
   resolve: {
     alias: {
+      '@harapter/conformance/fake': fileURLToPath(
+        new URL('./packages/conformance/src/fake-provider.ts', import.meta.url),
+      ),
       '@harapter/adapter-codex': fileURLToPath(
         new URL('./providers/codex/src/index.ts', import.meta.url),
       ),

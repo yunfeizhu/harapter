@@ -12,6 +12,21 @@ unsupported. The [command entrypoint](src/session-main.ts) runs configured
 Providers sequentially, emitting JSON lines identified by their one-based
 configuration order.
 
+## Host interactions
+
+The trusted configuration module may export `onInteraction(context)` in addition
+to its default Provider configuration and optional `dispose()`. The CLI forwards
+that callback to each selected setup. It receives private request data plus
+Session/Run references and an `AbortSignal`; the common stdout renderer
+continues to emit metadata only. A handler must honor the signal when its UI or
+input request is no longer valid. Missing handlers fail on an active
+interaction.
+
+The programmatic equivalent is `setup.onInteraction`. See the
+[interaction guide](interactions.md) for the offline terminal demo and host UI
+boundary. Adding a handler does not change the security settings below or force
+a runtime to ask for approval. The existing default inputs avoid tool use.
+
 ## What runs
 
 1. Create a persisted source Session and complete one fictional text request.

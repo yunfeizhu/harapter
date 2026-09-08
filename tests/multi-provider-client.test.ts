@@ -1,6 +1,7 @@
 import type {
   HarnessClient,
   HarnessSession,
+  InteractionResponse,
   ProviderAdapterFactory,
 } from '@harapter/core';
 import { profileId, providerId } from '@harapter/core';
@@ -14,6 +15,7 @@ import {
   type MultiProviderRecord,
   type MultiProviderSetup,
 } from '../examples/multi-provider-client/src/index.js';
+import type { HostInteractionContext } from '../examples/multi-provider-client/src/interactions.js';
 import { createCodexOpenCodeSetups } from '../examples/multi-provider-client/src/codex-opencode.js';
 
 const ALPHA_PROVIDER_ID = providerId('harapter.example.alpha');
@@ -21,6 +23,110 @@ const BETA_PROVIDER_ID = providerId('harapter.example.beta');
 const SECRET_INPUT = 'multi-provider prompt that must not be rendered';
 
 describe('multi-provider reference client', () => {
+  it('closes every Client when one interaction fails while another waits indefinitely', async () => {
+    const waiting = Promise.withResolvers<AbortSignal>();
+    const clients: HarnessClient[] = [];
+    const closed = vi.fn();
+    const providers = fakeSetups().map((setup, index) => ({
+      ...setup,
+      factory: observeFactory(
+        createFakeProviderFactory({
+          providerId: setup.profile.providerId,
+          interaction: { kind: 'approval' },
+        }),
+        (client) => {
+          clients.push(client);
+          return {
+            descriptor: () => client.descriptor(),
+            capabilities: () => client.capabilities(),
+            createSession: () => client.createSession(),
+            resumeSession: (ref) => client.resumeSession(ref),
+            extensions: () => client.extensions(),
+            native: (guard) => client.native(guard),
+            close: async () => {
+              await client.close();
+              closed();
+            },
+          };
+        },
+      ),
+      onInteraction: async ({ signal }: HostInteractionContext) => {
+        if (index === 0) {
+          await waiting.promise;
+          throw new Error('fictional host failure');
+        }
+        waiting.resolve(signal);
+        return new Promise<InteractionResponse>(() => undefined);
+      },
+    })) as [MultiProviderSetup, MultiProviderSetup];
+    const work = runMultiProviderClient({
+      providers,
+      tasks: providers.map(({ profile }) => ({
+        profileId: profile.profileId,
+        input: { parts: [{ type: 'text', text: 'synthetic task' }] },
+      })),
+      write: () => undefined,
+    });
+    const result = work.then(
+      () => 'fulfilled',
+      () => 'rejected',
+    );
+    try {
+      const signal = await waiting.promise;
+      expect(
+        await Promise.race([
+          result,
+          new Promise((resolve) => {
+            setTimeout(() => {
+              resolve('pending');
+            }, 100);
+          }),
+        ]),
+      ).toBe('rejected');
+      expect(signal.aborted).toBe(true);
+      expect(closed).toHaveBeenCalledTimes(2);
+    } finally {
+      await Promise.all(clients.map((client) => client.close()));
+      await result;
+    }
+  });
+  it('routes concurrent decisions by Session while keeping the renderer private', async () => {
+    const seen = new Set<string>();
+    const ready = Promise.withResolvers<undefined>();
+    const providers = fakeSetups().map((setup) => ({
+      ...setup,
+      factory: createFakeProviderFactory({
+        providerId: setup.profile.providerId,
+        interaction: { kind: 'approval', prompt: SECRET_INPUT },
+      }),
+      onInteraction: async ({ sessionRef }: HostInteractionContext) => {
+        seen.add(sessionRef.profileId);
+        if (seen.size === 2) ready.resolve(undefined);
+        await ready.promise;
+        return { kind: 'approval' as const, decision: 'deny' as const };
+      },
+    })) as [MultiProviderSetup, MultiProviderSetup];
+    const records: MultiProviderRecord[] = [];
+    const outcomes = await runMultiProviderClient({
+      providers,
+      tasks: providers.map(({ profile }) => ({
+        profileId: profile.profileId,
+        input: { parts: [{ type: 'text', text: 'synthetic task' }] },
+      })),
+      write: (record) => {
+        records.push(record);
+      },
+    });
+    expect(outcomes.map(({ status }) => status)).toEqual([
+      'completed',
+      'completed',
+    ]);
+    expect(seen.size).toBe(2);
+    expect(JSON.stringify(records)).not.toContain(SECRET_INPUT);
+    expect(JSON.stringify(records)).not.toMatch(
+      /requestId|decision|providerState/,
+    );
+  });
   it('runs two Providers through one renderer and capability-gated controls', async () => {
     const records: MultiProviderRecord[] = [];
     const extensionDisposed = vi.fn();

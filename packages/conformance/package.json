@@ -28,6 +28,10 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
+    "./fake": {
+      "types": "./dist/fake-provider.d.ts",
+      "default": "./dist/fake-provider.js"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"

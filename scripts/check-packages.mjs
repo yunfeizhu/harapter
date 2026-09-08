@@ -350,7 +350,7 @@ try {
 }
 
 console.log(
-  `Validated ${String(entries.length)} public package tarballs, a clean consumer install, and 4 Session workflow CLI cases.`,
+  `Validated ${String(entries.length)} public package tarballs, a clean consumer install, 4 Session workflow CLI cases, and 10 offline interaction CLI cases.`,
 );
 
 function findPackageDirectories() {

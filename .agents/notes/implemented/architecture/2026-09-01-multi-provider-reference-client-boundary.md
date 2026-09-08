@@ -67,7 +67,49 @@ failure closes the connection without claiming native cancellation. A completed
 source and child continuation are prerequisites for later steps. Missing
 cancellation support skips the third model request.
 
+The
+[interaction guide](../../../../examples/multi-provider-client/interactions.md)
+owns the host callback boundary. Both runners consume events concurrently with
+an explicit host decision and response acknowledgment. Private request details
+and opaque references go only to that callback; the generic renderer still
+receives metadata. Resolution, terminality, and disposal abort the callback
+signal and suppress late answers. Response routing captures the original request
+identifier before exposing the presentation object to the host. An absent
+handler, duplicate request identity, malformed request, callback failure, or
+exhausted 64-request bound fails closed. The first failed concurrent task
+initiates Client cleanup before waiting for other task outcomes, so a second
+unanswered UI cannot trap cleanup. A callback that ignores abort cannot prevent
+observer completion, but the host remains responsible for releasing its own UI
+resources. Cleanup cannot undo an already submitted native response or prove
+external work stopped.
+
+The offline terminal demo uses fixed fictional questions and a deterministic
+Fake Provider, with no runtime or model call. The public
+[`@harapter/conformance/fake`](../../../../packages/conformance/README.md)
+subpath keeps Node demos independent of Vitest's execution context. An opt-in
+Fake request waits for a response; the ordinary echo configuration remains
+unchanged. A Fake deadline advertises Adapter-controlled timeout and represents
+connection abort, not native cancellation. The demo preserves that terminal
+status while exiting with failure if its Run did not complete. The shared opt-in
+interaction suite uses the five existing response-capable Adapters' protocol
+fixtures and preserves Pi's native interaction kind. It does not manufacture DSH
+response support or generalize fixture evidence into a new compatibility claim.
+
 ## Alternatives considered
+
+### Await each UI answer in the event loop
+
+A waiting user would prevent processing Provider resolution, cancellation, or
+terminal events. Independent decision tasks and abort signals preserve event
+progress. They add explicit cleanup and late-answer handling in the host
+composition instead of changing Core contracts.
+
+### Log request payloads through the existing renderer
+
+Requests may contain commands, paths, and private input. Host-selected UI
+presentation is necessary for an informed decision, while the shared metadata
+renderer remains suitable for logs. The offline demo can show fixed synthetic
+questions without changing this boundary.
 
 ### Extend the one-shot concurrent runner into a persistent application
 

@@ -91,6 +91,9 @@ Capability にはしません。未知 Event は bounded redacted
 observation に残り、Native Client は ownership-preserving read
 command のみです。
 
+同じ Pi
+Interaction 要求への応答送信は同時に一つだけです。重複は書き込み前に拒否し、不正な入力は修正して再試行できます。書き込み失敗時は配信状態が不明なため接続を中止します。遅延した応答で解決済み要求を再度解決することはありません。
+
 ## Compatibility と制限
 
 Pi RPC は Runtime Version を返しますが negotiated protocol

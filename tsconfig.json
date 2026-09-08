@@ -7,6 +7,9 @@
     "declarationMap": false,
     "noEmit": true,
     "paths": {
+      "@harapter/conformance/fake": [
+        "./packages/conformance/src/fake-provider.ts"
+      ],
       "@harapter/adapter-codex": ["providers/codex/src/index.ts"],
       "@harapter/adapter-dsh": ["providers/dsh/src/index.ts"],
       "@harapter/adapter-hermes": ["providers/hermes/src/index.ts"],
