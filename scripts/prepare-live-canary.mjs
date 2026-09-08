@@ -173,6 +173,10 @@ function main(args) {
       requireCount(rest, 1, 'validate-hermes-enabled-toolsets');
       validateHermesEnabledToolsets(rest[0]);
       return;
+    case 'resolve-hermes-release-tag':
+      requireCount(rest, 1, 'resolve-hermes-release-tag');
+      console.log(hermesReleaseTag(rest[0]));
+      return;
     case 'record-global-package':
       if (rest.length < 2 || rest.length > 3) {
         throw new SafeFailure(
@@ -448,6 +452,26 @@ function validateHermesEnabledToolsets(path) {
   if (!Array.isArray(document) || document.length !== 0) {
     throw new SafeFailure(failureMessage);
   }
+}
+
+function hermesReleaseTag(path) {
+  const failureMessage = 'The official Hermes release tag is invalid.';
+  const content = readBoundedTextFile(path, failureMessage);
+  let document;
+  try {
+    document = JSON.parse(content);
+  } catch {
+    throw new SafeFailure(failureMessage);
+  }
+  if (
+    !isRecord(document) ||
+    typeof document.tag_name !== 'string' ||
+    /\p{Cc}/u.test(document.tag_name) ||
+    !/^v[0-9][0-9A-Za-z.-]*$/u.test(document.tag_name)
+  ) {
+    throw new SafeFailure(failureMessage);
+  }
+  return document.tag_name;
 }
 
 function readBoundedTextFile(path, failureMessage) {

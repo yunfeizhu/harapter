@@ -1179,6 +1179,55 @@ const prepareLiveCanary = resolve(
   repositoryRoot,
   'scripts/prepare-live-canary.mjs',
 );
+const hermesReleasePath = join(fixtureRoot, 'hermes-release.json');
+for (const tag of ['v0.21.0', 'v0.21.0-rc.1']) {
+  writeFileSync(hermesReleasePath, JSON.stringify({ tag_name: tag }));
+  const result = run(prepareLiveCanary, [
+    'resolve-hermes-release-tag',
+    hermesReleasePath,
+  ]);
+  requireSuccess(result, 'Hermes official release tag');
+  assert.equal(result.stdout, `${tag}\n`);
+  assert.equal(result.stderr, '');
+}
+for (const content of [
+  '{"tag_name":',
+  'null',
+  '[]',
+  '{}',
+  '{"tag_name":21}',
+  JSON.stringify({ tag_name: '--untrusted-release-value' }),
+  JSON.stringify({ tag_name: 'v0.21.0\n' }),
+  JSON.stringify({ tag_name: 'v0.21.0\nuntrusted-release-value' }),
+  JSON.stringify({ tag_name: 'v0.21.0;untrusted-release-value' }),
+  JSON.stringify({ tag_name: 'untrusted-release-value' }),
+  JSON.stringify({ tag_name: 'v0.21.0', body: 'x'.repeat(1024 * 1024) }),
+]) {
+  writeFileSync(hermesReleasePath, content);
+  const result = run(prepareLiveCanary, [
+    'resolve-hermes-release-tag',
+    hermesReleasePath,
+  ]);
+  requireFailure(
+    result,
+    'The official Hermes release tag is invalid.',
+    'Hermes invalid release metadata',
+  );
+  assert.equal(result.stdout, '');
+  assert.doesNotMatch(result.stderr, /untrusted-release-value/u);
+  assert.equal(result.stderr.includes(hermesReleasePath), false);
+}
+rmSync(hermesReleasePath);
+requireFailure(
+  run(prepareLiveCanary, ['resolve-hermes-release-tag', hermesReleasePath]),
+  'The official Hermes release tag is invalid.',
+  'Hermes missing release metadata',
+);
+requireFailure(
+  run(prepareLiveCanary, ['resolve-hermes-release-tag']),
+  'resolve-hermes-release-tag received an invalid argument count.',
+  'Hermes release metadata argument count',
+);
 const liveEnvironment = {
   ...process.env,
   HARAPTER_LIVE_MODEL_API_KEY: 'test-key-that-must-not-be-written',
