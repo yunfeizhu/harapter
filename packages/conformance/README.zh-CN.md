@@ -22,6 +22,65 @@
 Trace 校验器，以及不依赖任何真实 Runtime 的 Fake
 Provider。通过共享套件只证明可移植契约成立，不等于某个真实 Provider 已获得支持证据。
 
+## 无需 Runtime 的应用测试
+
+应用测试可使用轻量入口
+`@harapter/conformance/fake`，运行时无需 Vitest；使用主入口的一致性测试套件时再安装 Vitest。Fake 的确定性结果是测试证据，不代表某个真实 Provider 的行为。
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/core @harapter/conformance
+npm install -D typescript @types/node
+```
+
+将下面的完整代码保存为 `app.ts`。它只导入上面安装的 npm 包；Node.js
+24 可以直接执行这份 TypeScript。
+
+<!-- sdk-example: test-with-fake.ts -->
+
+```ts
+import { HarnessRegistry } from '@harapter/core';
+import {
+  createFakeProfile,
+  createFakeProviderFactory,
+} from '@harapter/conformance/fake';
+
+// Replace the application's real Adapter at its composition boundary.
+const registry = new HarnessRegistry();
+registry.register(createFakeProviderFactory());
+const client = await registry.connect(createFakeProfile());
+try {
+  const session = await client.createSession();
+  try {
+    const run = await session.start({
+      parts: [{ type: 'text', text: 'Fictional test input.' }],
+    });
+    for await (const _event of run.events()) {
+      /* Drain even when the test has no renderer. */
+    }
+    const result = await run.result();
+    if (
+      result.status !== 'completed' ||
+      result.finalMessage !== 'Fictional test input.'
+    )
+      throw new Error('Application test failed.');
+    console.log({ applicationTestPassed: true });
+  } finally {
+    await session.close();
+  }
+} finally {
+  await client.close();
+}
+```
+
+```sh
+node app.ts
+```
+
+[完整应用、场景案例和错误处理](../../examples/sdk-application/README.zh-CN.md) ·
+[全部公开包](https://www.npmjs.com/org/harapter)
+
 ## 安装
 
 ```bash

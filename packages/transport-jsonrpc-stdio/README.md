@@ -27,6 +27,63 @@ backpressure, local wait controls, and connection disposal. It does not import
 Provider SDKs or assign portable Harapter meaning to Provider methods and
 payloads.
 
+## Application or Adapter development?
+
+Most applications should install `@harapter/core` and a Provider Adapter
+instead. Install this package directly when implementing or testing a
+machine-interface integration. The following complete offline example uses only
+published imports. It does not start a real Runtime and is not Provider
+compatibility evidence.
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/transport-jsonrpc-stdio
+npm install -D typescript @types/node
+```
+
+Save the following as `app.ts`. It imports only the npm packages installed
+above; Node.js 24 can execute this TypeScript directly.
+
+<!-- sdk-example: transport-jsonrpc-stdio.ts -->
+
+```ts
+import { PassThrough } from 'node:stream';
+import { JsonRpcStdioTransport } from '@harapter/transport-jsonrpc-stdio';
+
+// A deterministic in-memory peer; no Runtime or process is involved.
+const readable = new PassThrough();
+const writable = new PassThrough();
+writable.on('data', (frame: Buffer) => {
+  const request = JSON.parse(frame.toString('utf8')) as { id: number };
+  readable.write(
+    JSON.stringify({ jsonrpc: '2.0', id: request.id, result: 'pong' }) + '\n',
+  );
+});
+const transport = new JsonRpcStdioTransport({ readable, writable });
+try {
+  const reply = await transport.request('ping', {});
+  if (reply !== 'pong') throw new Error('Unexpected synthetic response.');
+  console.log({ responseReceived: true });
+} finally {
+  await transport.close();
+  readable.destroy();
+  writable.destroy();
+}
+```
+
+```sh
+node app.ts
+```
+
+For a real integration, replace the synthetic stream/Fetch peer with the
+host-owned process or endpoint described below. The consuming Adapter still owns
+startup, payload validation, authentication, redaction and terminal semantics. A
+transport write or EOF does not establish Run success or native cancellation.
+
+[Complete application, recipes and error handling](../../examples/sdk-application/README.md)
+· [All published packages](https://www.npmjs.com/org/harapter)
+
 ## Use this package when
 
 - an official harness interface speaks newline-delimited JSON-RPC-shaped
@@ -146,7 +203,7 @@ object itself through ordinary JSON serialization or Node inspection remains
 content-free. Inbound `method` and `params` have the same Provider-owned
 validation and redaction requirement.
 
-## Quick start
+## Compose a real transport
 
 ```ts
 import { JsonRpcStdioTransport } from '@harapter/transport-jsonrpc-stdio';

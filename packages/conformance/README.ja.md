@@ -22,6 +22,67 @@
 Trace 検証、実 Runtime を必要としない Fake
 Provider を提供します。共有スイートの成功は可搬契約の証拠であり、実 Provider の対応証拠ではありません。
 
+## Runtime なしでアプリをテストする
+
+アプリのテストには軽量な `@harapter/conformance/fake`
+を使えます。実行時の Vitest は不要で、メイン入口の conformance
+suite を使う場合だけ Vitest を追加します。Fake の決定的な結果はテスト証拠であり、実際の Provider の動作を示しません。
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/core @harapter/conformance
+npm install -D typescript @types/node
+```
+
+以下の完全なコードを `app.ts`
+に保存します。上でインストールした npm パッケージのみをインポートし、Node.js
+24 で直接実行できます。
+
+<!-- sdk-example: test-with-fake.ts -->
+
+```ts
+import { HarnessRegistry } from '@harapter/core';
+import {
+  createFakeProfile,
+  createFakeProviderFactory,
+} from '@harapter/conformance/fake';
+
+// Replace the application's real Adapter at its composition boundary.
+const registry = new HarnessRegistry();
+registry.register(createFakeProviderFactory());
+const client = await registry.connect(createFakeProfile());
+try {
+  const session = await client.createSession();
+  try {
+    const run = await session.start({
+      parts: [{ type: 'text', text: 'Fictional test input.' }],
+    });
+    for await (const _event of run.events()) {
+      /* Drain even when the test has no renderer. */
+    }
+    const result = await run.result();
+    if (
+      result.status !== 'completed' ||
+      result.finalMessage !== 'Fictional test input.'
+    )
+      throw new Error('Application test failed.');
+    console.log({ applicationTestPassed: true });
+  } finally {
+    await session.close();
+  }
+} finally {
+  await client.close();
+}
+```
+
+```sh
+node app.ts
+```
+
+[完全なアプリ、レシピ、エラー処理](../../examples/sdk-application/README.ja.md)
+· [公開パッケージ一覧](https://www.npmjs.com/org/harapter)
+
 ## インストール
 
 ```bash

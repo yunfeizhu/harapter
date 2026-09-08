@@ -23,13 +23,73 @@ interface 向けです。安全な URL 解決、request/response size、incremen
 parser、concurrency、cleanup を所有しますが、Provider
 route、payload、Session、Run の意味は解釈しません。
 
+## アプリ開発か Adapter 開発か
+
+通常のアプリには `@harapter/core` と Provider
+Adapter を導入します。マシンインターフェースを実装、テストする場合に本パッケージを直接使います。次の完全なオフライン例は公開インポートのみを使います。実際の Runtime を起動せず、Provider 互換性の証拠ではありません。
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/transport-http-sse
+npm install -D typescript @types/node
+```
+
+以下の完全なコードを `app.ts`
+に保存します。上でインストールした npm パッケージのみをインポートし、Node.js
+24 で直接実行できます。
+
+<!-- sdk-example: transport-http-sse.ts -->
+
+```ts
+import { HttpSseTransport } from '@harapter/transport-http-sse';
+
+// Inject Fetch for an offline application test; no HTTP request leaves this process.
+const transport = new HttpSseTransport({
+  baseUrl: 'https://example.invalid/',
+  fetch: (_input, init) =>
+    Promise.resolve(
+      init?.method === 'POST'
+        ? new Response('{"accepted":true}', { status: 200 })
+        : new Response('event: ready\ndata: {}\n\n', {
+            headers: { 'content-type': 'text/event-stream' },
+          }),
+    ),
+});
+try {
+  const response = await transport.request('task', {
+    method: 'POST',
+    body: '{}',
+  });
+  if (response.status !== 200)
+    throw new Error('Unexpected synthetic response.');
+  let count = 0;
+  for await (const _event of transport.subscribe('events')) {
+    count += 1;
+    break; // This example needs one event; an unexpected remote EOF is an error.
+  }
+  console.log({ httpStatus: response.status, eventsReceived: count });
+} finally {
+  await transport.close();
+}
+```
+
+```sh
+node app.ts
+```
+
+実際の統合では合成ストリーム／Fetch を、後述するホスト所有プロセスやエンドポイントに置き換えます。起動手順、payload の検証、認証、編集処理、最終状態の解釈は Adapter が担当します。書き込みや EOF は Run 成功やネイティブキャンセルを意味しません。
+
+[完全なアプリ、レシピ、エラー処理](../../examples/sdk-application/README.ja.md)
+· [公開パッケージ一覧](https://www.npmjs.com/org/harapter)
+
 ## インストール
 
 ```bash
 pnpm add @harapter/transport-http-sse
 ```
 
-## クイックスタート
+## 実際のトランスポートを構成する
 
 ```ts
 import { HttpSseTransport } from '@harapter/transport-http-sse';

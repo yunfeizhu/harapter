@@ -26,6 +26,71 @@ local wait controls, incremental SSE framing, operation capacity, and transport
 disposal. It does not import Provider SDKs or assign Session, Run, Event,
 interaction, error, or cancellation meaning to upstream routes and payloads.
 
+## Application or Adapter development?
+
+Most applications should install `@harapter/core` and a Provider Adapter
+instead. Install this package directly when implementing or testing a
+machine-interface integration. The following complete offline example uses only
+published imports. It does not start a real Runtime and is not Provider
+compatibility evidence.
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/transport-http-sse
+npm install -D typescript @types/node
+```
+
+Save the following as `app.ts`. It imports only the npm packages installed
+above; Node.js 24 can execute this TypeScript directly.
+
+<!-- sdk-example: transport-http-sse.ts -->
+
+```ts
+import { HttpSseTransport } from '@harapter/transport-http-sse';
+
+// Inject Fetch for an offline application test; no HTTP request leaves this process.
+const transport = new HttpSseTransport({
+  baseUrl: 'https://example.invalid/',
+  fetch: (_input, init) =>
+    Promise.resolve(
+      init?.method === 'POST'
+        ? new Response('{"accepted":true}', { status: 200 })
+        : new Response('event: ready\ndata: {}\n\n', {
+            headers: { 'content-type': 'text/event-stream' },
+          }),
+    ),
+});
+try {
+  const response = await transport.request('task', {
+    method: 'POST',
+    body: '{}',
+  });
+  if (response.status !== 200)
+    throw new Error('Unexpected synthetic response.');
+  let count = 0;
+  for await (const _event of transport.subscribe('events')) {
+    count += 1;
+    break; // This example needs one event; an unexpected remote EOF is an error.
+  }
+  console.log({ httpStatus: response.status, eventsReceived: count });
+} finally {
+  await transport.close();
+}
+```
+
+```sh
+node app.ts
+```
+
+For a real integration, replace the synthetic stream/Fetch peer with the
+host-owned process or endpoint described below. The consuming Adapter still owns
+startup, payload validation, authentication, redaction and terminal semantics. A
+transport write or EOF does not establish Run success or native cancellation.
+
+[Complete application, recipes and error handling](../../examples/sdk-application/README.md)
+· [All published packages](https://www.npmjs.com/org/harapter)
+
 ## Use this package when
 
 - a harness exposes commands over HTTP and streams progress over SSE;
@@ -128,7 +193,7 @@ upstream exception, or cleanup exception. A safe numeric HTTP status is exposed
 only for `http_status`. Ordinary JSON serialization and Node inspection contain
 only the stable name, code, fixed message, and optional status.
 
-## Quick start
+## Compose a real transport
 
 ```ts
 import { HttpSseTransport } from '@harapter/transport-http-sse';

@@ -23,6 +23,127 @@ HTTP/OpenAPI と SSE を Harapter
 lifecycle に mapping します。Server の導入、認証、起動、停止はホストが行い、Adapter は指定 Endpoint だけに接続して remote
 Session を暗黙削除しません。
 
+## 自分のアプリですぐに使う
+
+Node.js 24+ の ESM プロジェクトで以下の完全な例を `app.ts`
+として保存します。Harapter の checkout や非公開インポートは不要です。
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/core @harapter/adapter-opencode
+npm install -D typescript @types/node
+```
+
+### ホストが用意する設定
+
+| 環境変数                   | 設定値                                                                  |
+| -------------------------- | ----------------------------------------------------------------------- |
+| `HARAPTER_OPENCODE_URL`    | 起動済みの OpenCode HTTP サーバー URL。                                 |
+| `OPENCODE_SERVER_USERNAME` | Basic-auth ユーザー名。既定値は opencode。                              |
+| `OPENCODE_SERVER_PASSWORD` | ホストの認証情報ストレージから取得するサーバーパスワード。              |
+| `HARAPTER_WORKSPACE`       | 既存の空テストディレクトリの絶対パス。OpenCode はサーバー側のパスです。 |
+
+認証情報は Runtime またはホスト環境に保持し、ソースや Session 参照へ書き込みません。初回は空のテスト Workspace と、ホストが確認したツール無効／読み取り専用設定を使います。
+
+下表の設定を用意して `node app.ts`
+を実行します。イベントを消費し、最終テキストを `result.finalMessage`
+から取得し、必ずリソースを解放します。stdout はメタデータのみで、内容は認可されたアプリの応答へ渡します。モデル呼び出しはトークンを消費し、ネイティブ Session データを作成する場合があります。
+
+<!-- sdk-example: quick-opencode.ts -->
+
+```ts
+import { isAbsolute } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
+import {
+  OPENCODE_PROVIDER_ID,
+  createOpenCodeProviderFactory,
+} from '@harapter/adapter-opencode';
+
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`Set ${name} in the application environment.`);
+  return value;
+}
+
+async function main() {
+  const workspace = required('HARAPTER_WORKSPACE');
+  if (!isAbsolute(workspace))
+    throw new Error('Choose an absolute Workspace path.');
+  const factory = createOpenCodeProviderFactory({
+    resolveAuthHeaders: () =>
+      Promise.resolve({
+        authorization:
+          'Basic ' +
+          Buffer.from(
+            (process.env['OPENCODE_SERVER_USERNAME'] ?? 'opencode') +
+              ':' +
+              required('OPENCODE_SERVER_PASSWORD'),
+          ).toString('base64'),
+      }),
+  });
+  const client = await factory.connect({
+    profileId: profileId('my-opencode'),
+    providerId: OPENCODE_PROVIDER_ID,
+    displayName: 'Application opencode',
+    connection: {
+      kind: 'endpoint',
+      url: required('HARAPTER_OPENCODE_URL'),
+      transport: 'http',
+      ownership: 'external',
+      authRef: { scheme: 'env', id: 'opencode' },
+    },
+  });
+  let session: HarnessSession | undefined;
+  try {
+    session = await client.createSession({
+      workspace: { uri: pathToFileURL(workspace).href },
+    });
+    const run = await session.start(
+      {
+        parts: [
+          {
+            type: 'text',
+            text: 'Reply with exactly HARAPTER_OK. Do not use tools or inspect files.',
+          },
+        ],
+      },
+      { timeoutMs: 60_000 },
+    );
+    for await (const event of run.events()) {
+      if (event.type === 'interaction.requested')
+        throw new Error('Configure an explicit host interaction handler.');
+      console.log({ type: event.type, sequence: event.sequence });
+    }
+    const result = await run.result();
+    // Use result.finalMessage in your authorized application UI or response.
+    console.log({
+      status: result.status,
+      hasText: result.finalMessage !== undefined,
+    });
+    if (result.status !== 'completed') process.exitCode = 1;
+  } finally {
+    // Client shutdown also releases an active Run if application event handling fails.
+    try {
+      await client.close();
+    } finally {
+      await session?.close();
+    }
+  }
+}
+
+void main().catch((error: unknown) => {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+});
+```
+
+[完全なアプリ、レシピ、エラー処理](../../examples/sdk-application/README.ja.md)
+· [公開パッケージ一覧](https://www.npmjs.com/org/harapter)
+
 ## インストール
 
 ```bash

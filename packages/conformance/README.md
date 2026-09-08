@@ -23,6 +23,67 @@ Provider Adapters and a deterministic Fake Provider. Passing the Fake Provider
 suite proves the portable interfaces and test kit; it is not evidence that any
 real Provider or runtime is supported.
 
+## Test an application without a Runtime
+
+Use the lightweight `@harapter/conformance/fake` entrypoint for application
+tests. It does not require Vitest at runtime. Install Vitest separately only
+when using the conformance suite from the main entrypoint. The Fake result is
+deterministic test evidence, not evidence about an installed Provider.
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/core @harapter/conformance
+npm install -D typescript @types/node
+```
+
+Save the following as `app.ts`. It imports only the npm packages installed
+above; Node.js 24 can execute this TypeScript directly.
+
+<!-- sdk-example: test-with-fake.ts -->
+
+```ts
+import { HarnessRegistry } from '@harapter/core';
+import {
+  createFakeProfile,
+  createFakeProviderFactory,
+} from '@harapter/conformance/fake';
+
+// Replace the application's real Adapter at its composition boundary.
+const registry = new HarnessRegistry();
+registry.register(createFakeProviderFactory());
+const client = await registry.connect(createFakeProfile());
+try {
+  const session = await client.createSession();
+  try {
+    const run = await session.start({
+      parts: [{ type: 'text', text: 'Fictional test input.' }],
+    });
+    for await (const _event of run.events()) {
+      /* Drain even when the test has no renderer. */
+    }
+    const result = await run.result();
+    if (
+      result.status !== 'completed' ||
+      result.finalMessage !== 'Fictional test input.'
+    )
+      throw new Error('Application test failed.');
+    console.log({ applicationTestPassed: true });
+  } finally {
+    await session.close();
+  }
+} finally {
+  await client.close();
+}
+```
+
+```sh
+node app.ts
+```
+
+[Complete application, recipes and error handling](../../examples/sdk-application/README.md)
+· [All published packages](https://www.npmjs.com/org/harapter)
+
 ## Use this package when
 
 - you are building or reviewing a Harapter Provider Adapter;

@@ -79,6 +79,52 @@ importers:
         specifier: workspace:*
         version: link:../../packages/conformance
 
+  examples/sdk-application:
+    dependencies:
+      '@harapter/adapter-codex':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@harapter/adapter-dsh':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@harapter/adapter-hermes':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@harapter/adapter-openclaw':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@harapter/adapter-opencode':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@harapter/adapter-pi':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@harapter/core':
+        specifier: ^0.3.0
+        version: 0.3.0
+    devDependencies:
+      '@harapter/conformance':
+        specifier: ^0.3.0
+        version: 0.3.0(vitest@4.1.11)
+      '@harapter/transport-acp':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@harapter/transport-http-sse':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@harapter/transport-jsonl-process':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@harapter/transport-jsonrpc-stdio':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@types/node':
+        specifier: 24.13.3
+        version: 24.13.3
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   examples/single-provider:
     dependencies:
       '@harapter/adapter-codex':
@@ -264,6 +310,56 @@ packages:
   '@eslint/plugin-kit@0.7.2':
     resolution: {integrity: sha512-+CNAzxglkrpNf/kKywqQfk74QjtceuOE7Qm+AF8miRvPF/wmmK5+OJOgVh3AVTT3RP2mH3+FOaxlE5v72owk0A==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+
+  '@harapter/adapter-codex@0.3.0':
+    resolution: {integrity: sha512-AgKfnjCYMxYqbJqGHwA/UQuyHPQcCt7Lbc/NW0SgPqMCt2jKm589kSEyZJ18Gd5wJE4LRH8RjdWc7XhQ6NHslg==}
+    engines: {node: '>=24'}
+
+  '@harapter/adapter-dsh@0.3.0':
+    resolution: {integrity: sha512-sVzBETe2ffxDHHgpqEzE23+WQGdQOiTtzZT+IhYEWtzqEWvOn/R6L/xFTmqaj+emANcjDdaih7jd9djZuIJNJQ==}
+    engines: {node: '>=24'}
+
+  '@harapter/adapter-hermes@0.3.0':
+    resolution: {integrity: sha512-xI7Ho3kYzl+dTAJz45586i2NFRMkBt/XvgfRaXKu+hoUq4H4zE0oDnmTdmW6+U3bUCgr2akUg0z0jvSMwNrPHw==}
+    engines: {node: '>=24'}
+
+  '@harapter/adapter-openclaw@0.3.0':
+    resolution: {integrity: sha512-+iOr7zuuERVCXADjYBZ5961SKdL1f5mduQdEk22Q4kfpknO9tpsJG2H5UGE2sV2wsM3qcvHdOjHL+M0nQwRutA==}
+    engines: {node: '>=24'}
+
+  '@harapter/adapter-opencode@0.3.0':
+    resolution: {integrity: sha512-U4PHzpHr6J2ydoQzn/8t770hPteLHx+CYYJHhb/2YmmN9pGcnqSeOQx7sZJk0DSLJqvlEX7QnlHFT31R8hzFRQ==}
+    engines: {node: '>=24'}
+
+  '@harapter/adapter-pi@0.3.0':
+    resolution: {integrity: sha512-9WWWu4vRWooWxvtcIQ9Rwddi5Nla1cRe77XhgqtQ8ny6/w+hWTxSMzpWgk+jPb3TBmJ23hnDa+cvmKawiTSp+g==}
+    engines: {node: '>=24'}
+
+  '@harapter/conformance@0.3.0':
+    resolution: {integrity: sha512-VESTaUBQ8jxpAoDjM9w93gUvT8Nsvs+gW2mL93WjtSnheCXCxfAe4Lmw7HJRyJSAW3iiMoHGF1cv2tDdpnx2Tg==}
+    engines: {node: '>=24'}
+    peerDependencies:
+      vitest: '>=4.1.11 <5'
+
+  '@harapter/core@0.3.0':
+    resolution: {integrity: sha512-Dqd9zYoGO/+3nrVwYuGAI+5dWwwJ8vQc4EmLNTPa0uKIetNtSovjeLYIaOxYrHAK3pvdCjRMtVgkBElIr0D1Xg==}
+    engines: {node: '>=24'}
+
+  '@harapter/transport-acp@0.3.0':
+    resolution: {integrity: sha512-ZqEWnFQ1WnxMgLZePNL5ygEmsUqSXswuLrz6ms2EKvS4YJPTCaUterAIWpKWaCRCGQ4sX8hVtOKkff7iQkmpdw==}
+    engines: {node: '>=24'}
+
+  '@harapter/transport-http-sse@0.3.0':
+    resolution: {integrity: sha512-hSc8vmCpWlgWEdq7VkDCRSoLMyP6+3z9+UNfiSWPRNUl7MtKk7mj9r3BZ6Xwm+v++ky+LbGMRrhbnGFXEBwg6w==}
+    engines: {node: '>=24'}
+
+  '@harapter/transport-jsonl-process@0.3.0':
+    resolution: {integrity: sha512-szh9KFsk4DVjNbVyrbsnmHEbO0tJBjP/FsRC9YD+n3S4D6CBgNJ0X0LNKy46tDNPsM0CeSLfvRK4x/y4ZBnxeg==}
+    engines: {node: '>=24'}
+
+  '@harapter/transport-jsonrpc-stdio@0.3.0':
+    resolution: {integrity: sha512-4qT+Hw3+CsGWeTWI0XIIQteyVhR2I9SkFRfWKG9IwZ2NNZPIygSXXEkVdGaCUUEPvTjAq3JESfq4cGBDWC9Yig==}
+    engines: {node: '>=24'}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -1479,6 +1575,58 @@ snapshots:
     dependencies:
       '@eslint/core': 1.2.1
       levn: 0.4.1
+
+  '@harapter/adapter-codex@0.3.0':
+    dependencies:
+      '@harapter/core': 0.3.0
+      '@harapter/transport-jsonrpc-stdio': 0.3.0
+
+  '@harapter/adapter-dsh@0.3.0':
+    dependencies:
+      '@harapter/core': 0.3.0
+      '@harapter/transport-jsonrpc-stdio': 0.3.0
+      ws: 8.21.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@harapter/adapter-hermes@0.3.0':
+    dependencies:
+      '@harapter/core': 0.3.0
+      '@harapter/transport-http-sse': 0.3.0
+
+  '@harapter/adapter-openclaw@0.3.0':
+    dependencies:
+      '@harapter/core': 0.3.0
+      '@harapter/transport-acp': 0.3.0
+      '@harapter/transport-jsonrpc-stdio': 0.3.0
+
+  '@harapter/adapter-opencode@0.3.0':
+    dependencies:
+      '@harapter/core': 0.3.0
+      '@harapter/transport-http-sse': 0.3.0
+
+  '@harapter/adapter-pi@0.3.0':
+    dependencies:
+      '@harapter/core': 0.3.0
+      '@harapter/transport-jsonl-process': 0.3.0
+
+  '@harapter/conformance@0.3.0(vitest@4.1.11)':
+    dependencies:
+      '@harapter/core': 0.3.0
+      vitest: 4.1.11(@types/node@24.13.3)(@vitest/coverage-v8@4.1.11)
+
+  '@harapter/core@0.3.0': {}
+
+  '@harapter/transport-acp@0.3.0':
+    dependencies:
+      '@harapter/transport-jsonrpc-stdio': 0.3.0
+
+  '@harapter/transport-http-sse@0.3.0': {}
+
+  '@harapter/transport-jsonl-process@0.3.0': {}
+
+  '@harapter/transport-jsonrpc-stdio@0.3.0': {}
 
   '@humanfs/core@0.19.2':
     dependencies:

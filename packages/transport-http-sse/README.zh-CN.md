@@ -21,13 +21,72 @@
 这个传输包适合“HTTP 提交操作、SSE 推送进度”的 Harness 接口。它负责安全解析 Endpoint、限制请求和响应大小、增量解析 SSE、限制并发与清理资源，但不解释任何 Provider
 Route、Payload、Session 或 Run 语义。
 
+## 应用接入还是 Adapter 开发？
+
+普通应用通常安装 `@harapter/core` 和 Provider
+Adapter；实现或测试机器接口时才直接使用本包。下面是仅使用公开导入的完整离线案例，不启动真实 Runtime，也不构成 Provider 兼容性证据。
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/transport-http-sse
+npm install -D typescript @types/node
+```
+
+将下面的完整代码保存为 `app.ts`。它只导入上面安装的 npm 包；Node.js
+24 可以直接执行这份 TypeScript。
+
+<!-- sdk-example: transport-http-sse.ts -->
+
+```ts
+import { HttpSseTransport } from '@harapter/transport-http-sse';
+
+// Inject Fetch for an offline application test; no HTTP request leaves this process.
+const transport = new HttpSseTransport({
+  baseUrl: 'https://example.invalid/',
+  fetch: (_input, init) =>
+    Promise.resolve(
+      init?.method === 'POST'
+        ? new Response('{"accepted":true}', { status: 200 })
+        : new Response('event: ready\ndata: {}\n\n', {
+            headers: { 'content-type': 'text/event-stream' },
+          }),
+    ),
+});
+try {
+  const response = await transport.request('task', {
+    method: 'POST',
+    body: '{}',
+  });
+  if (response.status !== 200)
+    throw new Error('Unexpected synthetic response.');
+  let count = 0;
+  for await (const _event of transport.subscribe('events')) {
+    count += 1;
+    break; // This example needs one event; an unexpected remote EOF is an error.
+  }
+  console.log({ httpStatus: response.status, eventsReceived: count });
+} finally {
+  await transport.close();
+}
+```
+
+```sh
+node app.ts
+```
+
+真实集成时，将合成的流／Fetch 替换为下文所述的宿主进程或端点。启动协议、payload 校验、认证、脱敏和最终状态仍由使用它的 Adapter 负责。传输写入或 EOF 不等于 Run 成功或原生取消。
+
+[完整应用、场景案例和错误处理](../../examples/sdk-application/README.zh-CN.md) ·
+[全部公开包](https://www.npmjs.com/org/harapter)
+
 ## 安装
 
 ```bash
 pnpm add @harapter/transport-http-sse
 ```
 
-## 快速开始
+## 组合真实传输
 
 ```ts
 import { HttpSseTransport } from '@harapter/transport-http-sse';

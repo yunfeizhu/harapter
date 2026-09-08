@@ -23,13 +23,64 @@ Stream 交换一行一个 JSON 对象的 Provider
 Adapter。它负责 framing、请求关联、有序入站消息、背压、超时和清理，但不解释 Provider 方法，也不生成 Harapter
 Session、Run 或终态。
 
+## 应用接入还是 Adapter 开发？
+
+普通应用通常安装 `@harapter/core` 和 Provider
+Adapter；实现或测试机器接口时才直接使用本包。下面是仅使用公开导入的完整离线案例，不启动真实 Runtime，也不构成 Provider 兼容性证据。
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/transport-jsonrpc-stdio
+npm install -D typescript @types/node
+```
+
+将下面的完整代码保存为 `app.ts`。它只导入上面安装的 npm 包；Node.js
+24 可以直接执行这份 TypeScript。
+
+<!-- sdk-example: transport-jsonrpc-stdio.ts -->
+
+```ts
+import { PassThrough } from 'node:stream';
+import { JsonRpcStdioTransport } from '@harapter/transport-jsonrpc-stdio';
+
+// A deterministic in-memory peer; no Runtime or process is involved.
+const readable = new PassThrough();
+const writable = new PassThrough();
+writable.on('data', (frame: Buffer) => {
+  const request = JSON.parse(frame.toString('utf8')) as { id: number };
+  readable.write(
+    JSON.stringify({ jsonrpc: '2.0', id: request.id, result: 'pong' }) + '\n',
+  );
+});
+const transport = new JsonRpcStdioTransport({ readable, writable });
+try {
+  const reply = await transport.request('ping', {});
+  if (reply !== 'pong') throw new Error('Unexpected synthetic response.');
+  console.log({ responseReceived: true });
+} finally {
+  await transport.close();
+  readable.destroy();
+  writable.destroy();
+}
+```
+
+```sh
+node app.ts
+```
+
+真实集成时，将合成的流／Fetch 替换为下文所述的宿主进程或端点。启动协议、payload 校验、认证、脱敏和最终状态仍由使用它的 Adapter 负责。传输写入或 EOF 不等于 Run 成功或原生取消。
+
+[完整应用、场景案例和错误处理](../../examples/sdk-application/README.zh-CN.md) ·
+[全部公开包](https://www.npmjs.com/org/harapter)
+
 ## 安装
 
 ```bash
 pnpm add @harapter/transport-jsonrpc-stdio
 ```
 
-## 快速开始
+## 组合真实传输
 
 ```ts
 import { JsonRpcStdioTransport } from '@harapter/transport-jsonrpc-stdio';

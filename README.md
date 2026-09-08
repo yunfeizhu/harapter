@@ -60,18 +60,20 @@ runtime it uses.
 
 ## Quick start
 
-### 1. Install the published packages
+Use Node.js 24 or newer. Start in your own project; normal applications install
+Core plus the Adapter they need. Transport and conformance packages are for
+Adapter development and tests. No Harapter repository checkout is required.
 
-Harapter requires Node.js 24 or newer. Install Core and one Adapter from npm
-using the default `latest` channel:
+### 1. Install the SDK in your application
 
-```bash
+```sh
+mkdir my-harapter-app
+cd my-harapter-app
+npm init -y
+npm pkg set type=module
 npm install @harapter/core @harapter/adapter-codex
-# or: pnpm add @harapter/core @harapter/adapter-codex
-# or: yarn add @harapter/core @harapter/adapter-codex
+npm install -D typescript @types/node
 ```
-
-Choose the Adapter that matches the host-operated Runtime:
 
 | Runtime          | Published Adapter                                              | Connection owned by        |
 | ---------------- | -------------------------------------------------------------- | -------------------------- |
@@ -82,143 +84,137 @@ Choose the Adapter that matches the host-operated Runtime:
 | OpenClaw         | [`@harapter/adapter-openclaw`](./providers/openclaw/README.md) | Adapter-managed ACP bridge |
 | Pi Agent         | [`@harapter/adapter-pi`](./providers/pi/README.md)             | Adapter-managed process    |
 
-Install and authenticate the selected Runtime separately. Harapter does not
-discover, install, update, or sign in to runtimes for the host.
+### 2. Prepare and authenticate a Runtime
 
-### 2. Run the maintained source reference (optional)
+For this example, install Codex using the
+[official instructions](https://developers.openai.com/codex/cli/), then run
+`codex` once and complete sign-in. The Runtime owns model authentication and may
+consume tokens. Harapter uses its machine interface and does not install or
+authenticate it. Create an empty test Workspace and keep the default read-only
+policy.
 
-Clone the repository when you want an executable reference application or plan
-to contribute. The Workspace pins pnpm `11.23.0`:
+### 3. Run a complete SDK call
 
-```bash
-git clone https://github.com/yunfeizhu/harapter.git
-cd harapter
-corepack enable
-pnpm install --frozen-lockfile
-pnpm build
-```
+Save the following as `app.ts`. It imports only the npm packages installed
+above; Node.js 24 can execute this TypeScript directly.
 
-The reference application uses Codex because that Adapter has recorded live
-evidence. Supply a host-installed `codex` command explicitly:
-
-```bash
-HARAPTER_CODEX_COMMAND=codex \
-  pnpm --filter @harapter/example-single-provider start
-```
-
-This creates a temporary workspace, launches the stable Codex App Server in a
-read-only sandbox, runs one ephemeral Session, consumes its Event stream, reads
-the authoritative Result, and closes every resource. It sends a small fictional
-prompt and may consume Provider tokens. Output contains only safe lifecycle
-metadata—never prompt or message bodies, raw Provider traffic, credentials, or
-local paths.
-
-### 3. Integrate the portable lifecycle
-
-The following uses the actual public exports installed in step 1. The
-composition root chooses an Adapter and Profile; the application-facing
-lifecycle remains Provider-agnostic:
+<!-- sdk-example: quick-codex.ts -->
 
 ```ts
+import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import {
-  HarnessRegistry,
-  profileId,
-  type HarnessSession,
-} from '@harapter/core';
+import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
 import {
   CODEX_PROVIDER_ID,
   createCodexProviderFactory,
 } from '@harapter/adapter-codex';
 
-const registry = new HarnessRegistry();
-registry.register(createCodexProviderFactory());
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`Set ${name} in the application environment.`);
+  return value;
+}
 
-const client = await registry.connect({
-  profileId: profileId('codex-local'),
-  providerId: CODEX_PROVIDER_ID,
-  displayName: 'Local Codex',
-  connection: {
-    kind: 'process',
-    command: 'codex',
-    args: ['app-server', '--stdio'],
-    cwd: process.cwd(),
-    ownership: 'adapter',
-  },
-  requiredCapabilities: [{ name: 'input.text' }, { name: 'run.stream' }],
-});
-
-let session: HarnessSession | undefined;
-
-try {
-  const descriptor = await client.descriptor();
-  const capabilities = await client.capabilities();
-  console.log({
-    compatibility: descriptor.compatibility,
-    streaming: capabilities.capabilities['run.stream']?.mode,
-  });
-
-  session = await client.createSession({
-    workspace: { uri: pathToFileURL(process.cwd()).href },
-    providerOptions: {
-      approvalPolicy: 'never',
-      sandbox: 'read-only',
-      ephemeral: true,
+async function main() {
+  const workspace = required('HARAPTER_WORKSPACE');
+  if (!isAbsolute(workspace))
+    throw new Error('Choose an absolute Workspace path.');
+  const factory = createCodexProviderFactory();
+  const client = await factory.connect({
+    profileId: profileId('my-codex'),
+    providerId: CODEX_PROVIDER_ID,
+    displayName: 'Application codex',
+    connection: {
+      kind: 'process',
+      command: required('HARAPTER_CODEX_COMMAND'),
+      args: ['app-server', '--stdio'],
+      cwd: workspace,
+      ownership: 'adapter',
     },
   });
-
-  const run = await session.start(
-    {
-      parts: [
-        {
-          type: 'text',
-          text: 'Reply with exactly HARAPTER_OK. Do not use tools.',
-        },
-      ],
-    },
-    { timeoutMs: 60_000 },
-  );
-
-  for await (const event of run.events()) {
-    console.log({ sequence: event.sequence, type: event.type });
-  }
-
-  const result = await run.result();
-  console.log({ status: result.status });
-} finally {
+  let session: HarnessSession | undefined;
   try {
-    await session?.close();
+    session = await client.createSession({
+      workspace: { uri: pathToFileURL(workspace).href },
+      providerOptions: {
+        approvalPolicy: 'never',
+        sandbox: 'read-only',
+        ephemeral: true,
+      },
+    });
+    const run = await session.start(
+      {
+        parts: [
+          {
+            type: 'text',
+            text: 'Reply with exactly HARAPTER_OK. Do not use tools or inspect files.',
+          },
+        ],
+      },
+      { timeoutMs: 60_000 },
+    );
+    for await (const event of run.events()) {
+      if (event.type === 'interaction.requested')
+        throw new Error('Configure an explicit host interaction handler.');
+      console.log({ type: event.type, sequence: event.sequence });
+    }
+    const result = await run.result();
+    // Use result.finalMessage in your authorized application UI or response.
+    console.log({
+      status: result.status,
+      hasText: result.finalMessage !== undefined,
+    });
+    if (result.status !== 'completed') process.exitCode = 1;
   } finally {
-    await client.close();
+    // Client shutdown also releases an active Run if application event handling fails.
+    try {
+      await client.close();
+    } finally {
+      await session?.close();
+    }
   }
 }
+
+void main().catch((error: unknown) => {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+});
 ```
 
-When selecting another Provider, the Registry → Client → Session → Run → Events
-→ Result lifecycle remains unchanged, while the Adapter Factory, Provider ID,
-Profile connection, and Provider-local options change. Select every Session and
-Run input or control from the observed Capability Manifest and the owning
-[Provider README](./providers/README.md); an option accepted by one Adapter may
-be invalid for another. Each Provider README also owns its exact runtime
-prerequisites, connection shape, and compatibility boundary.
+Run it from your project (POSIX shell shown; set the same environment variables
+in PowerShell on Windows):
 
-### 4. Handle lifecycle semantics explicitly
+```sh
+mkdir workspace
+export HARAPTER_CODEX_COMMAND=codex
+export HARAPTER_WORKSPACE="$PWD/workspace"
+node app.ts
+```
 
-- Declare `requiredCapabilities` on a Profile instead of checking a Provider
-  name. Requirements accept only `native` by default; weaker modes require an
-  explicit host decision.
-- Continuously consume `run.events()`. Adapters use bounded buffering and may
-  abort an unread Run instead of silently dropping Events.
-- Treat `run.result()` as the authoritative terminal outcome. `completed`,
-  `cancelled`, `failed`, and `connection_aborted` are distinct states.
-- Handle `interaction.requested` with `session.respond()` only under the host's
-  authorization and data policy.
-- Persist `session.ref()` as opaque Provider-owned state only when the active
-  Capability Manifest supports resume. Resume it through the same Provider and
-  Profile; never copy it to another Adapter.
-- Do not log `providerState`, raw Provider Events, `providerResult`,
-  credentials, prompts, or message bodies by default. Always close the Session
-  and Client.
+Expected output: lifecycle event types, followed by
+`{ status: "completed", hasText: true }`. `result.finalMessage` is the model
+text to return to your authorized application UI; the sample logs metadata only.
+A failed or cancelled Run is not a completed answer. Each task has a 60-second
+deadline and every resource is closed.
+
+### 4. Integrate with your business code
+
+Move connection configuration into your composition module and expose a service
+function to your request handler or desktop application. The
+[complete SDK application](./examples/sdk-application/README.md) includes its
+own `package.json`, TypeScript configuration, a service returning text and
+status, reconnection/resume, native fork, cancellation, concurrent Providers and
+host interaction handling. It uses published dependencies and can be copied into
+an independent project.
+
+Use `isHarnessError(error)` to read the stable `code` and `retryable` fields.
+Correct missing Runtime/authentication settings before retrying. Keep draining
+`run.events()` and use `run.result()` as terminal authority. Persist Session
+references only under the original Provider/Profile and an access-controlled
+host storage policy. Do not log raw events, native state, credentials or
+content.
 
 ## Why Harapter
 
@@ -294,6 +290,10 @@ README for exact capabilities and compatibility boundaries.
 
 ## More examples
 
+Start with the
+[independent SDK application](./examples/sdk-application/README.md) for
+user-facing integration recipes.
+
 - [Single-Provider reference](./examples/single-provider/README.md) shows a full
   Client → Session → Run → Event → Result lifecycle with safe cleanup.
 - [Multi-Provider reference](./examples/multi-provider-client/README.md) shows
@@ -303,6 +303,19 @@ README for exact capabilities and compatibility boundaries.
 Both references are deterministic by default: their tests do not discover,
 install, authenticate, or invoke a third-party runtime. Optional live entry
 points run only when the host supplies an explicit runtime configuration.
+
+### Run repository references (contributors, optional)
+
+Clone the repository only to develop Harapter or work on its maintained
+references. The Workspace pins pnpm 11.23.0:
+
+```sh
+git clone https://github.com/yunfeizhu/harapter.git
+cd harapter
+corepack enable
+pnpm install --frozen-lockfile
+pnpm build
+```
 
 ## Project status
 

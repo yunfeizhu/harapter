@@ -20,6 +20,7 @@ import {
   validatePublicPackagePolicy,
 } from './lib/package-publication.mjs';
 import { checkSessionWorkflowCommand } from './lib/session-workflow-smoke.mjs';
+import { checkSdkApplication } from './lib/sdk-application-smoke.mjs';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const policy = readJson(
@@ -255,6 +256,7 @@ try {
 
   run(process.execPath, ['smoke.mjs'], consumerRoot, 'runtime consumer smoke');
   checkSessionWorkflowCommand(repositoryRoot, consumerRoot);
+  checkSdkApplication(repositoryRoot, consumerRoot);
   run(
     resolve(repositoryRoot, 'node_modules/.bin/tsc'),
     [
@@ -350,7 +352,7 @@ try {
 }
 
 console.log(
-  `Validated ${String(entries.length)} public package tarballs, a clean consumer install, 4 Session workflow CLI cases, and 10 offline interaction CLI cases.`,
+  `Validated ${String(entries.length)} public package tarballs, a clean consumer install, the standalone SDK application, 4 Session workflow CLI cases, and 10 offline interaction CLI cases.`,
 );
 
 function findPackageDirectories() {

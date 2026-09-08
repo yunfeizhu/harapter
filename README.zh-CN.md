@@ -57,18 +57,19 @@ Loop。每个 Runtime 仍由宿主选择、安装、认证并实施安全策略�
 
 ## 快速上手
 
-### 1. 安装已经发布的 Package
+使用 Node.js
+24 或更新版本。从你自己的项目开始，普通应用只需安装 Core 和选定的 Adapter；transport 与 conformance 主要用于 Adapter 开发和测试。接入不需要克隆 Harapter 仓库。
 
-Harapter 需要 Node.js 24 或更高版本。从 npm 默认的 `latest`
-渠道安装 Core 和一个 Adapter：
+### 1. 在自己的项目中安装 SDK
 
-```bash
+```sh
+mkdir my-harapter-app
+cd my-harapter-app
+npm init -y
+npm pkg set type=module
 npm install @harapter/core @harapter/adapter-codex
-# 或：pnpm add @harapter/core @harapter/adapter-codex
-# 或：yarn add @harapter/core @harapter/adapter-codex
+npm install -D typescript @types/node
 ```
-
-根据宿主运行的 Runtime 选择 Adapter：
 
 | Runtime          | 已发布 Adapter                                                       | Connection 所有者         |
 | ---------------- | -------------------------------------------------------------------- | ------------------------- |
@@ -79,137 +80,125 @@ npm install @harapter/core @harapter/adapter-codex
 | OpenClaw         | [`@harapter/adapter-openclaw`](./providers/openclaw/README.zh-CN.md) | Adapter 管理的 ACP Bridge |
 | Pi Agent         | [`@harapter/adapter-pi`](./providers/pi/README.zh-CN.md)             | Adapter 管理的 Process    |
 
-对应 Runtime 仍需单独安装和认证。Harapter 不会替宿主发现、安装、更新或登录 Runtime。
+### 2. 准备并认证 Runtime
 
-### 2. 运行维护中的源码参考实现（可选）
+本例使用 Codex，请按[官方说明](https://developers.openai.com/codex/cli/)安装，先运行一次
+`codex`
+完成登录。模型认证由 Runtime 管理，真实调用可能消耗 token。Harapter 调用其机器接口，不负责安装或认证。请创建空测试工作区，并保留默认只读策略。
 
-如果要运行完整参考应用或参与贡献，再克隆仓库。Workspace 固定使用 pnpm
-`11.23.0`：
+### 3. 运行完整的 SDK 调用
 
-```bash
-git clone https://github.com/yunfeizhu/harapter.git
-cd harapter
-corepack enable
-pnpm install --frozen-lockfile
-pnpm build
-```
+将下面的完整代码保存为 `app.ts`。它只导入上面安装的 npm 包；Node.js
+24 可以直接执行这份 TypeScript。
 
-参考实现使用已有真实运行证据的 Codex Adapter。请显式提供宿主已经安装的 `codex`
-命令：
-
-```bash
-HARAPTER_CODEX_COMMAND=codex \
-  pnpm --filter @harapter/example-single-provider start
-```
-
-这个入口会创建临时 Workspace，在只读 Sandbox 中启动稳定的 Codex App
-Server，运行一个临时 Session，消费 Event
-Stream，读取权威 Result，并关闭全部资源。它会发送一条虚构的小型 Prompt，可能消耗 Provider
-Token。输出只包含安全的生命周期元数据，不包含 Prompt、消息正文、Provider 原始流量、凭据或本地路径。
-
-### 3. 接入可移植生命周期
-
-下面直接使用第 1 步安装的真实公开 Export。组合根负责选择 Adapter 和 Profile；面向应用的生命周期不依赖具体 Provider：
+<!-- sdk-example: quick-codex.ts -->
 
 ```ts
+import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import {
-  HarnessRegistry,
-  profileId,
-  type HarnessSession,
-} from '@harapter/core';
+import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
 import {
   CODEX_PROVIDER_ID,
   createCodexProviderFactory,
 } from '@harapter/adapter-codex';
 
-const registry = new HarnessRegistry();
-registry.register(createCodexProviderFactory());
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`Set ${name} in the application environment.`);
+  return value;
+}
 
-const client = await registry.connect({
-  profileId: profileId('codex-local'),
-  providerId: CODEX_PROVIDER_ID,
-  displayName: 'Local Codex',
-  connection: {
-    kind: 'process',
-    command: 'codex',
-    args: ['app-server', '--stdio'],
-    cwd: process.cwd(),
-    ownership: 'adapter',
-  },
-  requiredCapabilities: [{ name: 'input.text' }, { name: 'run.stream' }],
-});
-
-let session: HarnessSession | undefined;
-
-try {
-  const descriptor = await client.descriptor();
-  const capabilities = await client.capabilities();
-  console.log({
-    compatibility: descriptor.compatibility,
-    streaming: capabilities.capabilities['run.stream']?.mode,
-  });
-
-  session = await client.createSession({
-    workspace: { uri: pathToFileURL(process.cwd()).href },
-    providerOptions: {
-      approvalPolicy: 'never',
-      sandbox: 'read-only',
-      ephemeral: true,
+async function main() {
+  const workspace = required('HARAPTER_WORKSPACE');
+  if (!isAbsolute(workspace))
+    throw new Error('Choose an absolute Workspace path.');
+  const factory = createCodexProviderFactory();
+  const client = await factory.connect({
+    profileId: profileId('my-codex'),
+    providerId: CODEX_PROVIDER_ID,
+    displayName: 'Application codex',
+    connection: {
+      kind: 'process',
+      command: required('HARAPTER_CODEX_COMMAND'),
+      args: ['app-server', '--stdio'],
+      cwd: workspace,
+      ownership: 'adapter',
     },
   });
-
-  const run = await session.start(
-    {
-      parts: [
-        {
-          type: 'text',
-          text: 'Reply with exactly HARAPTER_OK. Do not use tools.',
-        },
-      ],
-    },
-    { timeoutMs: 60_000 },
-  );
-
-  for await (const event of run.events()) {
-    console.log({ sequence: event.sequence, type: event.type });
-  }
-
-  const result = await run.result();
-  console.log({ status: result.status });
-} finally {
+  let session: HarnessSession | undefined;
   try {
-    await session?.close();
+    session = await client.createSession({
+      workspace: { uri: pathToFileURL(workspace).href },
+      providerOptions: {
+        approvalPolicy: 'never',
+        sandbox: 'read-only',
+        ephemeral: true,
+      },
+    });
+    const run = await session.start(
+      {
+        parts: [
+          {
+            type: 'text',
+            text: 'Reply with exactly HARAPTER_OK. Do not use tools or inspect files.',
+          },
+        ],
+      },
+      { timeoutMs: 60_000 },
+    );
+    for await (const event of run.events()) {
+      if (event.type === 'interaction.requested')
+        throw new Error('Configure an explicit host interaction handler.');
+      console.log({ type: event.type, sequence: event.sequence });
+    }
+    const result = await run.result();
+    // Use result.finalMessage in your authorized application UI or response.
+    console.log({
+      status: result.status,
+      hasText: result.finalMessage !== undefined,
+    });
+    if (result.status !== 'completed') process.exitCode = 1;
   } finally {
-    await client.close();
+    // Client shutdown also releases an active Run if application event handling fails.
+    try {
+      await client.close();
+    } finally {
+      await session?.close();
+    }
   }
 }
+
+void main().catch((error: unknown) => {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+});
 ```
 
-切换到其他 Provider 后，Registry → Client → Session → Run → Events →
-Result 生命周期保持不变，但需要配置对应的 Adapter Factory、Provider ID、Profile
-Connection 和 Provider-local
-Option。Session 和 Run 的每项输入或控制都必须根据当前运行时观测到的 Capability
-Manifest 与对应的
-[Provider README](./providers/README.md)选择；一个 Adapter 接受的 Option 对另一个 Adapter 可能无效。每份 Provider
-README 还负责记录准确的 Runtime 前置条件、Connection 结构和兼容边界。
+在自己的项目目录中运行。下面使用 POSIX
+shell；Windows 用户在 PowerShell 中设置同名环境变量：
 
-### 4. 显式处理生命周期语义
+```sh
+mkdir workspace
+export HARAPTER_CODEX_COMMAND=codex
+export HARAPTER_WORKSPACE="$PWD/workspace"
+node app.ts
+```
 
-- 在 Profile 中声明
-  `requiredCapabilities`，不要检查 Provider 名称。Requirement 默认只接受
-  `native`；使用较弱 Mode 必须由宿主显式决定。
-- 持续消费
-  `run.events()`。Adapter 使用有界 Buffer，未读取的 Run 可能被中止，不会静默丢弃 Event。
-- 把 `run.result()` 作为权威终态。`completed`、`cancelled`、`failed` 和
-  `connection_aborted` 是不同状态。
-- 只有在宿主授权和数据策略允许时，才使用 `session.respond()` 处理
-  `interaction.requested`。
-- 仅当当前 Capability Manifest 支持 Resume 时，才把 `session.ref()`
-  作为不透明的 Provider-owned
-  State 持久化。必须通过原 Provider 和 Profile 恢复，不能复制给其他 Adapter。
-- 默认不要记录 `providerState`、Provider Raw
-  Event、`providerResult`、凭据、Prompt 或消息正文。始终关闭 Session 和 Client。
+预期先输出生命周期事件类型，最后输出
+`{ status: "completed", hasText: true }`。`result.finalMessage`
+才是应返回给用户受控界面的模型文本，示例日志只记录元数据。失败或取消的 Run 不是成功答案。每次调用有 60 秒截止时间，所有资源都会关闭。
+
+### 4. 接入业务代码
+
+把连接配置放进应用的组合模块，把调用封装为业务服务，再从请求处理器或桌面应用调用。[完整 SDK 应用](./examples/sdk-application/README.zh-CN.md)包含独立
+`package.json`、TypeScript 配置、返回文本与状态的 service，以及重连恢复、原生分叉、取消、多 Provider 并发和宿主交互处理。它依赖已发布包，可以复制到独立项目中使用。
+
+通过 `isHarnessError(error)` 读取稳定的 `code` 和 `retryable`
+字段。缺少 Runtime 或认证时先修正配置再重试；持续消费 `run.events()`，以
+`run.result()`
+为最终状态依据。Session 引用只能在原 Provider/Profile 和有访问控制的宿主存储策略下保存与恢复。不要记录 raw 事件、原生状态、凭证或业务内容。
 
 ## 为什么选择 Harapter
 
@@ -278,12 +267,27 @@ README。
 
 ## 更多示例
 
+面向应用接入的案例从[独立 SDK 应用](./examples/sdk-application/README.zh-CN.md)开始。
+
 - [单 Provider 参考实现](./examples/single-provider/README.md)展示完整的 Client
   → Session → Run → Event → Result 生命周期及安全清理。
 - [多 Provider 参考实现](./examples/multi-provider-client/README.md)展示 Profile 路由、并发事件流、Session 级控制项、所有权验证和显式 Provider
   Extension 边界。
 
 两份参考实现默认都保持确定性：测试不会发现、安装、认证或调用第三方 Runtime。只有宿主显式提供 Runtime 配置时，可选的 Live 入口才会运行。
+
+### 运行仓库参考程序（贡献者，可选）
+
+只有开发 Harapter 或维护参考程序时才需要克隆完整仓库。Workspace 固定使用 pnpm
+11.23.0：
+
+```sh
+git clone https://github.com/yunfeizhu/harapter.git
+cd harapter
+corepack enable
+pnpm install --frozen-lockfile
+pnpm build
+```
 
 ## 项目状态
 

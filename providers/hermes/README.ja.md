@@ -23,6 +23,112 @@ Server の Session、Run、Status、SSE
 Event、Stop、Approval を Harapter に mapping します。Hermes の導入、認証、起動、停止、設定はホストが所有し、Adapter は指定 HTTP
 Endpoint にだけ接続します。
 
+## 自分のアプリですぐに使う
+
+Node.js 24+ の ESM プロジェクトで以下の完全な例を `app.ts`
+として保存します。Harapter の checkout や非公開インポートは不要です。
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/core @harapter/adapter-hermes
+npm install -D typescript @types/node
+```
+
+### ホストが用意する設定
+
+| 環境変数                  | 設定値                                                            |
+| ------------------------- | ----------------------------------------------------------------- |
+| `HARAPTER_HERMES_URL`     | 起動済み Hermes API Server の URL。                               |
+| `HARAPTER_HERMES_API_KEY` | API Server の bearer 認証情報。モデル認証は Hermes が管理します。 |
+
+認証情報は Runtime またはホスト環境に保持し、ソースや Session 参照へ書き込みません。初回は空のテスト Workspace と、ホストが確認したツール無効／読み取り専用設定を使います。
+
+下表の設定を用意して `node app.ts`
+を実行します。イベントを消費し、最終テキストを `result.finalMessage`
+から取得し、必ずリソースを解放します。stdout はメタデータのみで、内容は認可されたアプリの応答へ渡します。モデル呼び出しはトークンを消費し、ネイティブ Session データを作成する場合があります。
+
+<!-- sdk-example: quick-hermes.ts -->
+
+```ts
+import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
+import {
+  HERMES_PROVIDER_ID,
+  createHermesProviderFactory,
+} from '@harapter/adapter-hermes';
+
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`Set ${name} in the application environment.`);
+  return value;
+}
+
+async function main() {
+  const factory = createHermesProviderFactory({
+    resolveAuthHeaders: () =>
+      Promise.resolve({
+        authorization: 'Bearer ' + required('HARAPTER_HERMES_API_KEY'),
+      }),
+  });
+  const client = await factory.connect({
+    profileId: profileId('my-hermes'),
+    providerId: HERMES_PROVIDER_ID,
+    displayName: 'Application hermes',
+    connection: {
+      kind: 'endpoint',
+      url: required('HARAPTER_HERMES_URL'),
+      transport: 'http',
+      ownership: 'external',
+      authRef: { scheme: 'env', id: 'hermes' },
+    },
+  });
+  let session: HarnessSession | undefined;
+  try {
+    session = await client.createSession({});
+    const run = await session.start(
+      {
+        parts: [
+          {
+            type: 'text',
+            text: 'Reply with exactly HARAPTER_OK. Do not use tools or inspect files.',
+          },
+        ],
+      },
+      { timeoutMs: 60_000 },
+    );
+    for await (const event of run.events()) {
+      if (event.type === 'interaction.requested')
+        throw new Error('Configure an explicit host interaction handler.');
+      console.log({ type: event.type, sequence: event.sequence });
+    }
+    const result = await run.result();
+    // Use result.finalMessage in your authorized application UI or response.
+    console.log({
+      status: result.status,
+      hasText: result.finalMessage !== undefined,
+    });
+    if (result.status !== 'completed') process.exitCode = 1;
+  } finally {
+    // Client shutdown also releases an active Run if application event handling fails.
+    try {
+      await client.close();
+    } finally {
+      await session?.close();
+    }
+  }
+}
+
+void main().catch((error: unknown) => {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+});
+```
+
+[完全なアプリ、レシピ、エラー処理](../../examples/sdk-application/README.ja.md)
+· [公開パッケージ一覧](https://www.npmjs.com/org/harapter)
+
 ## インストール
 
 ```bash

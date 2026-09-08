@@ -22,6 +22,119 @@
 API で扱うための中心パッケージです。Client、Session、Run、イベント、終端結果、Capability、Error、Interaction、Provider 拡張を定義しますが、Provider
 SDK を import せず、名前から機能を推測しません。
 
+## 自分のアプリですぐに使う
+
+Core をアプリ内の実際の Adapter に接続します。以下の完全な Codex 例は公開済みパッケージを使い、テスト Provider やリポジトリのビルドを必要としません。Codex を別途インストールして認証し、`HARAPTER_CODEX_COMMAND`
+と絶対パスの `HARAPTER_WORKSPACE` を指定します。
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/core @harapter/adapter-codex
+npm install -D typescript @types/node
+```
+
+### ホストが用意する設定
+
+| 環境変数                 | 設定値                                                                  |
+| ------------------------ | ----------------------------------------------------------------------- |
+| `HARAPTER_CODEX_COMMAND` | 認証済みの Codex 実行ファイル。例: codex。                              |
+| `HARAPTER_WORKSPACE`     | 既存の空テストディレクトリの絶対パス。OpenCode はサーバー側のパスです。 |
+
+認証情報は Runtime またはホスト環境に保持し、ソースや Session 参照へ書き込みません。初回は空のテスト Workspace と、ホストが確認したツール無効／読み取り専用設定を使います。
+
+下表の設定を用意して `node app.ts`
+を実行します。イベントを消費し、最終テキストを `result.finalMessage`
+から取得し、必ずリソースを解放します。stdout はメタデータのみで、内容は認可されたアプリの応答へ渡します。モデル呼び出しはトークンを消費し、ネイティブ Session データを作成する場合があります。
+
+<!-- sdk-example: quick-codex.ts -->
+
+```ts
+import { isAbsolute } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
+import {
+  CODEX_PROVIDER_ID,
+  createCodexProviderFactory,
+} from '@harapter/adapter-codex';
+
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`Set ${name} in the application environment.`);
+  return value;
+}
+
+async function main() {
+  const workspace = required('HARAPTER_WORKSPACE');
+  if (!isAbsolute(workspace))
+    throw new Error('Choose an absolute Workspace path.');
+  const factory = createCodexProviderFactory();
+  const client = await factory.connect({
+    profileId: profileId('my-codex'),
+    providerId: CODEX_PROVIDER_ID,
+    displayName: 'Application codex',
+    connection: {
+      kind: 'process',
+      command: required('HARAPTER_CODEX_COMMAND'),
+      args: ['app-server', '--stdio'],
+      cwd: workspace,
+      ownership: 'adapter',
+    },
+  });
+  let session: HarnessSession | undefined;
+  try {
+    session = await client.createSession({
+      workspace: { uri: pathToFileURL(workspace).href },
+      providerOptions: {
+        approvalPolicy: 'never',
+        sandbox: 'read-only',
+        ephemeral: true,
+      },
+    });
+    const run = await session.start(
+      {
+        parts: [
+          {
+            type: 'text',
+            text: 'Reply with exactly HARAPTER_OK. Do not use tools or inspect files.',
+          },
+        ],
+      },
+      { timeoutMs: 60_000 },
+    );
+    for await (const event of run.events()) {
+      if (event.type === 'interaction.requested')
+        throw new Error('Configure an explicit host interaction handler.');
+      console.log({ type: event.type, sequence: event.sequence });
+    }
+    const result = await run.result();
+    // Use result.finalMessage in your authorized application UI or response.
+    console.log({
+      status: result.status,
+      hasText: result.finalMessage !== undefined,
+    });
+    if (result.status !== 'completed') process.exitCode = 1;
+  } finally {
+    // Client shutdown also releases an active Run if application event handling fails.
+    try {
+      await client.close();
+    } finally {
+      await session?.close();
+    }
+  }
+}
+
+void main().catch((error: unknown) => {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+});
+```
+
+[完全なアプリ、レシピ、エラー処理](../../examples/sdk-application/README.ja.md)
+· [公開パッケージ一覧](https://www.npmjs.com/org/harapter)
+
 ## このパッケージが適するケース
 
 - Codex、OpenCode、その他の Adapter を切り替えてもアプリの流れを保ちたい；
