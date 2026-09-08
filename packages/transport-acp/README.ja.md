@@ -23,13 +23,70 @@ negotiation、Session method、Prompt、typed update、Permission
 Request、Capability Gate、未知 message の bounded observation を実装します。ACP
 Agent の起動、Provider 選択、Harapter Event mapping は行いません。
 
+## アプリ開発か Adapter 開発か
+
+通常のアプリには `@harapter/core` と Provider
+Adapter を導入します。マシンインターフェースを実装、テストする場合に本パッケージを直接使います。次の完全なオフライン例は公開インポートのみを使います。実際の Runtime を起動せず、Provider 互換性の証拠ではありません。
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/transport-acp
+npm install -D typescript @types/node
+```
+
+以下の完全なコードを `app.ts`
+に保存します。上でインストールした npm パッケージのみをインポートし、Node.js
+24 で直接実行できます。
+
+<!-- sdk-example: transport-acp.ts -->
+
+```ts
+import { PassThrough } from 'node:stream';
+import { AcpClient } from '@harapter/transport-acp';
+
+const readable = new PassThrough();
+const writable = new PassThrough();
+// This synthetic peer implements only the initialization used in this example.
+writable.on('data', (frame: Buffer) => {
+  const request = JSON.parse(frame.toString('utf8')) as { id: number };
+  readable.write(
+    JSON.stringify({
+      jsonrpc: '2.0',
+      id: request.id,
+      result: { protocolVersion: 1, agentCapabilities: {}, authMethods: [] },
+    }) + '\n',
+  );
+});
+const client = new AcpClient({ readable, writable });
+try {
+  const initialized = await client.initialize({
+    clientInfo: { name: 'harapter-application-test', version: '1.0.0' },
+  });
+  console.log({ protocolVersion: initialized.protocolVersion });
+} finally {
+  await client.close();
+  readable.destroy();
+  writable.destroy();
+}
+```
+
+```sh
+node app.ts
+```
+
+実際の統合では合成ストリーム／Fetch を、後述するホスト所有プロセスやエンドポイントに置き換えます。起動手順、payload の検証、認証、編集処理、最終状態の解釈は Adapter が担当します。書き込みや EOF は Run 成功やネイティブキャンセルを意味しません。
+
+[完全なアプリ、レシピ、エラー処理](../../examples/sdk-application/README.ja.md)
+· [公開パッケージ一覧](https://www.npmjs.com/org/harapter)
+
 ## インストール
 
 ```bash
 pnpm add @harapter/transport-acp
 ```
 
-## クイックスタート
+## 実際のトランスポートを構成する
 
 ```ts
 import { AcpClient } from '@harapter/transport-acp';

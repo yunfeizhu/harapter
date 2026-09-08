@@ -30,6 +30,68 @@ portable Harapter lifecycle events, or infer capabilities from an Agent name.
 The consuming Provider Adapter owns process policy, Provider meaning, Session
 ownership, compatibility, and portable event and error mapping.
 
+## Application or Adapter development?
+
+Most applications should install `@harapter/core` and a Provider Adapter
+instead. Install this package directly when implementing or testing a
+machine-interface integration. The following complete offline example uses only
+published imports. It does not start a real Runtime and is not Provider
+compatibility evidence.
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/transport-acp
+npm install -D typescript @types/node
+```
+
+Save the following as `app.ts`. It imports only the npm packages installed
+above; Node.js 24 can execute this TypeScript directly.
+
+<!-- sdk-example: transport-acp.ts -->
+
+```ts
+import { PassThrough } from 'node:stream';
+import { AcpClient } from '@harapter/transport-acp';
+
+const readable = new PassThrough();
+const writable = new PassThrough();
+// This synthetic peer implements only the initialization used in this example.
+writable.on('data', (frame: Buffer) => {
+  const request = JSON.parse(frame.toString('utf8')) as { id: number };
+  readable.write(
+    JSON.stringify({
+      jsonrpc: '2.0',
+      id: request.id,
+      result: { protocolVersion: 1, agentCapabilities: {}, authMethods: [] },
+    }) + '\n',
+  );
+});
+const client = new AcpClient({ readable, writable });
+try {
+  const initialized = await client.initialize({
+    clientInfo: { name: 'harapter-application-test', version: '1.0.0' },
+  });
+  console.log({ protocolVersion: initialized.protocolVersion });
+} finally {
+  await client.close();
+  readable.destroy();
+  writable.destroy();
+}
+```
+
+```sh
+node app.ts
+```
+
+For a real integration, replace the synthetic stream/Fetch peer with the
+host-owned process or endpoint described below. The consuming Adapter still owns
+startup, payload validation, authentication, redaction and terminal semantics. A
+transport write or EOF does not establish Run success or native cancellation.
+
+[Complete application, recipes and error handling](../../examples/sdk-application/README.md)
+· [All published packages](https://www.npmjs.com/org/harapter)
+
 ## Use this package when
 
 - an Adapter connects to an Agent that implements stable ACP v1;
@@ -153,7 +215,7 @@ payloads, negotiated `_meta`, known tool `rawInput` and `rawOutput`, remote
 errors, and authentication-method values must not be logged or attached to
 portable errors without Adapter-owned validation and redaction.
 
-## Quick start
+## Compose a real transport
 
 ```ts
 import { AcpClient } from '@harapter/transport-acp';

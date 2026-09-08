@@ -1,5 +1,9 @@
 # Multi-provider reference client
 
+For an application installed from npm, start with the
+[standalone SDK application](../sdk-application/README.md). This directory is a
+repository reference built as part of the Harapter Workspace.
+
 This example connects two independently selected Harapter Providers, routes new
 tasks by Profile, consumes both event streams concurrently through one portable
 renderer, and returns Provider-bound Session references without rendering their

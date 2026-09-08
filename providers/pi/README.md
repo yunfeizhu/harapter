@@ -26,6 +26,113 @@ starts only the exact adapter-owned command selected by the Profile. It does not
 install a Pi Runtime or SDK, select models, manage credentials, read Session
 files, or change host security policy.
 
+## Quick start in an application
+
+Use a Node.js 24+ ESM project. Save the complete example as `app.ts`; no
+Harapter checkout or private imports are needed.
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/core @harapter/adapter-pi
+npm install -D typescript @types/node
+```
+
+### Configuration supplied by the host
+
+| Variable              | Value                                                                                                    |
+| --------------------- | -------------------------------------------------------------------------------------------------------- |
+| `HARAPTER_PI_COMMAND` | Absolute path to the authenticated Pi executable; this sample disables tools and context-file discovery. |
+| `HARAPTER_WORKSPACE`  | Absolute path to an existing, empty test directory.                                                      |
+
+Secrets remain in the Runtime or host environment, never in source code or
+Session references. Use an empty test Workspace and a host-reviewed
+no-tools/read-only configuration for this first call.
+
+Run `node app.ts` after providing the configuration below. Events are consumed
+continuously, the final text is available as `result.finalMessage`, and cleanup
+always runs. Metadata goes to stdout; route content only to an authorized
+application response. A model call may consume tokens and create native Session
+state.
+
+<!-- sdk-example: quick-pi.ts -->
+
+```ts
+import { isAbsolute } from 'node:path';
+import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
+import { PI_PROVIDER_ID, createPiProviderFactory } from '@harapter/adapter-pi';
+
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`Set ${name} in the application environment.`);
+  return value;
+}
+
+async function main() {
+  const workspace = required('HARAPTER_WORKSPACE');
+  if (!isAbsolute(workspace))
+    throw new Error('Choose an absolute Workspace path.');
+  const factory = createPiProviderFactory();
+  const client = await factory.connect({
+    profileId: profileId('my-pi'),
+    providerId: PI_PROVIDER_ID,
+    displayName: 'Application pi',
+    connection: {
+      kind: 'process',
+      command: required('HARAPTER_PI_COMMAND'),
+      args: ['--no-tools', '--no-context-files'],
+      cwd: workspace,
+      ownership: 'adapter',
+    },
+  });
+  let session: HarnessSession | undefined;
+  try {
+    // Pi uses the Profile's cwd; per-Session Workspace selection is unsupported.
+    session = await client.createSession();
+    const run = await session.start(
+      {
+        parts: [
+          {
+            type: 'text',
+            text: 'Reply with exactly HARAPTER_OK. Do not use tools or inspect files.',
+          },
+        ],
+      },
+      { timeoutMs: 60_000 },
+    );
+    for await (const event of run.events()) {
+      if (event.type === 'interaction.requested')
+        throw new Error('Configure an explicit host interaction handler.');
+      console.log({ type: event.type, sequence: event.sequence });
+    }
+    const result = await run.result();
+    // Use result.finalMessage in your authorized application UI or response.
+    console.log({
+      status: result.status,
+      hasText: result.finalMessage !== undefined,
+    });
+    if (result.status !== 'completed') process.exitCode = 1;
+  } finally {
+    // Client shutdown also releases an active Run if application event handling fails.
+    try {
+      await client.close();
+    } finally {
+      await session?.close();
+    }
+  }
+}
+
+void main().catch((error: unknown) => {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+});
+```
+
+[Complete application, recipes and error handling](../../examples/sdk-application/README.md)
+· [All published packages](https://www.npmjs.com/org/harapter)
+
 ## Use this Adapter when
 
 - your host supplies the official Pi Agent executable in strict RPC mode;

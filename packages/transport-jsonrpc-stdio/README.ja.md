@@ -23,13 +23,65 @@ Adapter 向け transport です。framing、request
 correlation、順序付き inbound、backpressure、timeout、cleanup を担いますが、Provider
 method を解釈せず、Harapter の Session、Run、終端結果を生成しません。
 
+## アプリ開発か Adapter 開発か
+
+通常のアプリには `@harapter/core` と Provider
+Adapter を導入します。マシンインターフェースを実装、テストする場合に本パッケージを直接使います。次の完全なオフライン例は公開インポートのみを使います。実際の Runtime を起動せず、Provider 互換性の証拠ではありません。
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/transport-jsonrpc-stdio
+npm install -D typescript @types/node
+```
+
+以下の完全なコードを `app.ts`
+に保存します。上でインストールした npm パッケージのみをインポートし、Node.js
+24 で直接実行できます。
+
+<!-- sdk-example: transport-jsonrpc-stdio.ts -->
+
+```ts
+import { PassThrough } from 'node:stream';
+import { JsonRpcStdioTransport } from '@harapter/transport-jsonrpc-stdio';
+
+// A deterministic in-memory peer; no Runtime or process is involved.
+const readable = new PassThrough();
+const writable = new PassThrough();
+writable.on('data', (frame: Buffer) => {
+  const request = JSON.parse(frame.toString('utf8')) as { id: number };
+  readable.write(
+    JSON.stringify({ jsonrpc: '2.0', id: request.id, result: 'pong' }) + '\n',
+  );
+});
+const transport = new JsonRpcStdioTransport({ readable, writable });
+try {
+  const reply = await transport.request('ping', {});
+  if (reply !== 'pong') throw new Error('Unexpected synthetic response.');
+  console.log({ responseReceived: true });
+} finally {
+  await transport.close();
+  readable.destroy();
+  writable.destroy();
+}
+```
+
+```sh
+node app.ts
+```
+
+実際の統合では合成ストリーム／Fetch を、後述するホスト所有プロセスやエンドポイントに置き換えます。起動手順、payload の検証、認証、編集処理、最終状態の解釈は Adapter が担当します。書き込みや EOF は Run 成功やネイティブキャンセルを意味しません。
+
+[完全なアプリ、レシピ、エラー処理](../../examples/sdk-application/README.ja.md)
+· [公開パッケージ一覧](https://www.npmjs.com/org/harapter)
+
 ## インストール
 
 ```bash
 pnpm add @harapter/transport-jsonrpc-stdio
 ```
 
-## クイックスタート
+## 実際のトランスポートを構成する
 
 ```ts
 import { JsonRpcStdioTransport } from '@harapter/transport-jsonrpc-stdio';

@@ -22,13 +22,62 @@
 framing、有序入站迭代、串行写入、背压、超时和清理。Provider
 Adapter 仍然负责启动进程、关联请求、解释消息、脱敏以及映射 Harapter 生命周期。
 
+## 应用接入还是 Adapter 开发？
+
+普通应用通常安装 `@harapter/core` 和 Provider
+Adapter；实现或测试机器接口时才直接使用本包。下面是仅使用公开导入的完整离线案例，不启动真实 Runtime，也不构成 Provider 兼容性证据。
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/transport-jsonl-process
+npm install -D typescript @types/node
+```
+
+将下面的完整代码保存为 `app.ts`。它只导入上面安装的 npm 包；Node.js
+24 可以直接执行这份 TypeScript。
+
+<!-- sdk-example: transport-jsonl-process.ts -->
+
+```ts
+import { PassThrough } from 'node:stream';
+import { JsonlProcessTransport } from '@harapter/transport-jsonl-process';
+
+const readable = new PassThrough();
+const writable = new PassThrough();
+writable.resume();
+const transport = new JsonlProcessTransport({ readable, writable });
+try {
+  const incoming = transport.incoming()[Symbol.asyncIterator]();
+  const next = incoming.next();
+  readable.write('{"type":"ready"}\n');
+  const message = await next;
+  if (message.done) throw new Error('Missing synthetic message.');
+  await transport.send({ type: 'ping' });
+  console.log({ messageReceived: true, localWriteCompleted: true });
+} finally {
+  await transport.close();
+  readable.destroy();
+  writable.destroy();
+}
+```
+
+```sh
+node app.ts
+```
+
+真实集成时，将合成的流／Fetch 替换为下文所述的宿主进程或端点。启动协议、payload 校验、认证、脱敏和最终状态仍由使用它的 Adapter 负责。传输写入或 EOF 不等于 Run 成功或原生取消。
+
+[完整应用、场景案例和错误处理](../../examples/sdk-application/README.zh-CN.md) ·
+[全部公开包](https://www.npmjs.com/org/harapter)
+
 ## 安装
 
 ```bash
 pnpm add @harapter/transport-jsonl-process
 ```
 
-## 快速开始
+## 组合真实传输
 
 ```ts
 import { JsonlProcessTransport } from '@harapter/transport-jsonl-process';

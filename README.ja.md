@@ -57,18 +57,19 @@ Loop ではありません。各 Runtime の選択、インストール、認証
 
 ## クイックスタート
 
-### 1. 公開済み Package をインストールする
+Node.js
+24 以降を使用します。自分のプロジェクトから始め、通常のアプリには Core と選択した Adapter をインストールします。transport と conformance は主に Adapter 開発とテスト向けです。Harapter の clone は不要です。
 
-Harapter は Node.js 24 以降を必要とします。npm の既定の `latest`
-チャネルから Core と一つの Adapter をインストールします。
+### 1. 自分のプロジェクトに SDK を導入する
 
-```bash
+```sh
+mkdir my-harapter-app
+cd my-harapter-app
+npm init -y
+npm pkg set type=module
 npm install @harapter/core @harapter/adapter-codex
-# または: pnpm add @harapter/core @harapter/adapter-codex
-# または: yarn add @harapter/core @harapter/adapter-codex
+npm install -D typescript @types/node
 ```
-
-ホストが運用する Runtime に合う Adapter を選びます。
 
 | Runtime          | 公開済み Adapter                                                  | Connection の所有者        |
 | ---------------- | ----------------------------------------------------------------- | -------------------------- |
@@ -79,140 +80,126 @@ npm install @harapter/core @harapter/adapter-codex
 | OpenClaw         | [`@harapter/adapter-openclaw`](./providers/openclaw/README.ja.md) | Adapter-managed ACP bridge |
 | Pi Agent         | [`@harapter/adapter-pi`](./providers/pi/README.ja.md)             | Adapter-managed process    |
 
-Runtime の導入と認証は別途行います。Harapter は Runtime の検出、導入、更新、ログインをホストの代わりに行いません。
+### 2. Runtime を準備して認証する
 
-### 2. 管理されているソースリファレンスを実行する（任意）
+この例では Codex を使います。[公式手順](https://developers.openai.com/codex/cli/)でインストールし、最初に
+`codex`
+を実行してログインを完了してください。モデルの認証は Runtime が管理し、呼び出しでトークンを消費する可能性があります。Harapter はマシンインターフェースを使い、インストールや認証は行いません。空のテスト Workspace と既定の読み取り専用ポリシーを使います。
 
-実行可能な参考アプリまたはコントリビューションにはリポジトリを clone します。Workspace は pnpm
-`11.23.0` を固定しています。
+### 3. 完全な SDK 呼び出しを実行する
 
-```bash
-git clone https://github.com/yunfeizhu/harapter.git
-cd harapter
-corepack enable
-pnpm install --frozen-lockfile
-pnpm build
-```
+以下の完全なコードを `app.ts`
+に保存します。上でインストールした npm パッケージのみをインポートし、Node.js
+24 で直接実行できます。
 
-リファレンスアプリケーションは live evidence が記録済みの Codex
-Adapter を使用します。ホストにインストール済みの `codex`
-コマンドを明示的に指定します。
-
-```bash
-HARAPTER_CODEX_COMMAND=codex \
-  pnpm --filter @harapter/example-single-provider start
-```
-
-この Entry Point は一時 Workspace を作成し、Read-only Sandbox で安定版 Codex App
-Server を起動して、1 つの Ephemeral Session を実行します。Event
-Stream を消費し、信頼できる Result を読み、すべてのリソースを Close します。小さな架空の Prompt を送信するため、Provider
-Token を消費する場合があります。出力は安全なライフサイクルメタデータだけで、Prompt、Message 本文、Provider の Raw
-Traffic、Credential、ローカルパスを含みません。
-
-### 3. ポータブルなライフサイクルを組み込む
-
-次のコードは手順 1 で導入した実際の public export を使います。Composition
-Root が Adapter と Profile を選択し、アプリケーション向けライフサイクルは Provider に依存しません。
+<!-- sdk-example: quick-codex.ts -->
 
 ```ts
+import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import {
-  HarnessRegistry,
-  profileId,
-  type HarnessSession,
-} from '@harapter/core';
+import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
 import {
   CODEX_PROVIDER_ID,
   createCodexProviderFactory,
 } from '@harapter/adapter-codex';
 
-const registry = new HarnessRegistry();
-registry.register(createCodexProviderFactory());
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`Set ${name} in the application environment.`);
+  return value;
+}
 
-const client = await registry.connect({
-  profileId: profileId('codex-local'),
-  providerId: CODEX_PROVIDER_ID,
-  displayName: 'Local Codex',
-  connection: {
-    kind: 'process',
-    command: 'codex',
-    args: ['app-server', '--stdio'],
-    cwd: process.cwd(),
-    ownership: 'adapter',
-  },
-  requiredCapabilities: [{ name: 'input.text' }, { name: 'run.stream' }],
-});
-
-let session: HarnessSession | undefined;
-
-try {
-  const descriptor = await client.descriptor();
-  const capabilities = await client.capabilities();
-  console.log({
-    compatibility: descriptor.compatibility,
-    streaming: capabilities.capabilities['run.stream']?.mode,
-  });
-
-  session = await client.createSession({
-    workspace: { uri: pathToFileURL(process.cwd()).href },
-    providerOptions: {
-      approvalPolicy: 'never',
-      sandbox: 'read-only',
-      ephemeral: true,
+async function main() {
+  const workspace = required('HARAPTER_WORKSPACE');
+  if (!isAbsolute(workspace))
+    throw new Error('Choose an absolute Workspace path.');
+  const factory = createCodexProviderFactory();
+  const client = await factory.connect({
+    profileId: profileId('my-codex'),
+    providerId: CODEX_PROVIDER_ID,
+    displayName: 'Application codex',
+    connection: {
+      kind: 'process',
+      command: required('HARAPTER_CODEX_COMMAND'),
+      args: ['app-server', '--stdio'],
+      cwd: workspace,
+      ownership: 'adapter',
     },
   });
-
-  const run = await session.start(
-    {
-      parts: [
-        {
-          type: 'text',
-          text: 'Reply with exactly HARAPTER_OK. Do not use tools.',
-        },
-      ],
-    },
-    { timeoutMs: 60_000 },
-  );
-
-  for await (const event of run.events()) {
-    console.log({ sequence: event.sequence, type: event.type });
-  }
-
-  const result = await run.result();
-  console.log({ status: result.status });
-} finally {
+  let session: HarnessSession | undefined;
   try {
-    await session?.close();
+    session = await client.createSession({
+      workspace: { uri: pathToFileURL(workspace).href },
+      providerOptions: {
+        approvalPolicy: 'never',
+        sandbox: 'read-only',
+        ephemeral: true,
+      },
+    });
+    const run = await session.start(
+      {
+        parts: [
+          {
+            type: 'text',
+            text: 'Reply with exactly HARAPTER_OK. Do not use tools or inspect files.',
+          },
+        ],
+      },
+      { timeoutMs: 60_000 },
+    );
+    for await (const event of run.events()) {
+      if (event.type === 'interaction.requested')
+        throw new Error('Configure an explicit host interaction handler.');
+      console.log({ type: event.type, sequence: event.sequence });
+    }
+    const result = await run.result();
+    // Use result.finalMessage in your authorized application UI or response.
+    console.log({
+      status: result.status,
+      hasText: result.finalMessage !== undefined,
+    });
+    if (result.status !== 'completed') process.exitCode = 1;
   } finally {
-    await client.close();
+    // Client shutdown also releases an active Run if application event handling fails.
+    try {
+      await client.close();
+    } finally {
+      await session?.close();
+    }
   }
 }
+
+void main().catch((error: unknown) => {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+});
 ```
 
-別の Provider を選択しても、Registry → Client → Session → Run → Events →
-Result のライフサイクルは変わりませんが、Adapter Factory、Provider ID、Profile
-Connection、Provider-local
-Option はその Provider 用に構成します。Session と Run の各入力や Control は、実行中の Runtime から観測した Capability
-Manifest と対応する
-[Provider README](./providers/README.md)に基づいて選択してください。ある Adapter が受け入れる Option は、別の Adapter では無効な場合があります。各 Provider
-README は、正確な Runtime の前提条件、Connection 形式、互換性境界も所有します。
+自分のプロジェクトで実行します。以下は POSIX
+shell の例です。Windows では PowerShell で同名の環境変数を設定してください。
 
-### 4. ライフサイクルの意味を明示的に扱う
+```sh
+mkdir workspace
+export HARAPTER_CODEX_COMMAND=codex
+export HARAPTER_WORKSPACE="$PWD/workspace"
+node app.ts
+```
 
-- Provider 名を検査せず、Profile に `requiredCapabilities`
-  を宣言します。Requirementは既定で `native`
-  のみを受け入れ、弱い Mode の利用にはホストの明示的な判断が必要です。
-- `run.events()`
-  を継続的に消費します。Adapter は上限付き Buffer を使用し、未読の Run を Event の暗黙的な破棄ではなく Abort する場合があります。
-- `run.result()` を信頼できる終端結果として扱います。`completed`、`cancelled`、
-  `failed`、`connection_aborted` は異なる状態です。
-- ホストの Authorization と Data Policy が許可する場合にのみ、
-  `session.respond()` で `interaction.requested` を処理します。
-- 現在の Capability Manifest が Resume をサポートする場合にのみ、`session.ref()`
-  を不透明な Provider-owned
-  State として保存します。元の Provider と Profile から Resume し、別の Adapter へ渡してはいけません。
-- `providerState`、Provider Raw
-  Event、`providerResult`、Credential、Prompt、Message 本文は既定で記録しません。Session と Client は必ず Close します。
+想定出力はライフサイクルのイベント種別と
+`{ status: "completed", hasText: true }` です。`result.finalMessage`
+がユーザーの管理された UI に返すモデルのテキストで、サンプルはメタデータだけをログに表示します。失敗やキャンセルは成功した回答ではありません。呼び出しには 60 秒の期限があり、すべてのリソースを閉じます。
+
+### 4. 業務コードへ組み込む
+
+接続設定をアプリの構成モジュールに置き、業務サービスとしてリクエストハンドラーやデスクトップアプリから呼び出します。[完全な SDK アプリ](./examples/sdk-application/README.ja.md)には独立した
+`package.json`、TypeScript 設定、テキストと状態を返す service、再接続と再開、ネイティブ fork、キャンセル、並行 Provider、ホスト対話処理があります。公開済みパッケージを使い、独立したプロジェクトへコピーできます。
+
+`isHarnessError(error)` で安定した `code` と `retryable`
+を読み取ります。Runtime や認証が不足する場合は設定を修正してから再試行します。`run.events()`
+を消費し続け、`run.result()`
+を最終状態の根拠とします。Session 参照は元の Provider/Profile とアクセス制御されたホストの保存ポリシーに従って保存、再開してください。raw イベント、ネイティブ状態、認証情報、業務コンテンツをログに出さないでください。
 
 ## Harapter を使う理由
 
@@ -282,6 +269,8 @@ README を参照してください。
 
 ## その他のサンプル
 
+アプリへの組み込みには[独立した SDK アプリ](./examples/sdk-application/README.ja.md)から始めてください。
+
 - [Single-Provider リファレンス](./examples/single-provider/README.md) — Client
   → Session → Run → Event →
   Result の完全なライフサイクルと安全な Cleanup を示します。
@@ -292,6 +281,19 @@ README を参照してください。
 
 2 つのリファレンスは既定で決定論的です。テストはサードパーティ Runtime の検出、インストール、認証、実行を行いません。ホストが Runtime 設定を明示的に指定した場合のみ、任意の Live
 Entry Point が実行されます。
+
+### リポジトリのサンプルを実行する（貢献者向け、任意）
+
+Harapter 自体や参照アプリを開発する場合だけリポジトリを clone します。Workspace は pnpm
+11.23.0 を固定しています。
+
+```sh
+git clone https://github.com/yunfeizhu/harapter.git
+cd harapter
+corepack enable
+pnpm install --frozen-lockfile
+pnpm build
+```
 
 ## プロジェクトの状態
 

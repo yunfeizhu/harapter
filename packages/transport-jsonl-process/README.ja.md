@@ -24,13 +24,63 @@ write、backpressure、timeout、cleanup を提供します。process 起動、r
 correlation、message の意味、redaction、Harapter mapping は Provider
 Adapter が所有します。
 
+## アプリ開発か Adapter 開発か
+
+通常のアプリには `@harapter/core` と Provider
+Adapter を導入します。マシンインターフェースを実装、テストする場合に本パッケージを直接使います。次の完全なオフライン例は公開インポートのみを使います。実際の Runtime を起動せず、Provider 互換性の証拠ではありません。
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/transport-jsonl-process
+npm install -D typescript @types/node
+```
+
+以下の完全なコードを `app.ts`
+に保存します。上でインストールした npm パッケージのみをインポートし、Node.js
+24 で直接実行できます。
+
+<!-- sdk-example: transport-jsonl-process.ts -->
+
+```ts
+import { PassThrough } from 'node:stream';
+import { JsonlProcessTransport } from '@harapter/transport-jsonl-process';
+
+const readable = new PassThrough();
+const writable = new PassThrough();
+writable.resume();
+const transport = new JsonlProcessTransport({ readable, writable });
+try {
+  const incoming = transport.incoming()[Symbol.asyncIterator]();
+  const next = incoming.next();
+  readable.write('{"type":"ready"}\n');
+  const message = await next;
+  if (message.done) throw new Error('Missing synthetic message.');
+  await transport.send({ type: 'ping' });
+  console.log({ messageReceived: true, localWriteCompleted: true });
+} finally {
+  await transport.close();
+  readable.destroy();
+  writable.destroy();
+}
+```
+
+```sh
+node app.ts
+```
+
+実際の統合では合成ストリーム／Fetch を、後述するホスト所有プロセスやエンドポイントに置き換えます。起動手順、payload の検証、認証、編集処理、最終状態の解釈は Adapter が担当します。書き込みや EOF は Run 成功やネイティブキャンセルを意味しません。
+
+[完全なアプリ、レシピ、エラー処理](../../examples/sdk-application/README.ja.md)
+· [公開パッケージ一覧](https://www.npmjs.com/org/harapter)
+
 ## インストール
 
 ```bash
 pnpm add @harapter/transport-jsonl-process
 ```
 
-## クイックスタート
+## 実際のトランスポートを構成する
 
 ```ts
 import { JsonlProcessTransport } from '@harapter/transport-jsonl-process';

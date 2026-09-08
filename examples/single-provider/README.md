@@ -1,5 +1,9 @@
 # Single-provider reference application
 
+For an application installed from npm, start with the
+[standalone SDK application](../sdk-application/README.md). This directory is a
+repository reference built as part of the Harapter Workspace.
+
 This application demonstrates the complete portable Harapter path for one
 host-selected Provider:
 

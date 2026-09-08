@@ -27,6 +27,61 @@ limits. It does not spawn or discover executables, correlate protocol requests,
 interpret Provider messages, or assign Harapter Session, Run, Event, error, or
 cancellation semantics.
 
+## Application or Adapter development?
+
+Most applications should install `@harapter/core` and a Provider Adapter
+instead. Install this package directly when implementing or testing a
+machine-interface integration. The following complete offline example uses only
+published imports. It does not start a real Runtime and is not Provider
+compatibility evidence.
+
+```sh
+npm init -y
+npm pkg set type=module
+npm install @harapter/transport-jsonl-process
+npm install -D typescript @types/node
+```
+
+Save the following as `app.ts`. It imports only the npm packages installed
+above; Node.js 24 can execute this TypeScript directly.
+
+<!-- sdk-example: transport-jsonl-process.ts -->
+
+```ts
+import { PassThrough } from 'node:stream';
+import { JsonlProcessTransport } from '@harapter/transport-jsonl-process';
+
+const readable = new PassThrough();
+const writable = new PassThrough();
+writable.resume();
+const transport = new JsonlProcessTransport({ readable, writable });
+try {
+  const incoming = transport.incoming()[Symbol.asyncIterator]();
+  const next = incoming.next();
+  readable.write('{"type":"ready"}\n');
+  const message = await next;
+  if (message.done) throw new Error('Missing synthetic message.');
+  await transport.send({ type: 'ping' });
+  console.log({ messageReceived: true, localWriteCompleted: true });
+} finally {
+  await transport.close();
+  readable.destroy();
+  writable.destroy();
+}
+```
+
+```sh
+node app.ts
+```
+
+For a real integration, replace the synthetic stream/Fetch peer with the
+host-owned process or endpoint described below. The consuming Adapter still owns
+startup, payload validation, authentication, redaction and terminal semantics. A
+transport write or EOF does not establish Run success or native cancellation.
+
+[Complete application, recipes and error handling](../../examples/sdk-application/README.md)
+· [All published packages](https://www.npmjs.com/org/harapter)
+
 ## Use this package when
 
 - a harness exchanges one JSON object per line without JSON-RPC correlation;
@@ -101,7 +156,7 @@ contain sensitive data. The consuming Provider Adapter must validate and redact
 them before producing Harapter events, errors, diagnostics, logs, fixtures, or
 raw-channel observations.
 
-## Quick start
+## Compose a real transport
 
 ```ts
 import { JsonlProcessTransport } from '@harapter/transport-jsonl-process';

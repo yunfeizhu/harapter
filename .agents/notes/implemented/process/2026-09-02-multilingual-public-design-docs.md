@@ -26,6 +26,11 @@ installation, a minimal public-API example, lifecycle, safety, and limitations.
 Public API identifiers, protocol fields, package names, commands, and code
 remain in their canonical form in every language.
 
+Entry guides start with SDK installation in an independent application and a
+complete Runtime call. Repository cloning and source builds follow the consumer
+path. Copyable example verification is owned by the
+[SDK application evidence decision](../testing/2026-09-08-sdk-application-evidence.md).
+
 A semantic change to a localized README or design topic updates all three
 variants in one pull request. Technical design topics may remain English unless
 they already have a language triad. The repository documentation and package
