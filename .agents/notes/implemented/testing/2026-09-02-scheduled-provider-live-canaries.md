@@ -169,6 +169,14 @@ retained, but Runtime logs, state and model bodies are not uploaded. Local
 success and a configured workflow are explicitly distinct from a passing trusted
 Actions execution.
 
+The interaction installer delegates Hermes release-tag parsing to the shared
+Node preparation helper. The helper bounds the response, rejects malformed or
+unsafe tags, and reports failures without response content or local paths.
+Cross-platform policy tests exercise that command. Installation-step changes
+also need an actual execution of the YAML-decoded shell with isolated command
+substitutes before the trusted run; syntax-only checks do not establish that
+nested command substitutions and heredoc boundaries execute correctly.
+
 ## Alternatives considered
 
 ### Pin every Runtime to one exact version
@@ -189,6 +197,13 @@ Model choices would make the requested tool nondeterministic and place a real
 credential in a tool-capable Runtime. A fixed loopback model preserves real
 Runtime approvals and machine interfaces with no model Secret or model cost. It
 cannot replace authenticated model-service evidence, so both jobs remain.
+
+### Keep release parsing inline in a shell heredoc
+
+An indented delimiter inside command substitution can prevent every Provider's
+installation branch from parsing, while a local `bash -n` still exits
+successfully. A tested Node command removes that nested shell boundary and keeps
+metadata validation independent of the runner's shell version.
 
 ### Treat every successful canary as full Provider support
 

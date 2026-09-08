@@ -843,13 +843,7 @@ jobs:
               curl --fail --silent --show-error --retry 3 --max-time 30 \
                 https://api.github.com/repos/NousResearch/hermes-agent/releases/latest \
                 --output "$RUNNER_TEMP/hermes-release.json"
-              hermes_tag=$(node --input-type=module - "$RUNNER_TEMP/hermes-release.json" <<'NODE'
-              import { readFileSync } from 'node:fs';
-              const tag = JSON.parse(readFileSync(process.argv[2], 'utf8')).tag_name;
-              if (typeof tag !== 'string' || !/^v[0-9][0-9A-Za-z.-]*$/.test(tag)) throw new Error('Invalid official Hermes release tag.');
-              process.stdout.write(tag);
-              NODE
-              )
+              hermes_tag=$(node scripts/prepare-live-canary.mjs resolve-hermes-release-tag "$RUNNER_TEMP/hermes-release.json")
               hermes_source="$RUNNER_TEMP/harapter-hermes-source"
               git clone --quiet --depth 1 --branch "$hermes_tag" https://github.com/NousResearch/hermes-agent.git "$hermes_source"
               python3 -m venv "$RUNNER_TEMP/harapter-hermes-venv"
