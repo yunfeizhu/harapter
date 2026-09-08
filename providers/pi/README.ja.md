@@ -143,3 +143,9 @@ await child.close();
 | [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)     | [ガイド](../hermes/README.ja.md)                  |
 | [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw) | [ガイド](../openclaw/README.ja.md)                |
 | [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode) | [ガイド](../opencode/README.ja.md)                |
+
+公式 Runtime
+0.85.1 の[合成モデルによる対話の証拠](../../docs/provider-interaction-evidence.md)は、ホスト所有の実行ファイルで一つのテスト拡張を明示的に読み込み、四つの UI メソッドを検証します。確認待機中の中断は現在
+`failed` と `stopReason: error`、`run.cancel()` は `already_terminal`
+を返します。この経路は native
+cancellation の証拠ではなく、Adapter の拡張読み込み機能や認証済み拡張の証拠も追加しません。
