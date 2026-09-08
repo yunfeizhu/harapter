@@ -11,6 +11,7 @@ import {
   type SessionRef,
 } from '@harapter/core';
 import type { MultiProviderSetup } from './index.js';
+import { observeInteractiveRun } from './interactions.js';
 
 /** Example-local composition, not a portable Core fork contract. */
 export interface SessionHistoryBinding {
@@ -275,42 +276,48 @@ export async function runSessionWorkflow(
       cancellation === undefined ? 'run' : 'session';
     let pending: Promise<CancellationRecord | undefined> | undefined;
     try {
-      for await (const event of run.events()) {
-        if (
-          phase === 'cancellation' &&
-          pending === undefined &&
-          (cancellation?.ready(event) ?? event.type === 'run.started')
-        ) {
-          // Keep draining while native cancellation waits for events/acknowledgment.
-          pending = Promise.resolve()
-            .then(async (): Promise<CancellationRecord> => {
-              if (cancellation === undefined)
-                return {
-                  type: 'cancellation',
-                  scope,
-                  receipt: (await run.cancel()).mode,
-                };
-              await cancellation.request(session.ref());
-              return { type: 'cancellation', scope, receipt: 'accepted' };
-            })
-            .catch(async () => {
-              // Release the transport on request failure; never call this native cancellation.
-              try {
-                await client.close();
-              } catch {
-                /* Outer cleanup retries. */
-              }
-              return undefined;
-            });
-        }
-        await write({
-          type: 'event',
-          phase,
-          eventType: event.type,
-          sequence: event.sequence,
-        });
-      }
-      const result = await run.result();
+      const result = await observeInteractiveRun({
+        session,
+        run,
+        ...(setup.onInteraction === undefined
+          ? {}
+          : { onInteraction: setup.onInteraction }),
+        onEvent: async (event) => {
+          if (
+            phase === 'cancellation' &&
+            pending === undefined &&
+            (cancellation?.ready(event) ?? event.type === 'run.started')
+          ) {
+            // Keep draining while native cancellation waits for events/acknowledgment.
+            pending = Promise.resolve()
+              .then(async (): Promise<CancellationRecord> => {
+                if (cancellation === undefined)
+                  return {
+                    type: 'cancellation',
+                    scope,
+                    receipt: (await run.cancel()).mode,
+                  };
+                await cancellation.request(session.ref());
+                return { type: 'cancellation', scope, receipt: 'accepted' };
+              })
+              .catch(async () => {
+                // Release the transport on request failure; never call this native cancellation.
+                try {
+                  await client.close();
+                } catch {
+                  /* Outer cleanup retries. */
+                }
+                return undefined;
+              });
+          }
+          await write({
+            type: 'event',
+            phase,
+            eventType: event.type,
+            sequence: event.sequence,
+          });
+        },
+      });
       if (phase === 'cancellation') {
         const receipt =
           pending === undefined

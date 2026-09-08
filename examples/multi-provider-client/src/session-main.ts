@@ -6,16 +6,21 @@ import {
   type SessionProviderConfiguration,
 } from './session-providers.js';
 import { runSessionWorkflow } from './session-workflow.js';
+import type { HostInteractionHandler } from './interactions.js';
 
 /** Run an explicitly trusted host configuration, one Provider at a time. */
 export async function runConfiguredSessionWorkflows(
   config: SessionProviderConfiguration,
   write: (line: string) => void | Promise<void>,
+  onInteraction?: HostInteractionHandler,
 ): Promise<void> {
   const setups = createSessionWorkflowSetups(config);
   for (const [index, setup] of setups.entries()) {
     await runSessionWorkflow({
-      setup,
+      setup: {
+        ...setup,
+        ...(onInteraction === undefined ? {} : { onInteraction }),
+      },
       write: (record) =>
         write(JSON.stringify({ provider: index + 1, ...record })),
     });
@@ -41,9 +46,13 @@ if (isDirectExecution()) {
       if (hasDisposer(loaded)) dispose = () => loaded.dispose();
       if (!isConfigurationModule(loaded))
         throw new Error('Invalid configuration.');
-      await runConfiguredSessionWorkflows(loaded.default, (line) => {
-        process.stdout.write(`${line}\n`);
-      });
+      await runConfiguredSessionWorkflows(
+        loaded.default,
+        (line) => {
+          process.stdout.write(`${line}\n`);
+        },
+        interactionHandler(loaded),
+      );
     } catch {
       // Import, process, network and credential failures can contain private data.
       process.stderr.write(
@@ -59,6 +68,15 @@ if (isDirectExecution()) {
       }
     }
   }
+}
+
+function interactionHandler(value: object): HostInteractionHandler | undefined {
+  if (!('onInteraction' in value) || value.onInteraction === undefined)
+    return undefined;
+  if (typeof value.onInteraction !== 'function')
+    throw new Error('Invalid host interaction handler.');
+  // An explicitly trusted module implements the documented typed callback.
+  return value.onInteraction as HostInteractionHandler;
 }
 
 function isConfigurationModule(

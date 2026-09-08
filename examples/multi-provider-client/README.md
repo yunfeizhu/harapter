@@ -38,6 +38,24 @@ numbers, and terminal status. It never receives prompts, message bodies, raw
 events, Provider results, native state, errors, credentials, environment values,
 or local paths.
 
+## Host interactions
+
+Both runners accept `setup.onInteraction`. It receives the private request,
+Session/Run references, and an `AbortSignal`, and returns an explicit
+`InteractionResponse`. The example relays it through the same Session's
+`respond()` while continuing to drain events. The callback must dismiss its UI
+on abort; late answers are discarded even if it ignores the signal. Each Run
+accepts at most 64 distinct requests. Duplicate IDs and malformed requests fail
+closed. A missing handler fails explicitly when a live interaction is observed;
+there is no automatic approval or provider-policy change. The first failed task
+triggers Client cleanup and invalidates other pending interactions before the
+runner returns.
+
+The safe renderer still receives only metadata. Request details, input answers,
+and native Provider payloads belong to the host's separate, access-controlled
+presentation callback. See the [interaction guide](interactions.md) for an
+offline terminal demo, host composition, and the current Provider boundaries.
+
 ## Codex and OpenCode composition
 
 The host creates two isolated temporary directories, installs and authenticates

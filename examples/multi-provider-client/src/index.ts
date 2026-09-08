@@ -15,6 +15,10 @@ import {
   type RunResult,
   type SessionRef,
 } from '@harapter/core';
+import {
+  observeInteractiveRun,
+  type HostInteractionHandler,
+} from './interactions.js';
 
 /** Provider registration and per-Profile defaults selected by the host. */
 export interface MultiProviderSetup {
@@ -22,6 +26,8 @@ export interface MultiProviderSetup {
   readonly profile: HarnessProfile;
   readonly sessionInput?: CreateSessionInput;
   readonly runOptions?: RunOptions;
+  /** Host-owned decision UI; request payloads never reach the safe renderer. */
+  readonly onInteraction?: HostInteractionHandler;
 }
 
 /** One new or resumed task routed by Profile identity. */
@@ -135,6 +141,7 @@ export async function runMultiProviderClient(
   const write = serializedWriter(options.write);
   const connected = new Map<ProfileId, ConnectedProvider>();
   const disposers: MultiProviderDisposer[] = [];
+  let tasks: readonly Promise<MultiProviderOutcome>[] = [];
   let outcomes: readonly MultiProviderOutcome[] | undefined;
   let operationError: Error | undefined;
 
@@ -158,22 +165,17 @@ export async function runMultiProviderClient(
       if (disposer !== undefined) disposers.push(disposer);
     }
 
-    const settled = await Promise.allSettled(
-      options.tasks.map((task) => runTask(connected, task, write)),
-    );
-    const rejected = settled.find(
-      (result): result is PromiseRejectedResult => result.status === 'rejected',
-    );
-    if (rejected !== undefined) throw asError(rejected.reason);
-    outcomes = settled.map(
-      (result) =>
-        (result as PromiseFulfilledResult<MultiProviderOutcome>).value,
-    );
+    tasks = options.tasks.map((task) => runTask(connected, task, write));
+    // The first failure must reach cleanup even if another UI never answers.
+    outcomes = await Promise.all(tasks);
   } catch (error) {
     operationError = asError(error);
   }
 
   const cleanupError = await closeConnections(disposers, connected);
+  // Client teardown invalidates other Runs and dismisses their pending UI.
+  // Observe those task outcomes before returning the original failure.
+  await Promise.allSettled(tasks);
   if (operationError !== undefined) throw operationError;
   if (cleanupError !== undefined) throw cleanupError;
   if (outcomes === undefined) {
@@ -222,16 +224,22 @@ async function runTask(
       controls: visibleControls(capabilities),
     });
     const run = await session.start(task.input, selected.setup.runOptions);
-    for await (const event of run.events()) {
-      await write({
-        type: 'event',
-        providerId: event.providerId,
-        profileId: event.profileId,
-        eventType: event.type,
-        sequence: event.sequence,
-      });
-    }
-    const result = await run.result();
+    const result = await observeInteractiveRun({
+      session,
+      run,
+      ...(selected.setup.onInteraction === undefined
+        ? {}
+        : { onInteraction: selected.setup.onInteraction }),
+      onEvent: async (event) => {
+        await write({
+          type: 'event',
+          providerId: event.providerId,
+          profileId: event.profileId,
+          eventType: event.type,
+          sequence: event.sequence,
+        });
+      },
+    });
     await write({
       type: 'result',
       providerId: sessionRef.providerId,

@@ -136,6 +136,66 @@ try {
 The suite is a development dependency. A passing conformance suite is portable
 contract evidence, not live Provider compatibility evidence.
 
+## Shared interaction suite
+
+`defineInteractionConformanceSuite()` is opt-in. Supply fresh factory/Profile
+producers, a synthetic `input`, the observed `kind`, and a non-empty `responses`
+array of valid replies. The fixture must request one interaction per Run and
+settle after its response; include both approval and denial when offered. Cases
+use a two-second Run deadline and always close the Client. They verify observed
+capability, event ownership, one resolution, duplicate and foreign-Session
+rejection, cancellation strength, and invalidation after connection teardown.
+Cancellation may race an authoritative terminal result. Provider fixtures still
+own malformed native payloads, expiration, transport acknowledgment, and
+protocol ordering tests.
+
+```ts
+import { defineInteractionConformanceSuite } from '@harapter/conformance';
+
+defineInteractionConformanceSuite({
+  name: 'Example approval fixture',
+  createFactory: createApprovalFixtureFactory,
+  createProfile: createApprovalFixtureProfile,
+  input: { parts: [{ type: 'text', text: 'synthetic approval input' }] },
+  kind: 'approval',
+  responses: [
+    { kind: 'approval', decision: 'approve' },
+    { kind: 'approval', decision: 'deny' },
+  ],
+});
+```
+
+The two fixture producers above are supplied by the Adapter's test harness.
+Codex, OpenCode, Hermes, OpenClaw, and Pi run this suite with their synthetic
+machine-interface fixtures. Pi uses `kind: 'provider'`; DSH does not opt in
+because its current adapters do not expose a host response API.
+
+## Fake interactions outside Vitest
+
+`@harapter/conformance/fake` exports `createFakeProfile`,
+`createFakeProviderFactory`, their default identities, and `FakeProviderOptions`
+without importing Vitest. Use this public subpath in offline Node demos. The
+existing package root also exports these symbols for Vitest consumers.
+
+Set `interaction: { kind: 'approval' }` (or `user_input` / `provider`) to make
+each Fake Run emit one request and wait for an explicit response. Optional
+request fields are synthetic host fixture data. Without this option,
+interactions remain unsupported and the normal echo behavior is unchanged.
+Requests use factory-unique Run identities; only the Session handle that started
+the Run can respond. Wrong-kind, duplicate, foreign, closed, or expired
+responses reject. Approval denial resolves that request and completes the
+synthetic Run; it does not mean native Run cancellation. Fake user input accepts
+non-empty arrays of text parts; native responses retain their explicit Provider
+value.
+
+The observed `run.timeout` mode is `adapter_controlled`.
+
+`RunOptions.timeoutMs` accepts a positive safe integer up to 2,147,483,647.
+Expiration emits `interaction.resolved` before `connection.aborted`, releases
+waiters, and clears the timer. Native cancellation remains `run.cancelled`. The
+[offline interaction example](../../examples/multi-provider-client/interactions.md)
+demonstrates this lifecycle without real tools, runtimes, or model calls.
+
 ## Related packages
 
 [All packages](../../README.md#packages-on-npm)

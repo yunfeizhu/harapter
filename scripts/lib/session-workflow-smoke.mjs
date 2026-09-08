@@ -16,6 +16,9 @@ export function checkSessionWorkflowCommand(repositoryRoot, consumerRoot) {
     'session-main',
     'session-providers',
     'session-workflow',
+    'interactions',
+    'interaction-demo',
+    'interaction-main',
   ]) {
     const relative = `examples/multi-provider-client/dist/${name}.js`;
     const source = resolve(repositoryRoot, relative);
@@ -75,6 +78,42 @@ export function checkSessionWorkflowCommand(repositoryRoot, consumerRoot) {
     failure,
     'host resource cleanup',
   );
+
+  const demo = join(directory, 'interaction-main.js');
+  for (const [kind, input, status] of [
+    ['approval', 'approve\n', 0],
+    ['approval', 'deny\n', 0],
+    ['user_input', 'fictional-private-answer\n', 0],
+    ['provider', 'confirm\n', 0],
+    ['provider', 'cancel\n', 0],
+    ['approval', '\n', 1],
+    ['approval', '', 1],
+    ['provider', 'invalid\n', 1],
+    ['user_input', '\n', 1],
+    ['unknown', '', 1],
+  ]) {
+    const result = spawnSync(process.execPath, [demo, kind], {
+      cwd: consumerRoot,
+      encoding: 'utf8',
+      input,
+      timeout: 10_000,
+      maxBuffer: 1024 * 1024,
+    });
+    if (
+      result.error !== undefined ||
+      result.status !== status ||
+      (status === 0 &&
+        (!result.stdout.includes('interaction.resolved\n') ||
+          !result.stdout.endsWith('completed\n'))) ||
+      (status !== 0 && !/failed|Usage/u.test(result.stderr)) ||
+      /fictional-private-answer|requestId|providerState/u.test(
+        result.stdout + result.stderr,
+      )
+    )
+      throw new Error(
+        'Offline interaction CLI or public Fake export check failed.',
+      );
+  }
 
   function check(args, expectedOutput, expectedError, label) {
     const result = spawnSync(process.execPath, args, {

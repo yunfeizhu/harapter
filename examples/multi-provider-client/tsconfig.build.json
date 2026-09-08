@@ -4,6 +4,9 @@
     "baseUrl": ".",
     "outDir": "dist",
     "paths": {
+      "@harapter/conformance/fake": [
+        "../../packages/conformance/dist/fake-provider.d.ts"
+      ],
       "@harapter/adapter-codex": ["../../providers/codex/dist/index.d.ts"],
       "@harapter/adapter-opencode": [
         "../../providers/opencode/dist/index.d.ts"

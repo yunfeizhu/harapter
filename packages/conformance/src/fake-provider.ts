@@ -17,6 +17,7 @@ import {
   type HarnessProfile,
   type HarnessRun,
   type HarnessSession,
+  type InteractionRequest,
   type InteractionResponse,
   type InputPart,
   type ProviderAdapterFactory,
@@ -51,6 +52,8 @@ export interface FakeProviderOptions {
   nativeClient?: boolean;
   includeUnknownEvent?: boolean;
   rawEvents?: boolean;
+  /** One synthetic request per Run; absent by default. */
+  interaction?: Omit<InteractionRequest, 'requestId'>;
 }
 
 /**
@@ -89,6 +92,10 @@ export function createFakeProviderFactory(
     nativeClient: options.nativeClient ?? true,
     includeUnknownEvent: options.includeUnknownEvent ?? false,
     rawEvents: options.rawEvents ?? false,
+    interaction:
+      options.interaction === undefined
+        ? undefined
+        : structuredClone(options.interaction),
   };
   const descriptor: ProviderDescriptor = {
     providerId: resolved.providerId,
@@ -97,6 +104,7 @@ export function createFakeProviderFactory(
   };
   const state: FakeProviderState = {
     sessionSerial: 0,
+    runSerial: 0,
     sessions: new Map(),
   };
 
@@ -139,6 +147,7 @@ interface ResolvedFakeProviderOptions {
   nativeClient: boolean;
   includeUnknownEvent: boolean;
   rawEvents: boolean;
+  interaction: Omit<InteractionRequest, 'requestId'> | undefined;
 }
 
 interface FakeNativeClient {
@@ -148,6 +157,7 @@ interface FakeNativeClient {
 
 interface FakeProviderState {
   sessionSerial: number;
+  runSerial: number;
   readonly sessions: Map<ProviderSessionId, FakeNativeSessionState>;
 }
 
@@ -162,7 +172,6 @@ class FakeClient implements HarnessClient {
   private readonly activeRuns = new Set<FakeRun>();
   private readonly extensionRegistry: ExtensionRegistry;
   private readonly nativeClient: FakeNativeClient;
-  private runSerial = 0;
   private closed = false;
 
   constructor(
@@ -280,9 +289,13 @@ class FakeClient implements HarnessClient {
     return Promise.resolve();
   }
 
-  createRun(sessionId: ProviderSessionId, text: string): FakeRun {
+  createRun(
+    sessionId: ProviderSessionId,
+    text: string,
+    timeoutMs?: number,
+  ): FakeRun {
     this.assertOpen();
-    const portableRunId = runId(`fake-run-${String(++this.runSerial)}`);
+    const portableRunId = runId(`fake-run-${String(++this.state.runSerial)}`);
     const run = new FakeRun(
       {
         providerId: this.options.providerId,
@@ -295,6 +308,7 @@ class FakeClient implements HarnessClient {
       () => {
         this.activeRuns.delete(run);
       },
+      timeoutMs,
     );
     this.activeRuns.add(run);
     return run;
@@ -304,7 +318,7 @@ class FakeClient implements HarnessClient {
     return fakeCapabilities(this.profile, this.options);
   }
 
-  private assertOpen(): void {
+  assertOpen(): void {
     if (this.closed) {
       throw new HarnessError(
         'connection_aborted',
@@ -321,6 +335,7 @@ class FakeClient implements HarnessClient {
 
 class FakeSession implements HarnessSession {
   private closed = false;
+  private ownedRun: FakeRun | undefined;
 
   constructor(
     private readonly client: FakeClient,
@@ -343,7 +358,7 @@ class FakeSession implements HarnessSession {
     return Promise.resolve(this.client.capabilityManifest());
   }
 
-  start(input: HarnessInput, _options?: RunOptions): Promise<HarnessRun> {
+  start(input: HarnessInput, options?: RunOptions): Promise<HarnessRun> {
     return promiseFrom(() => {
       if (this.closed) {
         throw new HarnessError('session_not_found', 'Session is closed.', {
@@ -383,7 +398,24 @@ class FakeSession implements HarnessSession {
         );
       }
       const text = textParts.map((part) => part.text).join('');
-      const run = this.client.createRun(this.nativeSession.sessionId, text);
+      if (
+        options?.timeoutMs !== undefined &&
+        (!Number.isSafeInteger(options.timeoutMs) ||
+          options.timeoutMs <= 0 ||
+          options.timeoutMs > 2_147_483_647)
+      ) {
+        throw new HarnessError(
+          'invalid_request',
+          'Fake Run timeout must be a positive bounded integer.',
+          { retryable: false },
+        );
+      }
+      const run = this.client.createRun(
+        this.nativeSession.sessionId,
+        text,
+        options?.timeoutMs,
+      );
+      this.ownedRun = run;
       this.nativeSession.activeRun = run;
       run.afterSettlement(() => {
         if (this.nativeSession.activeRun === run) {
@@ -394,18 +426,25 @@ class FakeSession implements HarnessSession {
     });
   }
 
-  respond(_requestId: string, _response: InteractionResponse): Promise<void> {
-    return Promise.reject(
-      new HarnessError(
-        'unsupported_capability',
-        'Fake Provider exposes no interactions.',
-        {
-          retryable: false,
-          providerId: this.ref().providerId,
-          profileId: this.ref().profileId,
-        },
-      ),
-    );
+  respond(requestId: string, response: InteractionResponse): Promise<void> {
+    return promiseFrom(() => {
+      this.client.assertOpen();
+      if (this.closed) throw invalidInteraction();
+      if (
+        this.client.capabilityManifest().capabilities[
+          `interaction.${response.kind}`
+        ]?.mode !== 'native' &&
+        this.ownedRun === undefined
+      ) {
+        throw new HarnessError(
+          'unsupported_capability',
+          'Fake Provider exposes no matching interactions.',
+          { retryable: false },
+        );
+      }
+      if (this.ownedRun === undefined) throw invalidInteraction();
+      this.ownedRun.respond(requestId, response);
+    });
   }
 
   close(): Promise<void> {
@@ -433,7 +472,10 @@ class FakeRun implements HarnessRun {
   private readonly settlement: Promise<RunResult>;
   private resolveSettlement!: (result: RunResult) => void;
   private readonly settlementCallbacks: (() => void)[] = [];
-  private finalEvents: readonly HarnessEvent[] | undefined;
+  private readonly emitted: HarnessEvent[] = [];
+  private changed = Promise.withResolvers<undefined>();
+  private pending: InteractionRequest | undefined;
+  private readonly timer: ReturnType<typeof setTimeout> | undefined;
   private finalResult: RunResult | undefined;
   private completionScheduled = false;
 
@@ -442,11 +484,26 @@ class FakeRun implements HarnessRun {
     private readonly text: string,
     private readonly options: ResolvedFakeProviderOptions,
     onSettlement: () => void,
+    timeoutMs?: number,
   ) {
     this.settlement = new Promise((resolve) => {
       this.resolveSettlement = resolve;
     });
     this.settlementCallbacks.push(onSettlement);
+    this.emit('run.started', {});
+    if (options.interaction !== undefined) {
+      this.pending = {
+        ...structuredClone(options.interaction),
+        requestId: `${reference.runId}:interaction`,
+      };
+      this.emit('interaction.requested', structuredClone(this.pending));
+    }
+    this.timer =
+      timeoutMs === undefined
+        ? undefined
+        : setTimeout(() => {
+            this.abortConnection();
+          }, timeoutMs);
   }
 
   ref(): RunRef {
@@ -455,8 +512,15 @@ class FakeRun implements HarnessRun {
 
   async *events(): AsyncIterable<HarnessEvent> {
     this.scheduleCompletion();
-    await this.settlement;
-    for (const event of this.finalEvents ?? []) yield event;
+    let index = 0;
+    for (;;) {
+      const event = this.emitted[index];
+      if (event !== undefined) {
+        index += 1;
+        yield structuredClone(event);
+      } else if (this.isTerminal()) return;
+      else await this.changed.promise;
+    }
   }
 
   cancel(): Promise<CancelResult> {
@@ -507,11 +571,31 @@ class FakeRun implements HarnessRun {
     else this.settlementCallbacks.push(callback);
   }
 
+  respond(requestId: string, response: InteractionResponse): void {
+    if (
+      this.isTerminal() ||
+      this.pending?.requestId !== requestId ||
+      this.pending.kind !== response.kind
+    )
+      throw invalidInteraction();
+    if (
+      response.kind === 'user_input' &&
+      (response.parts.length === 0 ||
+        response.parts.some((part) => part.type !== 'text'))
+    )
+      throw invalidInteraction();
+    this.resolveInteraction('host');
+    this.finish(
+      { status: 'completed', finalMessage: this.text },
+      'run.completed',
+    );
+  }
+
   private scheduleCompletion(): void {
     if (this.completionScheduled || this.isTerminal()) return;
     this.completionScheduled = true;
     queueMicrotask(() => {
-      if (!this.isTerminal()) {
+      if (!this.isTerminal() && this.pending === undefined) {
         this.finish(
           { status: 'completed', finalMessage: this.text },
           'run.completed',
@@ -524,31 +608,40 @@ class FakeRun implements HarnessRun {
     result: RunResult,
     terminalType: 'run.completed' | 'run.cancelled' | 'connection.aborted',
   ): void {
-    const events: HarnessEvent[] = [this.event(0, 'run.started', {})];
+    clearTimeout(this.timer);
+    this.resolveInteraction('terminal');
     if (result.status === 'completed') {
-      events.push(
-        this.event(events.length, 'message.delta', { delta: this.text }),
-      );
+      this.emit('message.delta', { delta: this.text });
       if (this.options.includeUnknownEvent) {
-        events.push({
-          ...this.event(events.length, 'provider', {}),
+        this.emitted.push({
+          ...this.event(this.emitted.length, 'provider', {}),
           providerEventType: 'fake.unknown',
           ...(this.options.rawEvents
             ? { raw: { kind: 'fake.unknown', value: 'synthetic' } }
             : {}),
         });
       }
-      events.push(
-        this.event(events.length, 'message.completed', {
-          message: this.text,
-        }),
-      );
+      this.emit('message.completed', {
+        message: this.text,
+      });
     }
-    events.push(this.event(events.length, terminalType, result));
-    this.finalEvents = events;
+    this.emit(terminalType, result);
     this.finalResult = result;
     for (const callback of this.settlementCallbacks.splice(0)) callback();
     this.resolveSettlement(result);
+  }
+
+  private resolveInteraction(resolution: 'host' | 'terminal'): void {
+    if (this.pending === undefined) return;
+    const { requestId } = this.pending;
+    this.pending = undefined;
+    this.emit('interaction.resolved', { requestId, resolution });
+  }
+
+  private emit(type: HarnessEvent['type'], data: unknown): void {
+    this.emitted.push(this.event(this.emitted.length, type, data));
+    this.changed.resolve(undefined);
+    this.changed = Promise.withResolvers<undefined>();
   }
 
   private event(
@@ -594,6 +687,12 @@ function fakeCapabilities(
         source: 'configuration',
       },
       'run.stream': native,
+      'run.timeout': {
+        mode: 'adapter_controlled',
+        source: 'configuration',
+        reason:
+          'A local timer settles the synthetic Run as connection aborted.',
+      },
       ...(options.cancelMode === 'missing'
         ? {}
         : {
@@ -609,8 +708,12 @@ function fakeCapabilities(
       'input.text': native,
       'input.image': unsupported,
       'input.file': unsupported,
-      'interaction.approval': unsupported,
-      'interaction.user_input': unsupported,
+      'interaction.approval':
+        options.interaction?.kind === 'approval' ? native : unsupported,
+      'interaction.user_input':
+        options.interaction?.kind === 'user_input' ? native : unsupported,
+      'interaction.provider':
+        options.interaction?.kind === 'provider' ? native : unsupported,
       'event.raw': options.rawEvents
         ? { mode: 'adapter_controlled', source: 'configuration' }
         : unsupported,
@@ -619,6 +722,14 @@ function fakeCapabilities(
     observedAt: '2026-01-01T00:00:00.000Z',
     runtimeIdentity: FAKE_RUNTIME_IDENTITY,
   };
+}
+
+function invalidInteraction(): HarnessError {
+  return new HarnessError(
+    'invalid_request',
+    'No matching pending Fake interaction or invalid response.',
+    { retryable: false },
+  );
 }
 
 function promiseFrom<T>(operation: () => T): Promise<T> {

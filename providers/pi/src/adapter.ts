@@ -188,6 +188,7 @@ interface PendingRequest {
 }
 
 interface PendingInteraction {
+  responding: boolean;
   readonly nativeId: string;
   readonly method: 'select' | 'confirm' | 'input' | 'editor';
   readonly run: PiRun;
@@ -763,10 +764,17 @@ class PiProcessSession implements HarnessSession {
   ): Promise<void> {
     this.assertOpen();
     const pending = this.pendingInteractions.get(requestId);
-    if (pending === undefined || response.kind !== 'provider') {
+    if (
+      pending === undefined ||
+      pending.responding ||
+      response.kind !== 'provider'
+    ) {
       throw invalidInteraction(this.profile);
     }
     const outbound = prepareInteractionResponse(pending, response.value);
+    // Reserve before the asynchronous write so concurrent host decisions cannot
+    // submit the same native interaction twice. Invalid input remains retryable.
+    pending.responding = true;
     try {
       await this.peer.send(outbound);
     } catch {
@@ -859,6 +867,7 @@ class PiProcessSession implements HarnessSession {
     const localId = `pi-interaction-${String(++this.interactionSerial)}`;
     const typedMethod = method as PendingInteraction['method'];
     this.pendingInteractions.set(localId, {
+      responding: false,
       nativeId,
       method: typedMethod,
       run,

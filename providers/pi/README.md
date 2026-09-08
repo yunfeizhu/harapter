@@ -161,6 +161,11 @@ Portable approval and user-input capabilities remain unsupported because the
 official RPC surface exposes these calls as extension-owned UI methods rather
 than a general permission contract.
 
+A pending request accepts one response attempt at a time. Concurrent duplicates
+are rejected before transport writes; invalid input leaves the request available
+for correction. If a write fails, the connection is aborted because delivery is
+uncertain. Late responses cannot resolve an already settled request again.
+
 ## Unknown events, extension, and native access
 
 Unknown RPC events remain observable as bounded `provider` events and through

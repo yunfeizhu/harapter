@@ -88,6 +88,8 @@ Interaction，但不被提升为通用 Approval 或 User Input
 Capability。未知 Event 会进入有界、脱敏的 Observation；Native
 Client 只提供保持所有权的只读命令。
 
+同一 Pi 交互请求只允许一次响应发送。并发重复回答在写入前被拒绝；格式错误不会消耗请求，可修正后重试。发送失败时连接会中止，因为无法确定上游是否收到。迟到的回答不会再次解决已结束的请求。
+
 ## 兼容性与限制
 
 Pi RPC 会报告语义化 Runtime

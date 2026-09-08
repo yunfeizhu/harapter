@@ -26,6 +26,24 @@ const profile = createFakeProfile({
 });
 
 describe('session workflow example', () => {
+  it('routes source and resumed child interactions without rendering their payloads', async () => {
+    const scenario = createScenario('preserved', true);
+    const onInteraction = vi.fn(() => ({
+      kind: 'approval' as const,
+      decision: 'deny' as const,
+    }));
+    const records: SessionWorkflowRecord[] = [];
+    await runSessionWorkflow({
+      setup: { ...scenario.setup, onInteraction },
+      write: (record) => {
+        records.push(record);
+      },
+    });
+    expect(onInteraction.mock.calls.length).toBeGreaterThanOrEqual(2);
+    expect(JSON.stringify(records)).not.toMatch(
+      /requestId|prompt|providerState|decision/,
+    );
+  });
   it('reconnects before resume, rebinds history, and preserves opaque refs privately', async () => {
     const scenario = createScenario();
     const records: SessionWorkflowRecord[] = [];
@@ -219,7 +237,7 @@ function controlledScenario(
   const scenario = createScenario();
   const original = scenario.setup;
   const advanced = Promise.withResolvers<undefined>();
-  const release = Promise.withResolvers<undefined>();
+  let release = Promise.withResolvers<undefined>();
   let count = 0;
   let active: HarnessRun | undefined;
   const cancel = vi.fn(async () => {
@@ -239,6 +257,7 @@ function controlledScenario(
     start: async (input, options) => {
       const run = await session.start(input, options);
       if (++count !== 3) return run;
+      release = Promise.withResolvers<undefined>();
       active = run;
       const event = (
         type: HarnessEvent['type'],
@@ -255,7 +274,12 @@ function controlledScenario(
       });
       return {
         ref: () => run.ref(),
-        result: () => run.result(),
+        // This fixture settles only after the modeled cancellation checkpoint;
+        // observing result() must not complete its backing echo Run early.
+        result: async () => {
+          await release.promise;
+          return run.result();
+        },
         cancel,
         events: async function* () {
           yield event('run.started', 0);
@@ -308,8 +332,14 @@ function controlledScenario(
   return { ...scenario, setup, cancel };
 }
 
-function createScenario(parent: 'preserved' | 'retired' = 'preserved') {
-  const base = createFakeProviderFactory({ providerId: owner });
+function createScenario(
+  parent: 'preserved' | 'retired' = 'preserved',
+  interactive = false,
+) {
+  const base = createFakeProviderFactory({
+    providerId: owner,
+    ...(interactive ? { interaction: { kind: 'approval' as const } } : {}),
+  });
   const calls: string[] = [];
   const wrapSession = (session: HarnessSession): HarnessSession => ({
     ref: () => session.ref(),
