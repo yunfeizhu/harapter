@@ -1,8 +1,8 @@
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
+import { isHarnessError, profileId, type HarnessSession } from 'harapter';
 import {
   HERMES_PROVIDER_ID,
   createHermesProviderFactory,
-} from '@harapter/adapter-hermes';
+} from 'harapter/hermes';
 
 function required(name: string): string {
   const value = process.env[name];

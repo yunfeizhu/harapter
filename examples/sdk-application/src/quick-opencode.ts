@@ -1,10 +1,10 @@
 import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
+import { isHarnessError, profileId, type HarnessSession } from 'harapter';
 import {
   OPENCODE_PROVIDER_ID,
   createOpenCodeProviderFactory,
-} from '@harapter/adapter-opencode';
+} from 'harapter/opencode';
 
 function required(name: string): string {
   const value = process.env[name];

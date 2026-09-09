@@ -43,13 +43,37 @@ import {
   validateRegistryDistribution,
   validateRegistryDistTag,
   validateReleaseVersion,
+  validatePublicationMode,
   validateReleaseSbom,
   validateRemoteReleaseAssets,
 } from './lib/package-publication.mjs';
+import { rewriteDeclarationImports } from './lib/declaration-imports.mjs';
 import { validateWorkflowActionPins } from './lib/workflow-actions.mjs';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const fixtureRoot = mkdtempSync(join(tmpdir(), 'harapter-policy-checks-'));
+
+const declarationTarget = resolve(fixtureRoot, 'dist/dsh.d.ts');
+const internalDeclarations = new Map([
+  ['@harapter/core', resolve(fixtureRoot, 'dist/internal/core/index.d.ts')],
+]);
+assert.equal(
+  rewriteDeclarationImports(
+    "import type { X } from '@harapter/core';\nexport * from '@harapter/core';\ntype Y = import('@harapter/core').X;\ntype Literal = '@harapter/core';\nimport type { Z } from 'node:stream';",
+    declarationTarget,
+    internalDeclarations,
+  ),
+  'import type { X } from "./internal/core/index.js";\nexport * from "./internal/core/index.js";\ntype Y = import("./internal/core/index.js").X;\ntype Literal = \'@harapter/core\';\nimport type { Z } from \'node:stream\';',
+);
+assert.throws(
+  () =>
+    rewriteDeclarationImports(
+      "export * from '@harapter/unknown';",
+      declarationTarget,
+      internalDeclarations,
+    ),
+  /undeclared internal Harapter module/u,
+);
 
 const pinnedSha = '0123456789abcdef0123456789abcdef01234567';
 const pinnedDigest = 'a'.repeat(64);
@@ -2346,6 +2370,40 @@ assert.equal(
 );
 assert.equal(parseRegistryDistTagListing('not a dist-tag line\n'), undefined);
 assert.deepEqual(validatePublicPackagePolicy(publicPackagePolicyFixture), []);
+{
+  const mainPackagePolicy = {
+    ...publicPackagePolicyFixture,
+    packages: [
+      {
+        path: 'packages/harapter',
+        name: 'harapter',
+        smokeExport: 'createHarapter',
+      },
+    ],
+  };
+  assert.deepEqual(validatePublicPackagePolicy(mainPackagePolicy), []);
+  assert.ok(
+    expectedReleaseAssetNames(mainPackagePolicy, '0.3.0').includes(
+      'harapter-0.3.0.tgz',
+    ),
+  );
+  const mainPackageSbom = createReleaseSbom({
+    created: '2026-09-08T00:00:00.000Z',
+    releaseSha: 'a'.repeat(40),
+    version: '0.3.0',
+    packages: [{ name: 'harapter', sha256: 'b'.repeat(64), dependencies: [] }],
+  });
+  const mainPackage = mainPackageSbom.packages.find(
+    (entry) => entry.SPDXID === 'SPDXRef-Package-harapter',
+  );
+  assert.ok(mainPackage);
+  assert.equal(mainPackage.packageFileName, 'harapter-0.3.0.tgz');
+  assert.equal(
+    mainPackage.externalRefs[0].referenceLocator,
+    'pkg:npm/harapter@0.3.0',
+  );
+}
+
 assert.deepEqual(
   validateReleaseAutomation({
     prettierIgnore: 'node_modules\nCHANGELOG.md\n',
@@ -2413,10 +2471,10 @@ assert.deepEqual(
     'scripts/public-packages.json registryAvailability.pollIntervalSeconds must be an integer from 5 through 60.',
     'scripts/public-packages.json registryAvailability.queryTimeoutSeconds must be an integer from 5 through 60.',
     'scripts/public-packages.json packages[0].path must identify one package directory.',
-    'scripts/public-packages.json packages[0].name must be an @harapter package name.',
+    'scripts/public-packages.json packages[0].name must be harapter or an @harapter package name.',
     'scripts/public-packages.json packages[0].smokeExport must be a public identifier.',
     'scripts/public-packages.json packages[1].path must identify one package directory.',
-    'scripts/public-packages.json packages[1].name must be an @harapter package name.',
+    'scripts/public-packages.json packages[1].name must be harapter or an @harapter package name.',
     'scripts/public-packages.json packages[1].smokeExport must be a public identifier.',
   ],
 );
@@ -2572,6 +2630,23 @@ const validPublicManifest = {
   },
   scripts: { build: 'tsc --build' },
 };
+for (const section of [
+  'devDependencies',
+  'dependencies',
+  'optionalDependencies',
+  'peerDependencies',
+]) {
+  const failures = validatePublicPackageManifest({
+    entry: publicPackagePolicyFixture.packages[0],
+    knownPackageNames: new Set(['@harapter/core']),
+    internalPackageNames: new Set(['@harapter/adapter-dsh']),
+    packageJson: {
+      ...validPublicManifest,
+      [section]: { '@harapter/adapter-dsh': 'workspace:*' },
+    },
+  });
+  assert.equal(failures.length, section === 'devDependencies' ? 0 : 1);
+}
 assert.deepEqual(
   validatePublicPackageManifest({
     entry: publicPackagePolicyFixture.packages[0],
@@ -2665,13 +2740,55 @@ assert.deepEqual(validateReleaseVersion('0.1.0'), []);
 assert.deepEqual(validateReleaseVersion('0.0.0'), [
   'Release version 0.0.0 is not publishable.',
 ]);
-assert.deepEqual(validateReleaseVersion('0.1.1', { bootstrap: true }), []);
-assert.deepEqual(validateReleaseVersion('0.1.0', { bootstrap: true }), [
-  'The npm bootstrap path is restricted to release 0.1.1.',
-]);
-assert.deepEqual(validateReleaseVersion('0.2.0', { bootstrap: true }), [
-  'The npm bootstrap path is restricted to release 0.1.1.',
-]);
+const firstPublication = {
+  entries: [{ name: 'harapter' }],
+  version: '0.4.0',
+  bootstrap: true,
+  publishedVersions: new Map([['harapter', undefined]]),
+};
+assert.deepEqual(validatePublicationMode(firstPublication), []);
+assert.deepEqual(
+  validatePublicationMode({
+    ...firstPublication,
+    publishedVersions: new Map([['harapter', ['0.4.0']]]),
+  }),
+  [],
+);
+for (const published of [[], '0.4.0', {}, ['0.3.0'], ['0.3.0', '0.4.0']]) {
+  assert.ok(
+    validatePublicationMode({
+      ...firstPublication,
+      publishedVersions: new Map([['harapter', published]]),
+    }).length > 0,
+  );
+}
+assert.ok(
+  validatePublicationMode({
+    ...firstPublication,
+    entries: [{ name: '@harapter/core' }],
+  }).length > 0,
+);
+assert.ok(
+  validatePublicationMode({
+    ...firstPublication,
+    entries: [{ name: 'harapter' }, { name: '@harapter/core' }],
+  }).length > 0,
+);
+assert.ok(
+  validatePublicationMode({ ...firstPublication, bootstrap: false }).length > 0,
+);
+assert.ok(
+  validatePublicationMode({ ...firstPublication, publishedVersions: new Map() })
+    .length > 0,
+);
+assert.deepEqual(
+  validatePublicationMode({
+    ...firstPublication,
+    bootstrap: false,
+    publishedVersions: new Map([['harapter', ['0.3.0']]]),
+  }),
+  [],
+);
 assert.deepEqual(
   expectedReleaseAssetNames(publicPackagePolicyFixture, '0.1.1'),
   ['harapter-core-0.1.1.tgz', 'harapter-0.1.1.spdx.json', 'SHA256SUMS.txt'],

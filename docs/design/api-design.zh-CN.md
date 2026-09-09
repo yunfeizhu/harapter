@@ -15,7 +15,7 @@
 - 不支持的输入和能力在执行前明确失败，不能静默丢弃。
 
 本文使用接近 TypeScript 的伪代码表达语言无关契约，不限定首个 SDK 的实现语言。它描述的是目标设计，可能早于实现。当前已实现的 TypeScript
-API 以 [`@harapter/core` README](../../packages/core/README.md)、Package
+API 以 [`harapter` README](../../packages/core/README.md)、Package
 Export、源码和测试为准。本文中的签名或示例不代表已经实现，也不代表某个 Provider 已经支持。
 
 ## 2. Registry

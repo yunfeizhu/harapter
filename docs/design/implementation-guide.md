@@ -139,14 +139,14 @@ WebSocket Client directly.
 
 The ACP layer reuses the framing, request correlation, backpressure, bounded
 queues, wait timeouts, and connection cleanup from
-`@harapter/transport-jsonrpc-stdio`. It does not implement a second JSON-RPC
+`harapter/transports/jsonrpc-stdio`. It does not implement a second JSON-RPC
 Transport. The Provider Connection owns bridge-process creation, termination,
 restart, and ownership. The ACP layer does not interpret process exit as
 Provider-native cancellation.
 
 ### 2.5 Headless JSONL and local services
 
-- `@harapter/transport-jsonl-process` provides strict LF framing, bounded
+- `harapter/transports/jsonl-process` provides strict LF framing, bounded
   queues, serialized writes, backpressure, and connection cleanup for
   bidirectional non-JSON-RPC Headless JSONL protocols. The Provider Adapter
   retains request correlation, Event classification, and terminality. The Pi

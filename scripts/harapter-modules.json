@@ -1,0 +1,76 @@
+{
+  "modules": [
+    {
+      "path": "packages/core",
+      "name": "@harapter/core",
+      "smokeExport": "HarnessRegistry",
+      "subpath": "."
+    },
+    {
+      "path": "packages/transport-jsonrpc-stdio",
+      "name": "@harapter/transport-jsonrpc-stdio",
+      "smokeExport": "JsonRpcStdioTransport",
+      "subpath": "./transports/jsonrpc-stdio"
+    },
+    {
+      "path": "packages/transport-jsonl-process",
+      "name": "@harapter/transport-jsonl-process",
+      "smokeExport": "JsonlProcessTransport",
+      "subpath": "./transports/jsonl-process"
+    },
+    {
+      "path": "packages/transport-http-sse",
+      "name": "@harapter/transport-http-sse",
+      "smokeExport": "HttpSseTransport",
+      "subpath": "./transports/http-sse"
+    },
+    {
+      "path": "packages/transport-acp",
+      "name": "@harapter/transport-acp",
+      "smokeExport": "AcpClient",
+      "subpath": "./transports/acp"
+    },
+    {
+      "path": "packages/conformance",
+      "name": "@harapter/conformance",
+      "smokeExport": "validatePortableRunTrace",
+      "subpath": "./conformance"
+    },
+    {
+      "path": "providers/codex",
+      "name": "@harapter/adapter-codex",
+      "smokeExport": "createCodexProviderFactory",
+      "subpath": "./codex"
+    },
+    {
+      "path": "providers/dsh",
+      "name": "@harapter/adapter-dsh",
+      "smokeExport": "createDshProviderFactory",
+      "subpath": "./dsh"
+    },
+    {
+      "path": "providers/hermes",
+      "name": "@harapter/adapter-hermes",
+      "smokeExport": "createHermesProviderFactory",
+      "subpath": "./hermes"
+    },
+    {
+      "path": "providers/openclaw",
+      "name": "@harapter/adapter-openclaw",
+      "smokeExport": "createOpenClawProviderFactory",
+      "subpath": "./openclaw"
+    },
+    {
+      "path": "providers/opencode",
+      "name": "@harapter/adapter-opencode",
+      "smokeExport": "createOpenCodeProviderFactory",
+      "subpath": "./opencode"
+    },
+    {
+      "path": "providers/pi",
+      "name": "@harapter/adapter-pi",
+      "smokeExport": "createPiProviderFactory",
+      "subpath": "./pi"
+    }
+  ]
+}

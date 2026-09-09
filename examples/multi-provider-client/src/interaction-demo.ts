@@ -1,8 +1,5 @@
-import {
-  createFakeProfile,
-  createFakeProviderFactory,
-} from '@harapter/conformance/fake';
-import type { InteractionRequest, InteractionResponse } from '@harapter/core';
+import { createFakeProfile, createFakeProviderFactory } from 'harapter/testing';
+import type { InteractionRequest, InteractionResponse } from 'harapter';
 import { observeInteractiveRun } from './interactions.js';
 
 export interface InteractionDemoOptions {

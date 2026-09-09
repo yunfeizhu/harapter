@@ -1,4 +1,4 @@
-import { HttpSseTransport } from '@harapter/transport-http-sse';
+import { HttpSseTransport } from 'harapter/transports/http-sse';
 
 // Inject Fetch for an offline application test; no HTTP request leaves this process.
 const transport = new HttpSseTransport({

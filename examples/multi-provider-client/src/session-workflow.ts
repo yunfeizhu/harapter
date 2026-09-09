@@ -9,7 +9,7 @@ import {
   type HarnessSession,
   type RunResult,
   type SessionRef,
-} from '@harapter/core';
+} from 'harapter';
 import type { MultiProviderSetup } from './index.js';
 import { observeInteractiveRun } from './interactions.js';
 

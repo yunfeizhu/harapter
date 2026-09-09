@@ -247,17 +247,18 @@ separate repository-policy change.
 Maintainers dispatch `operation=prepare` from `main`, manually merge its release
 pull request, then dispatch `operation=finalize`. Preparation changes only the
 pull request; finalization creates only the draft Release. An isolated finalizer
-checks the SHA, builds 12 tarballs, an SPDX SBOM, and SHA-256 checksums,
-verifies their digests, then publishes the immutable Release. Do not create
-these artifacts manually. See [RELEASING.md](../RELEASING.md) for the procedure.
+checks the SHA, builds all policy-listed tarballs, an SPDX SBOM, and SHA-256
+checksums, verifies their digests, then publishes the immutable Release. Do not
+create these artifacts manually. See [RELEASING.md](../RELEASING.md) for the
+procedure.
 
-Public packages share one pre-1.0 version and publish under the default npm
-`latest` channel. Consumers install without a dist-tag suffix. `pnpm check`
-validates manifests, tarballs, dependency rewrites, and consumer imports.
+Only `harapter` publishes under npm `latest`; implementation modules stay
+private. Consumers install without a dist-tag suffix. `pnpm check` validates
+manifests, tarballs, dependency rewrites, and consumer imports.
 
 `npm` publication is dispatched from an immutable Release tag. It verifies and
 submits the tarballs in dependency order, then shares one bounded availability
-window before checking SHA-512, `latest`, and provenance. The first registry
-publication is `0.1.1` with a one-time short-lived token; later releases use the
-protected `npm` environment and trusted publishing. See
-[RELEASING.md](../RELEASING.md) for setup, recovery, and rollback.
+window before checking SHA-512, `latest`, and provenance. Initial creation of
+`harapter` uses a restricted bootstrap; later releases use the protected `npm`
+environment and trusted publishing. See [RELEASING.md](../RELEASING.md) for
+setup, recovery, and rollback.

@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
-<h1 align="center"><code>@harapter/adapter-pi</code></h1>
+<h1 align="center"><code>harapter/pi</code></h1>
 
 <p align="center"><strong>通过 Harapter 运行 Pi Agent 的严格 JSONL RPC 模式。</strong></p>
 
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/adapter-pi"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-pi?style=flat-square&amp;label=npm" alt="npm 版本"></a>
-  <a href="https://www.npmjs.com/package/@harapter/adapter-pi"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-pi?style=flat-square" alt="npm 下载量"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm 版本"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm 下载量"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI 状态"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 或更高版本">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 许可证"></a>
@@ -18,7 +18,10 @@
 
 <!-- markdownlint-enable MD033 -->
 
-`@harapter/adapter-pi` 将官方 Pi Agent `--mode rpc`
+本指南描述单个 `harapter`
+SDK 内的模块。普通应用接入请先看[应用指南](../../packages/harapter/README.zh-CN.md)。单包入口的首次发布尚待完成，下面的安装命令适用于该版本发布后。
+
+`harapter/pi` 将官方 Pi Agent `--mode rpc`
 接口映射为 Harapter。每个 Session 使用独立进程，支持流式 Event、持久化 Resume 和原生 Abort，同时禁用 Extension、Skill 与 Prompt
 Template 自动发现，防止普通文本绕过 Agent 生命周期。
 
@@ -30,7 +33,7 @@ Template 自动发现，防止普通文本绕过 Agent 生命周期。
 ```sh
 npm init -y
 npm pkg set type=module
-npm install @harapter/core @harapter/adapter-pi
+npm install harapter
 npm install -D typescript @types/node
 ```
 
@@ -50,8 +53,8 @@ npm install -D typescript @types/node
 
 ```ts
 import { isAbsolute } from 'node:path';
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
-import { PI_PROVIDER_ID, createPiProviderFactory } from '@harapter/adapter-pi';
+import { isHarnessError, profileId, type HarnessSession } from 'harapter';
+import { PI_PROVIDER_ID, createPiProviderFactory } from 'harapter/pi';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -122,7 +125,7 @@ void main().catch((error: unknown) => {
 ```
 
 [完整应用、场景案例和错误处理](../../examples/sdk-application/README.zh-CN.md) ·
-[全部公开包](https://www.npmjs.com/org/harapter)
+[全部公开包](https://www.npmjs.com/package/harapter)
 
 ## 前置条件与安装
 
@@ -131,14 +134,14 @@ Agent，选择模型和绝对可执行文件路径。Harapter 不读取 Session
 File、不管理 Credential，也不会安装 Runtime。
 
 ```bash
-pnpm add @harapter/core @harapter/adapter-pi
+pnpm add harapter
 ```
 
 ## 快速开始
 
 ```ts
-import { HarnessRegistry, profileId } from '@harapter/core';
-import { PI_PROVIDER_ID, createPiProviderFactory } from '@harapter/adapter-pi';
+import { HarnessRegistry, profileId } from 'harapter';
+import { PI_PROVIDER_ID, createPiProviderFactory } from 'harapter/pi';
 
 const registry = new HarnessRegistry();
 registry.register(createPiProviderFactory());
@@ -215,7 +218,7 @@ Access 或任意 Native Mutation。完整 Options、Live Test 和最后验证版
 `session.fork` 保持不支持，因为这些原生操作的历史范围和父生命周期不同。
 
 ```ts
-import { PI_SESSION_EXTENSION, type PiSessions } from '@harapter/adapter-pi';
+import { PI_SESSION_EXTENSION, type PiSessions } from 'harapter/pi';
 
 const sessions = client.extensions().get<PiSessions>(PI_SESSION_EXTENSION);
 if (sessions === undefined)
@@ -231,15 +234,15 @@ await child.close();
 
 [全部包](../../README.zh-CN.md#npm-包导航)
 
-| 包                                                                                       | 文档                                                   |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                         | [使用指南](../../packages/core/README.zh-CN.md)        |
-| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)           | [使用指南](../../packages/conformance/README.zh-CN.md) |
-| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)       | [使用指南](../codex/README.zh-CN.md)                   |
-| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)           | [使用指南](../dsh/README.zh-CN.md)                     |
-| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)     | [使用指南](../hermes/README.zh-CN.md)                  |
-| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw) | [使用指南](../openclaw/README.zh-CN.md)                |
-| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode) | [使用指南](../opencode/README.zh-CN.md)                |
+| 包                                                               | 文档                                                   |
+| ---------------------------------------------------------------- | ------------------------------------------------------ |
+| [`harapter`](https://www.npmjs.com/package/harapter)             | [使用指南](../../packages/core/README.zh-CN.md)        |
+| [`harapter/conformance`](https://www.npmjs.com/package/harapter) | [使用指南](../../packages/conformance/README.zh-CN.md) |
+| [`harapter/codex`](https://www.npmjs.com/package/harapter)       | [使用指南](../codex/README.zh-CN.md)                   |
+| [`harapter/dsh`](https://www.npmjs.com/package/harapter)         | [使用指南](../dsh/README.zh-CN.md)                     |
+| [`harapter/hermes`](https://www.npmjs.com/package/harapter)      | [使用指南](../hermes/README.zh-CN.md)                  |
+| [`harapter/openclaw`](https://www.npmjs.com/package/harapter)    | [使用指南](../openclaw/README.zh-CN.md)                |
+| [`harapter/opencode`](https://www.npmjs.com/package/harapter)    | [使用指南](../opencode/README.zh-CN.md)                |
 
 官方 Runtime
 0.85.1 已有[合成模型交互证据](../../docs/provider-interaction-evidence.md)，通过宿主自有可执行文件显式加载一个测试扩展，覆盖四种 UI 方法。中断等待中的确认时，当前返回

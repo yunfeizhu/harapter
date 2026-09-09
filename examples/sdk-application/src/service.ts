@@ -6,7 +6,7 @@ import {
   type HarnessSession,
   type RunResult,
   type SessionRef,
-} from '@harapter/core';
+} from 'harapter';
 import {
   observeInteractiveRun,
   type HostInteractionHandler,

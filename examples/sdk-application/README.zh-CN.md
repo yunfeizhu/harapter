@@ -2,15 +2,17 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
 
-从你自己的 Node.js
-24+／TypeScript 项目和 npm 包开始。本目录是完整的私有示例应用，不是需要额外安装的 npm 包。依赖使用已发布版本，TypeScript 配置不依赖 Harapter 仓库。
+在自己的 Node.js 24+／TypeScript 项目中使用单个 `harapter`
+SDK。本示例开发时使用 Workspace 依赖，单包入口的首次发布尚待完成。发布后复制本目录，先从 package.json 删除
+`harapter: "workspace:*"` 依赖，再执行 `npm install harapter`。独立构建使用
+`tsconfig.build.json`；`tsconfig.json` 仅用于仓库内源码检查。
 
 ## 创建并运行项目
 
 单文件入门请看[根 README 快速上手](../../README.zh-CN.md#快速上手)。需要按业务模块组织时，将本目录复制到自己的项目中，或保存下面列出的文件，然后在这个独立目录执行：
 
 ```sh
-npm install
+npm install harapter
 npm run build
 npm run offline
 ```
@@ -37,7 +39,7 @@ npm start
 | 文件                                       | 用途                                   |
 | ------------------------------------------ | -------------------------------------- |
 | [package.json](package.json)               | npm 依赖与运行命令                     |
-| [tsconfig.json](tsconfig.json)             | 独立严格 ESM 构建                      |
+| [tsconfig.build.json](tsconfig.build.json) | 独立严格 ESM 构建                      |
 | [src/main.ts](src/main.ts)                 | 真实 Codex 调用、SIGINT 与安全状态输出 |
 | [src/service.ts](src/service.ts)           | 业务调用、恢复、超时与结果             |
 | [src/interactions.ts](src/interactions.ts) | 异步宿主交互观察器                     |
@@ -149,10 +151,11 @@ Gateway 使用单独的端点组合；稳定存储身份和独占 Session 声明
 
 ## 验证范围
 
-应用会在 Workspace 外通过 npm 包编译并运行；仓库检查还会使用新打包的发布产物验证。离线测试证明应用行为，不替代真实 Provider 兼容性证据；对应边界由[官方 Runtime 证据](../../docs/provider-interaction-evidence.md)维护。真实入口使用已有认证，可能消耗 token 并创建原生 Session 数据。请使用空测试工作区及 Runtime 自身的工具／沙箱策略。关闭 Client 不会停止外部 HTTP 服务或 Gateway。
+应用会在 Workspace 外安装新打包的单个 SDK
+Tarball，编译并运行示例。离线测试证明应用行为，不替代真实 Provider 兼容性证据；对应边界由[官方 Runtime 证据](../../docs/provider-interaction-evidence.md)维护。真实入口使用已有认证，可能消耗 token 并创建原生 Session 数据。请使用空测试工作区及 Runtime 自身的工具／沙箱策略。关闭 Client 不会停止外部 HTTP 服务或 Gateway。
 
-2026-09-08，仓库外的 npm 应用使用 Harapter 0.3.0 和官方 Codex CLI
-0.153.4，实际执行了 `quick-codex`、`main` 与
+此次打包迁移之前，2026-09-08，仓库外的 npm 应用使用 Harapter 0.3.0 和官方 Codex
+CLI 0.153.4，实际执行了 `quick-codex`、`main` 与
 `session-main`，五次真实 Runtime 调用全部完成，包含重连恢复和原生分叉。模型请求由隔离的本地回环合成服务响应，没有工具调用，没有使用模型凭证。这证明应用接入路径，不代表所有 Provider 的新增兼容性声明，也不等于付费模型 canary。
 
 ## 仓库贡献者入口

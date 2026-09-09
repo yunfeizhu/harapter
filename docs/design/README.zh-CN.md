@@ -14,6 +14,11 @@ API 或机器协议。
 Adapter 思路，但适配对象不是一次模型请求，而是拥有 Session、Run、流式事件、工具调用和人工交互的有状态 Agent
 Runtime。
 
+[`harapter` 应用入口](../../packages/harapter/README.zh-CN.md)
+将 Core 与内部协议映射组装在一起。应用安装一个入口包并配置自己的 Runtime 连接，按选择加载实现模块，不会隐式安装 Runtime。仅发布
+`harapter`，Core、Adapter、Transport 和 Conformance 作为私有源码模块维护。这个打包边界位于 Provider-agnostic
+Core 之外，不改变 Session 归属或能力语义。
+
 ```text
 Host Application
         │
@@ -68,7 +73,7 @@ Session 始终绑定创建它的 Profile。
 - 通过 Capability Manifest 描述当前连接真实支持的行为；
 - 区分 Provider 原生能力、Adapter 连接控制能力和不支持能力；
 - 为 Provider 独有功能提供类型化 Extension 和 Native Escape Hatch；
-- 通过独立 Provider 包扩展新的 Harness，不修改 Core 的执行模型。
+- 通过独立 Provider 模块扩展新的 Harness，不修改 Core 的执行模型。
 
 ## 不属于 Adapter 的职责
 

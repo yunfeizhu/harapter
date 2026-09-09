@@ -14,9 +14,9 @@ host-selected Provider:
 5. consume portable events and the authoritative terminal result;
 6. close the Session and Client.
 
-[`src/index.ts`](src/index.ts) is Provider-agnostic and imports only
-`@harapter/core`. [`src/main.ts`](src/main.ts) is the composition root; it
-selects the Codex Adapter without leaking Codex types into the portable path.
+[`src/index.ts`](src/index.ts) is Provider-agnostic and imports only `harapter`.
+[`src/main.ts`](src/main.ts) is the composition root; it selects the Codex
+Adapter without leaking Codex types into the portable path.
 
 ## Run the example
 

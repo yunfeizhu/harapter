@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
-<h1 align="center"><code>@harapter/adapter-hermes</code></h1>
+<h1 align="center"><code>harapter/hermes</code></h1>
 
 <p align="center"><strong>通过 HTTP 与 SSE 把 Hermes Agent API Server 接入 Harapter。</strong></p>
 
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/adapter-hermes"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-hermes?style=flat-square&amp;label=npm" alt="npm 版本"></a>
-  <a href="https://www.npmjs.com/package/@harapter/adapter-hermes"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-hermes?style=flat-square" alt="npm 下载量"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm 版本"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm 下载量"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI 状态"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 或更高版本">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 许可证"></a>
@@ -18,8 +18,10 @@
 
 <!-- markdownlint-enable MD033 -->
 
-`@harapter/adapter-hermes` 把 Hermes Agent 官方 API
-Server 的 Session、Run、状态查询、SSE
+本指南描述单个 `harapter`
+SDK 内的模块。普通应用接入请先看[应用指南](../../packages/harapter/README.zh-CN.md)。单包入口的首次发布尚待完成，下面的安装命令适用于该版本发布后。
+
+`harapter/hermes` 把 Hermes Agent 官方 API Server 的 Session、Run、状态查询、SSE
 Event、Stop 和 Approval 映射为 Harapter。宿主负责安装、认证、启动、停止和配置 Hermes
 Agent；Adapter 只连接指定 HTTP Endpoint。
 
@@ -31,7 +33,7 @@ Agent；Adapter 只连接指定 HTTP Endpoint。
 ```sh
 npm init -y
 npm pkg set type=module
-npm install @harapter/core @harapter/adapter-hermes
+npm install harapter
 npm install -D typescript @types/node
 ```
 
@@ -50,11 +52,11 @@ npm install -D typescript @types/node
 <!-- sdk-example: quick-hermes.ts -->
 
 ```ts
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
+import { isHarnessError, profileId, type HarnessSession } from 'harapter';
 import {
   HERMES_PROVIDER_ID,
   createHermesProviderFactory,
-} from '@harapter/adapter-hermes';
+} from 'harapter/hermes';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -126,22 +128,22 @@ void main().catch((error: unknown) => {
 ```
 
 [完整应用、场景案例和错误处理](../../examples/sdk-application/README.zh-CN.md) ·
-[全部公开包](https://www.npmjs.com/org/harapter)
+[全部公开包](https://www.npmjs.com/package/harapter)
 
 ## 安装
 
 ```bash
-pnpm add @harapter/core @harapter/adapter-hermes
+pnpm add harapter
 ```
 
 ## 快速开始
 
 ```ts
-import { HarnessRegistry, profileId } from '@harapter/core';
+import { HarnessRegistry, profileId } from 'harapter';
 import {
   HERMES_PROVIDER_ID,
   createHermesProviderFactory,
-} from '@harapter/adapter-hermes';
+} from 'harapter/hermes';
 
 const registry = new HarnessRegistry();
 registry.register(createHermesProviderFactory());
@@ -218,10 +220,7 @@ context 的子会话。Harapter 会停用父会话，重新连接后也不允许
 `session.fork` 保持不支持，因为这些原生操作的历史范围和父生命周期不同。
 
 ```ts
-import {
-  HERMES_SESSION_EXTENSION,
-  type HermesSessions,
-} from '@harapter/adapter-hermes';
+import { HERMES_SESSION_EXTENSION, type HermesSessions } from 'harapter/hermes';
 
 const sessions = client
   .extensions()
@@ -239,12 +238,12 @@ await child.close();
 
 [全部包](../../README.zh-CN.md#npm-包导航)
 
-| 包                                                                                       | 文档                                                   |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                         | [使用指南](../../packages/core/README.zh-CN.md)        |
-| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)           | [使用指南](../../packages/conformance/README.zh-CN.md) |
-| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)       | [使用指南](../codex/README.zh-CN.md)                   |
-| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)           | [使用指南](../dsh/README.zh-CN.md)                     |
-| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw) | [使用指南](../openclaw/README.zh-CN.md)                |
-| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode) | [使用指南](../opencode/README.zh-CN.md)                |
-| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)             | [使用指南](../pi/README.zh-CN.md)                      |
+| 包                                                               | 文档                                                   |
+| ---------------------------------------------------------------- | ------------------------------------------------------ |
+| [`harapter`](https://www.npmjs.com/package/harapter)             | [使用指南](../../packages/core/README.zh-CN.md)        |
+| [`harapter/conformance`](https://www.npmjs.com/package/harapter) | [使用指南](../../packages/conformance/README.zh-CN.md) |
+| [`harapter/codex`](https://www.npmjs.com/package/harapter)       | [使用指南](../codex/README.zh-CN.md)                   |
+| [`harapter/dsh`](https://www.npmjs.com/package/harapter)         | [使用指南](../dsh/README.zh-CN.md)                     |
+| [`harapter/openclaw`](https://www.npmjs.com/package/harapter)    | [使用指南](../openclaw/README.zh-CN.md)                |
+| [`harapter/opencode`](https://www.npmjs.com/package/harapter)    | [使用指南](../opencode/README.zh-CN.md)                |
+| [`harapter/pi`](https://www.npmjs.com/package/harapter)          | [使用指南](../pi/README.zh-CN.md)                      |

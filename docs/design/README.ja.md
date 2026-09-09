@@ -16,6 +16,11 @@ Adapter という考え方を参考にしていますが、対象は 1 回の Mo
 Request ではありません。Session、Run、Streaming Event、Tool Call、Human
 Interaction を持つ Stateful Agent Runtime を扱います。
 
+[`harapter` アプリケーション入口](../../packages/harapter/README.ja.md)
+は Core と内部プロトコルマッピングを構成します。アプリは一つの入口パッケージをインストールして Runtime 接続を設定し、選択した実装だけを読み込みます。Runtime を暗黙にインストールしません。公開するのは
+`harapter`
+だけで、Core、Adapter、Transport、Conformance は非公開のソースモジュールです。この境界は Provider 非依存 Core の外側にあり、Session 所有権や能力の意味を変更しません。
+
 ```text
 Host Application
         │

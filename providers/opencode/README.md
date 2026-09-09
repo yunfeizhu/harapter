@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
-<h1 align="center"><code>@harapter/adapter-opencode</code></h1>
+<h1 align="center"><code>harapter/opencode</code></h1>
 
 <p align="center"><strong>Connect a host-operated OpenCode HTTP/SSE server to Harapter.</strong></p>
 
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/adapter-opencode"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-opencode?style=flat-square&amp;label=npm" alt="npm version"></a>
-  <a href="https://www.npmjs.com/package/@harapter/adapter-opencode"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-opencode?style=flat-square" alt="npm downloads"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm downloads"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
@@ -18,7 +18,12 @@
 
 <!-- markdownlint-enable MD033 -->
 
-`@harapter/adapter-opencode` maps the current documented stable `opencode serve`
+This guide describes a module included in the single `harapter` SDK. For
+ordinary application setup, start with the
+[application guide](../../packages/harapter/README.md). The first single-package
+release is pending; the installation commands apply after that release.
+
+`harapter/opencode` maps the current documented stable `opencode serve`
 HTTP/OpenAPI and Server-Sent Events interface to Harapter Core.
 
 The host installs, configures, authenticates, starts, and stops OpenCode. The
@@ -33,7 +38,7 @@ Harapter checkout or private imports are needed.
 ```sh
 npm init -y
 npm pkg set type=module
-npm install @harapter/core @harapter/adapter-opencode
+npm install harapter
 npm install -D typescript @types/node
 ```
 
@@ -61,11 +66,11 @@ state.
 ```ts
 import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
+import { isHarnessError, profileId, type HarnessSession } from 'harapter';
 import {
   OPENCODE_PROVIDER_ID,
   createOpenCodeProviderFactory,
-} from '@harapter/adapter-opencode';
+} from 'harapter/opencode';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -148,7 +153,7 @@ void main().catch((error: unknown) => {
 ```
 
 [Complete application, recipes and error handling](../../examples/sdk-application/README.md)
-· [All published packages](https://www.npmjs.com/org/harapter)
+· [Harapter on npm](https://www.npmjs.com/package/harapter)
 
 ## Use this Adapter when
 
@@ -160,7 +165,7 @@ void main().catch((error: unknown) => {
 ## Installation
 
 ```bash
-pnpm add @harapter/core @harapter/adapter-opencode
+pnpm add harapter
 ```
 
 ## Profile and authentication
@@ -169,11 +174,11 @@ OpenCode uses an `endpoint` Profile with `transport: 'http'` and
 `ownership: 'host'` or `ownership: 'external'`:
 
 ```ts
-import { profileId } from '@harapter/core';
+import { profileId } from 'harapter';
 import {
   OPENCODE_PROVIDER_ID,
   createOpenCodeProviderFactory,
-} from '@harapter/adapter-opencode';
+} from 'harapter/opencode';
 
 const factory = createOpenCodeProviderFactory({
   resolveAuthHeaders: async (reference) => headersFor(reference),
@@ -329,7 +334,7 @@ different history and parent-lifecycle semantics.
 import {
   OPENCODE_SESSION_EXTENSION,
   type OpenCodeSessions,
-} from '@harapter/adapter-opencode';
+} from 'harapter/opencode';
 
 const sessions = client
   .extensions()
@@ -350,12 +355,12 @@ tests use real runtimes with a local synthetic model, not a hosted model.
 
 [All packages](../../README.md#packages-on-npm)
 
-| Package                                                                                  | Documentation                                 |
-| ---------------------------------------------------------------------------------------- | --------------------------------------------- |
-| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                         | [Guide](../../packages/core/README.md)        |
-| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)           | [Guide](../../packages/conformance/README.md) |
-| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)       | [Guide](../codex/README.md)                   |
-| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)           | [Guide](../dsh/README.md)                     |
-| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)     | [Guide](../hermes/README.md)                  |
-| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw) | [Guide](../openclaw/README.md)                |
-| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)             | [Guide](../pi/README.md)                      |
+| Package                                                          | Documentation                                 |
+| ---------------------------------------------------------------- | --------------------------------------------- |
+| [`harapter`](https://www.npmjs.com/package/harapter)             | [Guide](../../packages/core/README.md)        |
+| [`harapter/conformance`](https://www.npmjs.com/package/harapter) | [Guide](../../packages/conformance/README.md) |
+| [`harapter/codex`](https://www.npmjs.com/package/harapter)       | [Guide](../codex/README.md)                   |
+| [`harapter/dsh`](https://www.npmjs.com/package/harapter)         | [Guide](../dsh/README.md)                     |
+| [`harapter/hermes`](https://www.npmjs.com/package/harapter)      | [Guide](../hermes/README.md)                  |
+| [`harapter/openclaw`](https://www.npmjs.com/package/harapter)    | [Guide](../openclaw/README.md)                |
+| [`harapter/pi`](https://www.npmjs.com/package/harapter)          | [Guide](../pi/README.md)                      |

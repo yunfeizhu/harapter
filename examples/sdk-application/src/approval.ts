@@ -1,5 +1,5 @@
 import { createInterface } from 'node:readline/promises';
-import { HarnessError } from '@harapter/core';
+import { HarnessError } from 'harapter';
 import type { HostInteractionHandler } from './interactions.js';
 
 /**

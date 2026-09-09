@@ -24,8 +24,8 @@ user's explicit authorization.
    `feat`, `fix`, and breaking-change markers produce the intended SemVer bump.
 4. Compare `version.txt`, the root manifest, every manifest listed in
    `scripts/public-packages.json`, the changelog, and release pull request
-   title. They use one synchronized pre-1.0 version. The first approved release
-   must be `0.1.0`; do not hand-edit one artifact to hide a configuration error.
+   title. They use the generated release version; do not hand-edit an artifact
+   to hide a configuration error.
 5. Verify that changelog entries describe user-visible additions, removals, and
    breaking migration requirements without leaking private data.
 6. Require all applicable CI, conformance, build, and security checks on the
@@ -37,11 +37,11 @@ user's explicit authorization.
 
 ## Package boundary
 
-The Workspace root and examples remain private. Public packages follow
-`scripts/public-packages.json`, use the synchronized Release Please version, and
-publish under the default npm `latest` dist-tag. Never publish from a checkout,
-local tarball, mutable branch, or unreviewed workflow. npm uses only the
-verified tarballs attached to an immutable GitHub Release.
+Only `harapter` is public; implementation modules and examples stay private.
+Follow `scripts/public-packages.json`, use the synchronized Release Please
+version, and publish under the default npm `latest` dist-tag. Never publish from
+a checkout, local tarball, mutable branch, or unreviewed workflow. npm uses only
+the verified tarballs attached to an immutable GitHub Release.
 
 Verify that `latest` identifies the release being published. Default-channel
 installation does not imply a 1.0 API stability guarantee. Historical immutable
@@ -50,12 +50,12 @@ releases retain their original channel policy.
 Normal npm publication uses the protected `npm` GitHub environment, OIDC trusted
 publishing, and provenance without a registry token. Release Please tags the
 single release train as `harapter-vX.Y.Z`; npm package versions remain `X.Y.Z`.
-The immutable `harapter-v0.1.0` Release is source-only. The one-time `0.1.1` npm
-bootstrap may use the environment secret `NPM_BOOTSTRAP_TOKEN` only after the
-maintainer has created a short-lived granular token. Reject bootstrap for any
-other version. After the first packages exist, verify trusted-publisher setup,
-remove the GitHub secret, and revoke the token before treating the release as
-complete.
+The single `harapter` package may require initial creation before OIDC setup.
+Bootstrap is restricted to that absent name or a same-version retry; reject any
+other published version or package. Use a short-lived `NPM_BOOTSTRAP_TOKEN` only
+in the protected environment, then verify trusted-publisher setup, delete the
+secret and revoke the token. Follow the current checks in `RELEASING.md`; the
+historical scoped bootstrap remains owned by its immutable tag.
 
 Before creating the first GitHub Release, require explicit authorization to
 enable immutable releases; the setting is not retroactive. The npm workflow must
@@ -64,12 +64,12 @@ npm provenance identifies the released source revision even after `main`
 advances.
 
 Release Please creates a draft Release. Its finalizer checks the Release output
-against the dispatch SHA, runs repository and package evidence, builds all 12
-`pnpm pack` tarballs, creates a deterministic SPDX SBOM bound to that commit and
-those tarballs, writes SHA-256 checksums, uploads only missing assets, verifies
-the exact remote names, sizes, and digests, and publishes only that complete
-draft. Do not create the tag early, clobber a draft asset, or publish a partial
-set.
+against the dispatch SHA, runs repository and package evidence, builds the
+policy-listed `pnpm pack` tarball, creates a deterministic SPDX SBOM bound to
+that commit and those tarballs, writes SHA-256 checksums, uploads only missing
+assets, verifies the exact remote names, sizes, and digests, and publishes only
+that complete draft. Do not create the tag early, clobber a draft asset, or
+publish a partial set.
 
 ## Complete and verify
 
@@ -77,7 +77,8 @@ After explicit authorization, merge the release pull request through the normal
 protected flow. Because the workflow is manual-only during initial development,
 obtain authorization for publication and dispatch `release-please.yml` with
 `--ref main -f operation=finalize`. Wait for both jobs, then verify the
-immutable tag, GitHub Release, 14 explicit assets, changelog, and target commit.
+immutable tag, GitHub Release, the policy-derived asset set, changelog, and
+target commit.
 
 npm publication is a separate irreversible action and requires explicit
 authorization immediately before dispatch. Run `publish-npm.yml` from the exact

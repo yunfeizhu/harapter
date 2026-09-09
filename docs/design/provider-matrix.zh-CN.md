@@ -304,12 +304,12 @@ Adapter。每个 Provider 仍需要独立处理：
 - Provider Command、Extension 和 Error；
 - 版本兼容与测试 Fixture。
 
-`transport-acp` 组合 `@harapter/transport-jsonrpc-stdio`，只拥有 ACP
+`transport-acp` 组合 `harapter/transports/jsonrpc-stdio`，只拥有 ACP
 Schema、方法、协议协商和 Capability 语义。JSON-RPC
 framing、请求关联、背压、队列边界、等待超时和连接清理继续由现有 Transport 拥有；进程策略由调用它的 Provider
 Connection 拥有。
 
-`@harapter/transport-jsonl-process`
+`harapter/transports/jsonl-process`
 拥有非 JSON-RPC 进程协议的严格 JSONL 收发和连接边界。Pi Agent
 Adapter 在其上实现 Provider
 RPC 关联、Session、Retry、Interaction、Cancel 和终态，不把 Pi 名称或事件语义写入 Transport。

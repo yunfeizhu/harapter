@@ -2,15 +2,18 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
 
-自分の Node.js
-24+／TypeScript プロジェクトに npm パッケージを導入するところから始めます。このディレクトリは完全な非公開サンプルアプリであり、追加インストールする npm パッケージではありません。依存は公開済みバージョンで、TypeScript 設定は Harapter リポジトリに依存しません。
+Node.js 24+／TypeScript アプリでは単一の `harapter`
+SDK を使用します。この非公開サンプルは開発中 Workspace 依存を使い、初回公開は未完了です。公開後は本ディレクトリをコピーし、package.json の
+`harapter: "workspace:*"` 依存を削除してから `npm install harapter`
+を実行します。独立ビルドは `tsconfig.build.json` を使い、`tsconfig.json`
+はリポジトリ内のソース検査専用です。
 
 ## プロジェクトを作成して実行する
 
 単一ファイルの入門は[ルート README](../../README.ja.md#クイックスタート)を参照してください。業務モジュールとして使う場合は、このディレクトリを自分のプロジェクトにコピーするか、下記のファイルを保存し、その独立したディレクトリで実行します。
 
 ```sh
-npm install
+npm install harapter
 npm run build
 npm run offline
 ```
@@ -37,7 +40,7 @@ npm start
 | ファイル                                   | 用途                                          |
 | ------------------------------------------ | --------------------------------------------- |
 | [package.json](package.json)               | npm 依存と実行コマンド                        |
-| [tsconfig.json](tsconfig.json)             | 独立した厳密 ESM ビルド                       |
+| [tsconfig.build.json](tsconfig.build.json) | 独立した厳密 ESM ビルド                       |
 | [src/main.ts](src/main.ts)                 | 実際の Codex 呼び出し、SIGINT、安全な状態表示 |
 | [src/service.ts](src/service.ts)           | 業務操作、再開、期限、結果                    |
 | [src/interactions.ts](src/interactions.ts) | 非同期ホスト対話オブザーバー                  |
@@ -149,10 +152,10 @@ Gateway は別のエンドポイント構成であり、保存領域の識別子
 
 ## 検証範囲
 
-アプリは Workspace 外で npm パッケージを使ってコンパイル、実行され、リポジトリの検査では新たに作成した公開 tarball も使います。オフラインテストはアプリの動作を検証し、実際の Provider 互換性は[公式 Runtime の証拠](../../docs/provider-interaction-evidence.md)で管理します。実際の入口は既存の認証を使い、トークンを消費してネイティブ Session データを作成する可能性があります。空のテスト Workspace と Runtime 自身のツール／サンドボックスポリシーを使ってください。Client を閉じても外部 HTTP サーバーや Gateway は停止しません。
+アプリは Workspace 外に新しく作成した単一 SDK の Tarball をインストールしてコンパイル、実行します。オフラインテストはアプリの動作を検証し、実際の Provider 互換性は[公式 Runtime の証拠](../../docs/provider-interaction-evidence.md)で管理します。実際の入口は既存の認証を使い、トークンを消費してネイティブ Session データを作成する可能性があります。空のテスト Workspace と Runtime 自身のツール／サンドボックスポリシーを使ってください。Client を閉じても外部 HTTP サーバーや Gateway は停止しません。
 
-2026-09-08、Workspace 外の npm アプリで Harapter 0.3.0 と公式 Codex CLI
-0.153.4 を使い、 `quick-codex`、`main`、`session-main`
+今回のパッケージ移行前の 2026-09-08、Workspace 外の npm アプリで Harapter
+0.3.0 と公式 Codex CLI 0.153.4 を使い、 `quick-codex`、`main`、`session-main`
 を実行しました。再接続、再開、ネイティブ fork を含む五回の実際の Runtime
 Run が完了しました。隔離したループバックの合成モデルが応答し、ツール呼び出しやモデル認証情報は使っていません。これはアプリ統合の証拠であり、全 Provider の新たな互換性表明や有料モデルの canary ではありません。
 

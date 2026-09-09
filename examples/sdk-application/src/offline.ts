@@ -1,8 +1,5 @@
-import { HarnessRegistry } from '@harapter/core';
-import {
-  createFakeProfile,
-  createFakeProviderFactory,
-} from '@harapter/conformance/fake';
+import { HarnessRegistry } from 'harapter';
+import { createFakeProfile, createFakeProviderFactory } from 'harapter/testing';
 import { runTask } from './service.js';
 
 const registry = new HarnessRegistry();

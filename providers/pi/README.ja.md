@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
-<h1 align="center"><code>@harapter/adapter-pi</code></h1>
+<h1 align="center"><code>harapter/pi</code></h1>
 
 <p align="center"><strong>Pi Agent の strict JSONL RPC mode を Harapter から実行します。</strong></p>
 
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/adapter-pi"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-pi?style=flat-square&amp;label=npm" alt="npm バージョン"></a>
-  <a href="https://www.npmjs.com/package/@harapter/adapter-pi"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-pi?style=flat-square" alt="npm ダウンロード数"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm バージョン"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm ダウンロード数"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI ステータス"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 以上">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 ライセンス"></a>
@@ -18,7 +18,10 @@
 
 <!-- markdownlint-enable MD033 -->
 
-`@harapter/adapter-pi` は公式 Pi Agent `--mode rpc`
+このガイドは単一の `harapter`
+SDK に含まれるモジュールを説明します。通常のアプリケーション接続は[アプリケーションガイド](../../packages/harapter/README.ja.md)から始めてください。単一パッケージの初回公開は未完了で、以下のインストール手順は公開後のものです。
+
+`harapter/pi` は公式 Pi Agent `--mode rpc`
 を Harapter に mapping します。Session ごとに独立 Process を使い、stream
 Event、persisted Resume、native Abort を提供します。Extension、Skill、Prompt
 Template discovery は無効化されます。
@@ -31,7 +34,7 @@ Node.js 24+ の ESM プロジェクトで以下の完全な例を `app.ts`
 ```sh
 npm init -y
 npm pkg set type=module
-npm install @harapter/core @harapter/adapter-pi
+npm install harapter
 npm install -D typescript @types/node
 ```
 
@@ -52,8 +55,8 @@ npm install -D typescript @types/node
 
 ```ts
 import { isAbsolute } from 'node:path';
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
-import { PI_PROVIDER_ID, createPiProviderFactory } from '@harapter/adapter-pi';
+import { isHarnessError, profileId, type HarnessSession } from 'harapter';
+import { PI_PROVIDER_ID, createPiProviderFactory } from 'harapter/pi';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -124,7 +127,7 @@ void main().catch((error: unknown) => {
 ```
 
 [完全なアプリ、レシピ、エラー処理](../../examples/sdk-application/README.ja.md)
-· [公開パッケージ一覧](https://www.npmjs.com/org/harapter)
+· [Harapter npm](https://www.npmjs.com/package/harapter)
 
 ## 前提条件とインストール
 
@@ -133,14 +136,14 @@ path はホストが所有します。Harapter は Session
 File や Credential を読み取らず Runtime を導入しません。
 
 ```bash
-pnpm add @harapter/core @harapter/adapter-pi
+pnpm add harapter
 ```
 
 ## クイックスタート
 
 ```ts
-import { HarnessRegistry, profileId } from '@harapter/core';
-import { PI_PROVIDER_ID, createPiProviderFactory } from '@harapter/adapter-pi';
+import { HarnessRegistry, profileId } from 'harapter';
+import { PI_PROVIDER_ID, createPiProviderFactory } from 'harapter/pi';
 
 const registry = new HarnessRegistry();
 registry.register(createPiProviderFactory());
@@ -220,7 +223,7 @@ File、任意 native mutation は対象外です。全 options、live test、検
 `session.fork` は引き続き非対応です。
 
 ```ts
-import { PI_SESSION_EXTENSION, type PiSessions } from '@harapter/adapter-pi';
+import { PI_SESSION_EXTENSION, type PiSessions } from 'harapter/pi';
 
 const sessions = client.extensions().get<PiSessions>(PI_SESSION_EXTENSION);
 if (sessions === undefined)
@@ -237,15 +240,15 @@ await child.close();
 
 [すべてのパッケージ](../../README.ja.md#npm-パッケージ一覧)
 
-| パッケージ                                                                               | ドキュメント                                      |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                         | [ガイド](../../packages/core/README.ja.md)        |
-| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)           | [ガイド](../../packages/conformance/README.ja.md) |
-| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)       | [ガイド](../codex/README.ja.md)                   |
-| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)           | [ガイド](../dsh/README.ja.md)                     |
-| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)     | [ガイド](../hermes/README.ja.md)                  |
-| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw) | [ガイド](../openclaw/README.ja.md)                |
-| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode) | [ガイド](../opencode/README.ja.md)                |
+| パッケージ                                                       | ドキュメント                                      |
+| ---------------------------------------------------------------- | ------------------------------------------------- |
+| [`harapter`](https://www.npmjs.com/package/harapter)             | [ガイド](../../packages/core/README.ja.md)        |
+| [`harapter/conformance`](https://www.npmjs.com/package/harapter) | [ガイド](../../packages/conformance/README.ja.md) |
+| [`harapter/codex`](https://www.npmjs.com/package/harapter)       | [ガイド](../codex/README.ja.md)                   |
+| [`harapter/dsh`](https://www.npmjs.com/package/harapter)         | [ガイド](../dsh/README.ja.md)                     |
+| [`harapter/hermes`](https://www.npmjs.com/package/harapter)      | [ガイド](../hermes/README.ja.md)                  |
+| [`harapter/openclaw`](https://www.npmjs.com/package/harapter)    | [ガイド](../openclaw/README.ja.md)                |
+| [`harapter/opencode`](https://www.npmjs.com/package/harapter)    | [ガイド](../opencode/README.ja.md)                |
 
 公式 Runtime
 0.85.1 の[合成モデルによる対話の証拠](../../docs/provider-interaction-evidence.md)は、ホスト所有の実行ファイルで一つのテスト拡張を明示的に読み込み、四つの UI メソッドを検証します。確認待機中の中断は現在

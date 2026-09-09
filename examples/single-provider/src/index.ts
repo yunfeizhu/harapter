@@ -9,7 +9,7 @@ import {
   type ProviderAdapterFactory,
   type RunOptions,
   type RunResult,
-} from '@harapter/core';
+} from 'harapter';
 
 /** Safe, portable records rendered by the reference application. */
 export type SingleProviderExampleRecord =

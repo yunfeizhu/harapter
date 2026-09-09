@@ -118,14 +118,14 @@ Test 和兼容性证据一起交付。第三方 SDK、CLI、Gateway 和 Runtime 
 ID、启动参数、Capability、Command 和 Extension。OpenClaw 的首个 Adapter 使用官方 ACP
 bridge，不直接实现 Gateway WebSocket 客户端。
 
-ACP 层复用 `@harapter/transport-jsonrpc-stdio`
+ACP 层复用 `harapter/transports/jsonrpc-stdio`
 已有的 framing、请求关联、背压、有界队列、等待超时和连接清理，不重复实现第二套 JSON-RPC
 Transport。Bridge 进程的创建、终止、重启和所有权属于 Provider
 Connection；ACP 层不把进程退出解释为 Provider 原生取消。
 
 ### 2.5 Headless JSONL 与本地服务
 
-- `@harapter/transport-jsonl-process` 为非 JSON-RPC 的双向 Headless
+- `harapter/transports/jsonl-process` 为非 JSON-RPC 的双向 Headless
   JSONL 协议提供严格 LF 分帧、有界队列、串行写入、背压和连接清理。请求关联、Event 分类和终态继续由 Provider
   Adapter 拥有。Pi Agent Adapter 使用该 Transport，并独立拥有 RPC
   Command、Session、Retry、Interaction、Cancel 和终态语义；

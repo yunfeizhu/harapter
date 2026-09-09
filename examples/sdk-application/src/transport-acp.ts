@@ -1,5 +1,5 @@
 import { PassThrough } from 'node:stream';
-import { AcpClient } from '@harapter/transport-acp';
+import { AcpClient } from 'harapter/transports/acp';
 
 const readable = new PassThrough();
 const writable = new PassThrough();

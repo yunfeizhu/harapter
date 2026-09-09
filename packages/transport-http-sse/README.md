@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
-<h1 align="center"><code>@harapter/transport-http-sse</code></h1>
+<h1 align="center"><code>harapter/transports/http-sse</code></h1>
 
 <p align="center"><strong>Bounded HTTP requests and pull-driven Server-Sent Events for Adapters.</strong></p>
 
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/transport-http-sse"><img src="https://img.shields.io/npm/v/%40harapter%2Ftransport-http-sse?style=flat-square&amp;label=npm" alt="npm version"></a>
-  <a href="https://www.npmjs.com/package/@harapter/transport-http-sse"><img src="https://img.shields.io/npm/dm/%40harapter%2Ftransport-http-sse?style=flat-square" alt="npm downloads"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm downloads"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
@@ -18,7 +18,12 @@
 
 <!-- markdownlint-enable MD033 -->
 
-`@harapter/transport-http-sse` is a bounded, Provider-neutral transport for
+This guide describes a module included in the single `harapter` SDK. For
+ordinary application setup, start with the
+[application guide](../../packages/harapter/README.md). The first single-package
+release is pending; the installation commands apply after that release.
+
+`harapter/transports/http-sse` is a bounded, Provider-neutral transport for
 Harness machine interfaces exposed through HTTP requests and Server-Sent Events.
 
 The package owns endpoint-safe URL resolution, request and response byte limits,
@@ -28,16 +33,15 @@ interaction, error, or cancellation meaning to upstream routes and payloads.
 
 ## Application or Adapter development?
 
-Most applications should install `@harapter/core` and a Provider Adapter
-instead. Install this package directly when implementing or testing a
-machine-interface integration. The following complete offline example uses only
-published imports. It does not start a real Runtime and is not Provider
-compatibility evidence.
+Most applications use `createHarapter` from `harapter`. Use this transport
+subpath when implementing or testing a machine-interface integration. The
+following complete offline example uses only published imports. It does not
+start a real Runtime and is not Provider compatibility evidence.
 
 ```sh
 npm init -y
 npm pkg set type=module
-npm install @harapter/transport-http-sse
+npm install harapter
 npm install -D typescript @types/node
 ```
 
@@ -47,7 +51,7 @@ above; Node.js 24 can execute this TypeScript directly.
 <!-- sdk-example: transport-http-sse.ts -->
 
 ```ts
-import { HttpSseTransport } from '@harapter/transport-http-sse';
+import { HttpSseTransport } from 'harapter/transports/http-sse';
 
 // Inject Fetch for an offline application test; no HTTP request leaves this process.
 const transport = new HttpSseTransport({
@@ -89,7 +93,7 @@ startup, payload validation, authentication, redaction and terminal semantics. A
 transport write or EOF does not establish Run success or native cancellation.
 
 [Complete application, recipes and error handling](../../examples/sdk-application/README.md)
-· [All published packages](https://www.npmjs.com/org/harapter)
+· [Harapter on npm](https://www.npmjs.com/package/harapter)
 
 ## Use this package when
 
@@ -102,7 +106,7 @@ transport write or EOF does not establish Run success or native cancellation.
 ## Installation
 
 ```bash
-pnpm add @harapter/transport-http-sse
+pnpm add harapter
 ```
 
 ## Public entrypoints
@@ -196,7 +200,7 @@ only the stable name, code, fixed message, and optional status.
 ## Compose a real transport
 
 ```ts
-import { HttpSseTransport } from '@harapter/transport-http-sse';
+import { HttpSseTransport } from 'harapter/transports/http-sse';
 
 const transport = new HttpSseTransport({
   baseUrl: 'http://127.0.0.1:4096/',
@@ -236,10 +240,10 @@ await events;
 
 [All packages](../../README.md#packages-on-npm)
 
-| Package                                                                                                | Documentation                                 |
-| ------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
-| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                                       | [Guide](../core/README.md)                    |
-| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [Guide](../transport-jsonrpc-stdio/README.md) |
-| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [Guide](../transport-jsonl-process/README.md) |
-| [`@harapter/transport-acp`](https://www.npmjs.com/package/@harapter/transport-acp)                     | [Guide](../transport-acp/README.md)           |
-| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)                         | [Guide](../conformance/README.md)             |
+| Package                                                                       | Documentation                                 |
+| ----------------------------------------------------------------------------- | --------------------------------------------- |
+| [`harapter`](https://www.npmjs.com/package/harapter)                          | [Guide](../core/README.md)                    |
+| [`harapter/transports/jsonrpc-stdio`](https://www.npmjs.com/package/harapter) | [Guide](../transport-jsonrpc-stdio/README.md) |
+| [`harapter/transports/jsonl-process`](https://www.npmjs.com/package/harapter) | [Guide](../transport-jsonl-process/README.md) |
+| [`harapter/transports/acp`](https://www.npmjs.com/package/harapter)           | [Guide](../transport-acp/README.md)           |
+| [`harapter/conformance`](https://www.npmjs.com/package/harapter)              | [Guide](../conformance/README.md)             |

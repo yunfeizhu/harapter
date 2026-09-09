@@ -75,7 +75,7 @@ ordinary executable host code; it must not log credentials or private content.
 This minimal configuration selects Codex:
 
 ```js
-import { profileId, providerId } from '@harapter/core';
+import { profileId, providerId } from 'harapter';
 
 function required(name) {
   const value = process.env[name];
@@ -140,7 +140,7 @@ Profile IDs unique. Configuration construction performs no I/O; executing the
 workflow starts processes and makes network and model requests.
 
 ```js
-// DSH: also import DSH_GATEWAY_PROTOCOL from '@harapter/adapter-dsh'.
+// DSH: also import DSH_GATEWAY_PROTOCOL from 'harapter/dsh'.
 dsh: {
   profile: {
     ...endpointProfile('deepseek.harness', 'dsh-demo', required('HARAPTER_DSH_ENDPOINT'), { scheme: 'host-vault', id: 'dsh-demo-cookie' }),
@@ -206,7 +206,7 @@ compile it in an ESM TypeScript project with Node 24, `module` and
 dependencies at one version:
 
 ```sh
-pnpm add @harapter/core@0.2.0 @harapter/adapter-codex@0.2.0 @harapter/adapter-dsh@0.2.0 @harapter/adapter-hermes@0.2.0 @harapter/adapter-openclaw@0.2.0 @harapter/adapter-opencode@0.2.0 @harapter/adapter-pi@0.2.0
+pnpm add harapter
 ```
 
 Call `createSessionWorkflowSetups(config)` and pass each setup to

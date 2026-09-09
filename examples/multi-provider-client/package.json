@@ -35,15 +35,7 @@
     "session-workflow": "node dist/session-main.js"
   },
   "dependencies": {
-    "@harapter/adapter-codex": "workspace:*",
-    "@harapter/adapter-dsh": "workspace:*",
-    "@harapter/adapter-hermes": "workspace:*",
-    "@harapter/adapter-openclaw": "workspace:*",
-    "@harapter/adapter-opencode": "workspace:*",
-    "@harapter/adapter-pi": "workspace:*",
-    "@harapter/core": "workspace:*"
+    "harapter": "workspace:*"
   },
-  "devDependencies": {
-    "@harapter/conformance": "workspace:*"
-  }
+  "devDependencies": {}
 }

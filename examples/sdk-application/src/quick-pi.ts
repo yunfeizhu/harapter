@@ -1,6 +1,6 @@
 import { isAbsolute } from 'node:path';
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
-import { PI_PROVIDER_ID, createPiProviderFactory } from '@harapter/adapter-pi';
+import { isHarnessError, profileId, type HarnessSession } from 'harapter';
+import { PI_PROVIDER_ID, createPiProviderFactory } from 'harapter/pi';
 
 function required(name: string): string {
   const value = process.env[name];

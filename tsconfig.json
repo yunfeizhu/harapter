@@ -27,7 +27,26 @@
       ],
       "@harapter/transport-jsonrpc-stdio": [
         "packages/transport-jsonrpc-stdio/src/index.ts"
-      ]
+      ],
+      "harapter": ["packages/harapter/src/index.ts"],
+      "harapter/transports/jsonrpc-stdio": [
+        "packages/transport-jsonrpc-stdio/src/index.ts"
+      ],
+      "harapter/transports/jsonl-process": [
+        "packages/transport-jsonl-process/src/index.ts"
+      ],
+      "harapter/transports/http-sse": [
+        "packages/transport-http-sse/src/index.ts"
+      ],
+      "harapter/transports/acp": ["packages/transport-acp/src/index.ts"],
+      "harapter/conformance": ["packages/conformance/src/index.ts"],
+      "harapter/codex": ["providers/codex/src/index.ts"],
+      "harapter/dsh": ["providers/dsh/src/index.ts"],
+      "harapter/hermes": ["providers/hermes/src/index.ts"],
+      "harapter/openclaw": ["providers/openclaw/src/index.ts"],
+      "harapter/opencode": ["providers/opencode/src/index.ts"],
+      "harapter/pi": ["providers/pi/src/index.ts"],
+      "harapter/testing": ["packages/conformance/src/fake-provider.ts"]
     },
     "sourceMap": false
   },

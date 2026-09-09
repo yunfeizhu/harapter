@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
-<h1 align="center"><code>@harapter/adapter-openclaw</code></h1>
+<h1 align="center"><code>harapter/openclaw</code></h1>
 
 <p align="center"><strong>stable ACP v1 で isolated OpenClaw Gateway Session を駆動します。</strong></p>
 
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/adapter-openclaw"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-openclaw?style=flat-square&amp;label=npm" alt="npm バージョン"></a>
-  <a href="https://www.npmjs.com/package/@harapter/adapter-openclaw"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-openclaw?style=flat-square" alt="npm ダウンロード数"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm バージョン"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm ダウンロード数"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI ステータス"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 以上">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 ライセンス"></a>
@@ -18,8 +18,10 @@
 
 <!-- markdownlint-enable MD033 -->
 
-`@harapter/adapter-openclaw` は公式 `openclaw acp` stdio Bridge を起動し、stable
-ACP
+このガイドは単一の `harapter`
+SDK に含まれるモジュールを説明します。通常のアプリケーション接続は[アプリケーションガイド](../../packages/harapter/README.ja.md)から始めてください。単一パッケージの初回公開は未完了で、以下のインストール手順は公開後のものです。
+
+`harapter/openclaw` は公式 `openclaw acp` stdio Bridge を起動し、stable ACP
 v1 の Session、Prompt、Event、Permission、Resume、cancellation を Harapter に mapping します。OpenClaw
 Gateway の導入、設定、認証、運用はホストが行います。
 
@@ -31,7 +33,7 @@ Node.js 24+ の ESM プロジェクトで以下の完全な例を `app.ts`
 ```sh
 npm init -y
 npm pkg set type=module
-npm install @harapter/core @harapter/adapter-openclaw
+npm install harapter
 npm install -D typescript @types/node
 ```
 
@@ -53,11 +55,11 @@ npm install -D typescript @types/node
 ```ts
 import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
+import { isHarnessError, profileId, type HarnessSession } from 'harapter';
 import {
   OPENCLAW_PROVIDER_ID,
   createOpenClawProviderFactory,
-} from '@harapter/adapter-openclaw';
+} from 'harapter/openclaw';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -130,22 +132,22 @@ await main().catch((error: unknown) => {
 ```
 
 [完全なアプリ、レシピ、エラー処理](../../examples/sdk-application/README.ja.md)
-· [公開パッケージ一覧](https://www.npmjs.com/org/harapter)
+· [Harapter npm](https://www.npmjs.com/package/harapter)
 
 ## インストール
 
 ```bash
-pnpm add @harapter/core @harapter/adapter-openclaw
+pnpm add harapter
 ```
 
 ## クイックスタート
 
 ```ts
-import { HarnessRegistry, profileId } from '@harapter/core';
+import { HarnessRegistry, profileId } from 'harapter';
 import {
   OPENCLAW_PROVIDER_ID,
   createOpenClawProviderFactory,
-} from '@harapter/adapter-openclaw';
+} from 'harapter/openclaw';
 
 const registry = new HarnessRegistry();
 registry.register(createOpenClawProviderFactory());
@@ -239,7 +241,7 @@ Client を閉じます。ホストが AbortSignal を無視しても各 RPC は
 import {
   OPENCLAW_SESSION_EXTENSION,
   type OpenClawSessions,
-} from '@harapter/adapter-openclaw';
+} from 'harapter/openclaw';
 
 const sessions = client
   .extensions()
@@ -258,12 +260,12 @@ await child.close();
 
 [すべてのパッケージ](../../README.ja.md#npm-パッケージ一覧)
 
-| パッケージ                                                                               | ドキュメント                                      |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                         | [ガイド](../../packages/core/README.ja.md)        |
-| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)           | [ガイド](../../packages/conformance/README.ja.md) |
-| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)       | [ガイド](../codex/README.ja.md)                   |
-| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)           | [ガイド](../dsh/README.ja.md)                     |
-| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)     | [ガイド](../hermes/README.ja.md)                  |
-| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode) | [ガイド](../opencode/README.ja.md)                |
-| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)             | [ガイド](../pi/README.ja.md)                      |
+| パッケージ                                                       | ドキュメント                                      |
+| ---------------------------------------------------------------- | ------------------------------------------------- |
+| [`harapter`](https://www.npmjs.com/package/harapter)             | [ガイド](../../packages/core/README.ja.md)        |
+| [`harapter/conformance`](https://www.npmjs.com/package/harapter) | [ガイド](../../packages/conformance/README.ja.md) |
+| [`harapter/codex`](https://www.npmjs.com/package/harapter)       | [ガイド](../codex/README.ja.md)                   |
+| [`harapter/dsh`](https://www.npmjs.com/package/harapter)         | [ガイド](../dsh/README.ja.md)                     |
+| [`harapter/hermes`](https://www.npmjs.com/package/harapter)      | [ガイド](../hermes/README.ja.md)                  |
+| [`harapter/opencode`](https://www.npmjs.com/package/harapter)    | [ガイド](../opencode/README.ja.md)                |
+| [`harapter/pi`](https://www.npmjs.com/package/harapter)          | [ガイド](../pi/README.ja.md)                      |

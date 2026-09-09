@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
-<h1 align="center"><code>@harapter/adapter-dsh</code></h1>
+<h1 align="center"><code>harapter/dsh</code></h1>
 
 <p align="center"><strong>把 DeepSeek Harness 官方 SDK Runtime 协议映射为 Harapter。</strong></p>
 
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/adapter-dsh"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-dsh?style=flat-square&amp;label=npm" alt="npm 版本"></a>
-  <a href="https://www.npmjs.com/package/@harapter/adapter-dsh"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-dsh?style=flat-square" alt="npm 下载量"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm 版本"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm 下载量"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI 状态"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 或更高版本">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 许可证"></a>
@@ -18,12 +18,14 @@
 
 <!-- markdownlint-enable MD033 -->
 
+本指南描述单个 `harapter`
+SDK 内的模块。普通应用接入请先看[应用指南](../../packages/harapter/README.zh-CN.md)。单包入口的首次发布尚待完成，下面的安装命令适用于该版本发布后。
+
 同一包提供 [SDK process](#sdk-process-strategy) 与
 [Gateway endpoint](#gateway-endpoint-策略)
 两种连接策略；Gateway 增加原生恢复、分叉和 Session 范围取消。
 
-`@harapter/adapter-dsh` 连接 DeepSeek Harness SDK
-Runtime 暴露的换行分隔 JSON-RPC 2.0
+`harapter/dsh` 连接 DeepSeek Harness SDK Runtime 暴露的换行分隔 JSON-RPC 2.0
 Server，并把 Session、Run、Event、Interaction、取消和错误映射到 Harapter。它不会嵌入或复制 DeepSeek
 Harness Agent Loop。
 
@@ -35,7 +37,7 @@ Harness Agent Loop。
 ```sh
 npm init -y
 npm pkg set type=module
-npm install @harapter/core @harapter/adapter-dsh
+npm install harapter
 npm install -D typescript @types/node
 ```
 
@@ -58,11 +60,8 @@ npm install -D typescript @types/node
 ```ts
 import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
-import {
-  DSH_PROVIDER_ID,
-  createDshProviderFactory,
-} from '@harapter/adapter-dsh';
+import { isHarnessError, profileId, type HarnessSession } from 'harapter';
+import { DSH_PROVIDER_ID, createDshProviderFactory } from 'harapter/dsh';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -138,7 +137,7 @@ void main().catch((error: unknown) => {
 ```
 
 [完整应用、场景案例和错误处理](../../examples/sdk-application/README.zh-CN.md) ·
-[全部公开包](https://www.npmjs.com/org/harapter)
+[全部公开包](https://www.npmjs.com/package/harapter)
 
 ## 前置条件与安装
 
@@ -146,7 +145,7 @@ void main().catch((error: unknown) => {
 Package、Cordis Application、Plugin、Model Adapter 或 Credential。
 
 ```bash
-pnpm add @harapter/core @harapter/adapter-dsh
+pnpm add harapter
 ```
 
 ## SDK process strategy
@@ -154,11 +153,8 @@ pnpm add @harapter/core @harapter/adapter-dsh
 ### 快速开始
 
 ```ts
-import { HarnessRegistry, profileId } from '@harapter/core';
-import {
-  DSH_PROVIDER_ID,
-  createDshProviderFactory,
-} from '@harapter/adapter-dsh';
+import { HarnessRegistry, profileId } from 'harapter';
+import { DSH_PROVIDER_ID, createDshProviderFactory } from 'harapter/dsh';
 
 const registry = new HarnessRegistry();
 registry.register(createDshProviderFactory());
@@ -253,14 +249,14 @@ UI 和插件不会向这些 Session 注入竞争工作，并不构成上游锁�
 interaction response。
 
 ```ts
-import { profileId, type SecretRef } from '@harapter/core';
+import { profileId, type SecretRef } from 'harapter';
 import {
   createDshProviderFactory,
   DSH_PROVIDER_ID,
   DSH_GATEWAY_PROTOCOL,
   DSH_GATEWAY_SESSION_EXTENSION,
   type DshGatewaySessions,
-} from '@harapter/adapter-dsh';
+} from 'harapter/dsh';
 
 // Supplied by the host's credential service.
 declare function resolveCookie(
@@ -372,12 +368,12 @@ cancellation 不在本策略范围内。
 
 [全部包](../../README.zh-CN.md#npm-包导航)
 
-| 包                                                                                       | 文档                                                   |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                         | [使用指南](../../packages/core/README.zh-CN.md)        |
-| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)           | [使用指南](../../packages/conformance/README.zh-CN.md) |
-| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)       | [使用指南](../codex/README.zh-CN.md)                   |
-| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)     | [使用指南](../hermes/README.zh-CN.md)                  |
-| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw) | [使用指南](../openclaw/README.zh-CN.md)                |
-| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode) | [使用指南](../opencode/README.zh-CN.md)                |
-| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)             | [使用指南](../pi/README.zh-CN.md)                      |
+| 包                                                               | 文档                                                   |
+| ---------------------------------------------------------------- | ------------------------------------------------------ |
+| [`harapter`](https://www.npmjs.com/package/harapter)             | [使用指南](../../packages/core/README.zh-CN.md)        |
+| [`harapter/conformance`](https://www.npmjs.com/package/harapter) | [使用指南](../../packages/conformance/README.zh-CN.md) |
+| [`harapter/codex`](https://www.npmjs.com/package/harapter)       | [使用指南](../codex/README.zh-CN.md)                   |
+| [`harapter/hermes`](https://www.npmjs.com/package/harapter)      | [使用指南](../hermes/README.zh-CN.md)                  |
+| [`harapter/openclaw`](https://www.npmjs.com/package/harapter)    | [使用指南](../openclaw/README.zh-CN.md)                |
+| [`harapter/opencode`](https://www.npmjs.com/package/harapter)    | [使用指南](../opencode/README.zh-CN.md)                |
+| [`harapter/pi`](https://www.npmjs.com/package/harapter)          | [使用指南](../pi/README.zh-CN.md)                      |

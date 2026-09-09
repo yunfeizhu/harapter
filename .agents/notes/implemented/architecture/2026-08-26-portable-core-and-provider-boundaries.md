@@ -13,12 +13,12 @@ differences into implicit behavior.
 
 Harapter separates provider-agnostic contracts, Core runtime checks, transport
 implementations, shared conformance tests, and independently owned Provider
-Adapters. [`@harapter/core`](../../../../packages/core/README.md) owns canonical
-clients, sessions, runs, events, interactions, capabilities, errors, ownership
+Adapters. [Core](../../../../packages/core/README.md) owns canonical clients,
+sessions, runs, events, interactions, capabilities, errors, ownership
 validation, and extension dispatch without importing Provider packages or SDKs.
 
-[`@harapter/conformance`](../../../../packages/conformance/README.md) exercises
-those interfaces with a deterministic Fake Provider. The suite verifies identity
+[Conformance](../../../../packages/conformance/README.md) exercises those
+interfaces with a deterministic Fake Provider. The suite verifies identity
 binding, capability requirements, event ordering, unique terminal results,
 cancellation versus connection abort, extensions, native access, and cleanup
 through public contracts rather than Provider internals.
@@ -31,6 +31,10 @@ implement an agent loop or move native checkpoints between Providers. The
 current structure is defined by the
 [architecture](../../../../docs/design/architecture.md) and
 [API design](../../../../docs/design/api-design.md).
+
+The outer [application entry](2026-09-08-single-application-entry.md) bundles
+these same first-party mappings for application use without moving Provider
+selection into Core or installing upstream Runtimes.
 
 ## Alternatives considered
 
@@ -55,7 +59,7 @@ remain bound to their creating Provider and Profile.
 
 ## Consequences
 
-- New Provider packages can implement the public SPI without adding their name,
+- New Provider modules can implement the public SPI without adding their name,
   SDK, or behavior to Core.
 - The Registry fails closed when Client or Capability identity differs from the
   requested Profile. It validates against an isolated Profile snapshot and
@@ -72,6 +76,7 @@ remain bound to their creating Provider and Profile.
 - Core states event and terminal obligations but does not infer Provider
   outcomes or own transport buffering and redaction. Adapters and transports
   must implement and verify those behaviors.
-- Public packages use 0.x versions and the default npm `latest` dist-tag. Their
-  synchronized release train includes Core, conformance, transports, and the
-  semantically different Provider Adapters that exercise the portable contract.
+- The single `harapter` SDK publishes under npm `latest`; Core, conformance,
+  transports and Adapters remain private source modules. Their public subpaths
+  share one bundled Core and one release, as owned by the application-entry
+  note.

@@ -1,15 +1,4 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "baseUrl": ".",
-    "noEmit": true,
-    "paths": {
-      "@harapter/adapter-codex": ["../../providers/codex/src/index.ts"],
-      "@harapter/core": ["../../packages/core/src/index.ts"],
-      "@harapter/transport-jsonrpc-stdio": [
-        "../../packages/transport-jsonrpc-stdio/src/index.ts"
-      ]
-    }
-  },
+  "extends": "../../tsconfig.json",
   "include": ["src/**/*.ts"]
 }

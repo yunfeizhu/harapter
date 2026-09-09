@@ -10,8 +10,8 @@ on:
         type: string
       bootstrap:
         description:
-          Use the one-time npm package-creation credential for package version
-          0.1.1
+          Use the one-time npm package-creation credential for the single
+          harapter package (first release only)
         default: false
         required: true
         type: boolean

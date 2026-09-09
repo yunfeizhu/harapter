@@ -18,10 +18,7 @@
     "start": "node dist/main.js"
   },
   "dependencies": {
-    "@harapter/adapter-codex": "workspace:*",
-    "@harapter/core": "workspace:*"
+    "harapter": "workspace:*"
   },
-  "devDependencies": {
-    "@harapter/conformance": "workspace:*"
-  }
+  "devDependencies": {}
 }

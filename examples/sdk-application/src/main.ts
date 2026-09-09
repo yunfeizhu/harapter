@@ -1,5 +1,5 @@
 import { isAbsolute } from 'node:path';
-import { isHarnessError } from '@harapter/core';
+import { isHarnessError } from 'harapter';
 import { connectCodex } from './codex.js';
 import { runTask } from './service.js';
 

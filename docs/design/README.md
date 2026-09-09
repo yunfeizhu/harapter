@@ -14,6 +14,14 @@ It borrows the Provider Adapter idea from LiteLLM, but the adapted unit is not a
 single model request. It is a stateful Agent Runtime with Sessions, Runs,
 streaming Events, tool calls, and human interactions.
 
+The [`harapter` application entry](../../packages/harapter/README.md) composes
+Core with bundled first-party protocol mappings. An application installs one
+entry package and configures its own Runtime connections. Implementation modules
+load only when selected; Runtime distributions are never installed implicitly.
+Only `harapter` is published; Core, Adapters, transports and conformance are
+private source modules. This packaging boundary sits outside provider-agnostic
+Core and does not change Session ownership or capability semantics.
+
 ```text
 Host Application
         │
@@ -80,7 +88,7 @@ Harness Session remains bound to the Profile that created it.
   unsupported behavior.
 - Expose typed Extensions and a Native Escape Hatch for Provider-specific
   behavior.
-- Add a Harness through an independent Provider package without changing Core's
+- Add a Harness through an independent Provider module without changing Core's
   execution model.
 
 ## Responsibilities outside an Adapter

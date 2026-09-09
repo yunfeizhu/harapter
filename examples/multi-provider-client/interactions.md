@@ -26,8 +26,8 @@ invalid decisions fail; no answer is chosen automatically. EOF and the 30-second
 Run deadline release the input reader and Client, and the command exits with
 failure.
 
-This demo uses `@harapter/conformance/fake` from the built checkout. It performs
-no network request, starts no runtime, invokes no tool, and requires no
+This demo uses `harapter/testing` from the built checkout. It performs no
+network request, starts no runtime, invokes no tool, and requires no
 credentials. Its fixed fictional questions are safe to show. It never logs the
 answer or request payload. Fake behavior is application-test evidence, not a
 claim that a real Provider supports all three interaction kinds.

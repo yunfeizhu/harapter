@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
-<h1 align="center"><code>@harapter/conformance</code></h1>
+<h1 align="center"><code>harapter/conformance</code></h1>
 
 <p align="center"><strong>Reusable lifecycle tests and a deterministic Fake Provider for Harapter.</strong></p>
 
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/conformance"><img src="https://img.shields.io/npm/v/%40harapter%2Fconformance?style=flat-square&amp;label=npm" alt="npm version"></a>
-  <a href="https://www.npmjs.com/package/@harapter/conformance"><img src="https://img.shields.io/npm/dm/%40harapter%2Fconformance?style=flat-square" alt="npm downloads"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm downloads"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
@@ -18,22 +18,27 @@
 
 <!-- markdownlint-enable MD033 -->
 
-`@harapter/conformance` provides reusable Vitest behavior checks for Harapter
+This guide describes a module included in the single `harapter` SDK. For
+ordinary application setup, start with the
+[application guide](../../packages/harapter/README.md). The first single-package
+release is pending; the installation commands apply after that release.
+
+`harapter/conformance` provides reusable Vitest behavior checks for Harapter
 Provider Adapters and a deterministic Fake Provider. Passing the Fake Provider
 suite proves the portable interfaces and test kit; it is not evidence that any
 real Provider or runtime is supported.
 
 ## Test an application without a Runtime
 
-Use the lightweight `@harapter/conformance/fake` entrypoint for application
-tests. It does not require Vitest at runtime. Install Vitest separately only
-when using the conformance suite from the main entrypoint. The Fake result is
-deterministic test evidence, not evidence about an installed Provider.
+Use the lightweight `harapter/testing` entrypoint for application tests. It does
+not require Vitest at runtime. Install Vitest separately only when using the
+conformance suite from `harapter/conformance`. The Fake result is deterministic
+test evidence, not evidence about an installed Provider.
 
 ```sh
 npm init -y
 npm pkg set type=module
-npm install @harapter/core @harapter/conformance
+npm install harapter
 npm install -D typescript @types/node
 ```
 
@@ -43,11 +48,8 @@ above; Node.js 24 can execute this TypeScript directly.
 <!-- sdk-example: test-with-fake.ts -->
 
 ```ts
-import { HarnessRegistry } from '@harapter/core';
-import {
-  createFakeProfile,
-  createFakeProviderFactory,
-} from '@harapter/conformance/fake';
+import { HarnessRegistry } from 'harapter';
+import { createFakeProfile, createFakeProviderFactory } from 'harapter/testing';
 
 // Replace the application's real Adapter at its composition boundary.
 const registry = new HarnessRegistry();
@@ -82,7 +84,7 @@ node app.ts
 ```
 
 [Complete application, recipes and error handling](../../examples/sdk-application/README.md)
-· [All published packages](https://www.npmjs.com/org/harapter)
+· [Harapter on npm](https://www.npmjs.com/package/harapter)
 
 ## Use this package when
 
@@ -97,13 +99,14 @@ node app.ts
 Install the suite with Vitest 4:
 
 ```bash
-pnpm add -D @harapter/conformance vitest@^4.1.11
+pnpm add harapter
+pnpm add -D vitest@^4.1.11
 ```
 
 ## Portable suite
 
 `definePortableProviderConformanceSuite()` accepts fresh Adapter factory and
-Profile producers. It verifies observable behavior through `@harapter/core`:
+Profile producers. It verifies observable behavior through `harapter`:
 
 - Client descriptor and Capability Manifest identity;
 - Session and Run ownership;
@@ -129,7 +132,7 @@ The suite does not replace protocol parsing, malformed-input, compatibility,
 redaction, timeout, race, or Provider-specific lifecycle evidence.
 
 ```ts
-import { definePortableProviderConformanceSuite } from '@harapter/conformance';
+import { definePortableProviderConformanceSuite } from 'harapter/conformance';
 import { createAdapterFactory, createTestProfile } from './test-support.js';
 
 definePortableProviderConformanceSuite({
@@ -158,11 +161,11 @@ allowing two native Sessions to collide.
 Use it in application tests without discovering or starting a real runtime:
 
 ```ts
-import { HarnessRegistry } from '@harapter/core';
+import { HarnessRegistry } from 'harapter';
 import {
   createFakeProfile,
   createFakeProviderFactory,
-} from '@harapter/conformance';
+} from 'harapter/conformance';
 
 const registry = new HarnessRegistry();
 registry.register(
@@ -211,7 +214,7 @@ own malformed native payloads, expiration, transport acknowledgment, and
 protocol ordering tests.
 
 ```ts
-import { defineInteractionConformanceSuite } from '@harapter/conformance';
+import { defineInteractionConformanceSuite } from 'harapter/conformance';
 
 defineInteractionConformanceSuite({
   name: 'Example approval fixture',
@@ -233,10 +236,10 @@ because its current adapters do not expose a host response API.
 
 ## Fake interactions outside Vitest
 
-`@harapter/conformance/fake` exports `createFakeProfile`,
-`createFakeProviderFactory`, their default identities, and `FakeProviderOptions`
-without importing Vitest. Use this public subpath in offline Node demos. The
-existing package root also exports these symbols for Vitest consumers.
+`harapter/testing` exports `createFakeProfile`, `createFakeProviderFactory`,
+their default identities, and `FakeProviderOptions` without importing Vitest.
+Use this public subpath in offline Node demos. The existing package root also
+exports these symbols for Vitest consumers.
 
 Set `interaction: { kind: 'approval' }` (or `user_input` / `provider`) to make
 each Fake Run emit one request and wait for an explicit response. Optional
@@ -261,16 +264,16 @@ demonstrates this lifecycle without real tools, runtimes, or model calls.
 
 [All packages](../../README.md#packages-on-npm)
 
-| Package                                                                                                | Documentation                                 |
-| ------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
-| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                                       | [Guide](../core/README.md)                    |
-| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [Guide](../transport-jsonrpc-stdio/README.md) |
-| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [Guide](../transport-jsonl-process/README.md) |
-| [`@harapter/transport-http-sse`](https://www.npmjs.com/package/@harapter/transport-http-sse)           | [Guide](../transport-http-sse/README.md)      |
-| [`@harapter/transport-acp`](https://www.npmjs.com/package/@harapter/transport-acp)                     | [Guide](../transport-acp/README.md)           |
-| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)                     | [Guide](../../providers/codex/README.md)      |
-| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)                         | [Guide](../../providers/dsh/README.md)        |
-| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)                   | [Guide](../../providers/hermes/README.md)     |
-| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw)               | [Guide](../../providers/openclaw/README.md)   |
-| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode)               | [Guide](../../providers/opencode/README.md)   |
-| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)                           | [Guide](../../providers/pi/README.md)         |
+| Package                                                                       | Documentation                                 |
+| ----------------------------------------------------------------------------- | --------------------------------------------- |
+| [`harapter`](https://www.npmjs.com/package/harapter)                          | [Guide](../core/README.md)                    |
+| [`harapter/transports/jsonrpc-stdio`](https://www.npmjs.com/package/harapter) | [Guide](../transport-jsonrpc-stdio/README.md) |
+| [`harapter/transports/jsonl-process`](https://www.npmjs.com/package/harapter) | [Guide](../transport-jsonl-process/README.md) |
+| [`harapter/transports/http-sse`](https://www.npmjs.com/package/harapter)      | [Guide](../transport-http-sse/README.md)      |
+| [`harapter/transports/acp`](https://www.npmjs.com/package/harapter)           | [Guide](../transport-acp/README.md)           |
+| [`harapter/codex`](https://www.npmjs.com/package/harapter)                    | [Guide](../../providers/codex/README.md)      |
+| [`harapter/dsh`](https://www.npmjs.com/package/harapter)                      | [Guide](../../providers/dsh/README.md)        |
+| [`harapter/hermes`](https://www.npmjs.com/package/harapter)                   | [Guide](../../providers/hermes/README.md)     |
+| [`harapter/openclaw`](https://www.npmjs.com/package/harapter)                 | [Guide](../../providers/openclaw/README.md)   |
+| [`harapter/opencode`](https://www.npmjs.com/package/harapter)                 | [Guide](../../providers/opencode/README.md)   |
+| [`harapter/pi`](https://www.npmjs.com/package/harapter)                       | [Guide](../../providers/pi/README.md)         |

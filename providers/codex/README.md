@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
-<h1 align="center"><code>@harapter/adapter-codex</code></h1>
+<h1 align="center"><code>harapter/codex</code></h1>
 
 <p align="center"><strong>Run the stable Codex App Server through Harapter's portable lifecycle.</strong></p>
 
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/adapter-codex"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-codex?style=flat-square&amp;label=npm" alt="npm version"></a>
-  <a href="https://www.npmjs.com/package/@harapter/adapter-codex"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-codex?style=flat-square" alt="npm downloads"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm downloads"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
@@ -18,7 +18,12 @@
 
 <!-- markdownlint-enable MD033 -->
 
-`@harapter/adapter-codex` exposes the official Codex harness through the stable
+This guide describes a module included in the single `harapter` SDK. For
+ordinary application setup, start with the
+[application guide](../../packages/harapter/README.md). The first single-package
+release is pending; the installation commands apply after that release.
+
+`harapter/codex` exposes the official Codex harness through the stable
 [Codex App Server](https://developers.openai.com/codex/app-server) interface and
 maps it to the portable Harapter lifecycle. The harness and App Server source
 live in the open-source
@@ -32,7 +37,7 @@ Harapter checkout or private imports are needed.
 ```sh
 npm init -y
 npm pkg set type=module
-npm install @harapter/core @harapter/adapter-codex
+npm install harapter
 npm install -D typescript @types/node
 ```
 
@@ -58,11 +63,8 @@ state.
 ```ts
 import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
-import {
-  CODEX_PROVIDER_ID,
-  createCodexProviderFactory,
-} from '@harapter/adapter-codex';
+import { isHarnessError, profileId, type HarnessSession } from 'harapter';
+import { CODEX_PROVIDER_ID, createCodexProviderFactory } from 'harapter/codex';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -139,7 +141,7 @@ void main().catch((error: unknown) => {
 ```
 
 [Complete application, recipes and error handling](../../examples/sdk-application/README.md)
-· [All published packages](https://www.npmjs.com/org/harapter)
+· [Harapter on npm](https://www.npmjs.com/package/harapter)
 
 ## Use this Adapter when
 
@@ -153,7 +155,7 @@ void main().catch((error: unknown) => {
 ## Installation
 
 ```bash
-pnpm add @harapter/core @harapter/adapter-codex
+pnpm add harapter
 ```
 
 ## Runtime prerequisites and compatibility
@@ -188,11 +190,8 @@ not redistribute either one; see the
   observation.
 
 ```ts
-import { HarnessRegistry, profileId } from '@harapter/core';
-import {
-  CODEX_PROVIDER_ID,
-  createCodexProviderFactory,
-} from '@harapter/adapter-codex';
+import { HarnessRegistry, profileId } from 'harapter';
+import { CODEX_PROVIDER_ID, createCodexProviderFactory } from 'harapter/codex';
 
 const registry = new HarnessRegistry();
 registry.register(createCodexProviderFactory());
@@ -417,10 +416,7 @@ Portable `session.fork` remains unsupported: these typed native operations have
 different history and parent-lifecycle semantics.
 
 ```ts
-import {
-  CODEX_SESSION_EXTENSION,
-  type CodexSessions,
-} from '@harapter/adapter-codex';
+import { CODEX_SESSION_EXTENSION, type CodexSessions } from 'harapter/codex';
 
 const sessions = client
   .extensions()
@@ -441,12 +437,12 @@ tests use real runtimes with a local synthetic model, not a hosted model.
 
 [All packages](../../README.md#packages-on-npm)
 
-| Package                                                                                  | Documentation                                 |
-| ---------------------------------------------------------------------------------------- | --------------------------------------------- |
-| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                         | [Guide](../../packages/core/README.md)        |
-| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)           | [Guide](../../packages/conformance/README.md) |
-| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)           | [Guide](../dsh/README.md)                     |
-| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)     | [Guide](../hermes/README.md)                  |
-| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw) | [Guide](../openclaw/README.md)                |
-| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode) | [Guide](../opencode/README.md)                |
-| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)             | [Guide](../pi/README.md)                      |
+| Package                                                          | Documentation                                 |
+| ---------------------------------------------------------------- | --------------------------------------------- |
+| [`harapter`](https://www.npmjs.com/package/harapter)             | [Guide](../../packages/core/README.md)        |
+| [`harapter/conformance`](https://www.npmjs.com/package/harapter) | [Guide](../../packages/conformance/README.md) |
+| [`harapter/dsh`](https://www.npmjs.com/package/harapter)         | [Guide](../dsh/README.md)                     |
+| [`harapter/hermes`](https://www.npmjs.com/package/harapter)      | [Guide](../hermes/README.md)                  |
+| [`harapter/openclaw`](https://www.npmjs.com/package/harapter)    | [Guide](../openclaw/README.md)                |
+| [`harapter/opencode`](https://www.npmjs.com/package/harapter)    | [Guide](../opencode/README.md)                |
+| [`harapter/pi`](https://www.npmjs.com/package/harapter)          | [Guide](../pi/README.md)                      |

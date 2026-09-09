@@ -13,10 +13,10 @@ owns language coverage, but does not define executable onboarding evidence.
 ## Decision
 
 The [SDK application](../../../../examples/sdk-application/README.md) is a
-private, copyable Node.js application with published registry dependencies and
-an independent TypeScript configuration. Application code uses only public
-exports. Root and public-package entry guides put complete npm-based calls
-before contributor setup. The
+private, copyable Node.js application using the single public SDK. Workspace
+linking is development-only; `tsconfig.build.json` defines an independent build.
+Application code uses only public exports. Root and public-package entry guides
+put complete npm-based calls before contributor setup. The
 [multilingual policy](../process/2026-09-02-multilingual-public-design-docs.md)
 continues to own synchronized language variants.
 
@@ -37,10 +37,11 @@ missing-configuration entrypoints, and rejects README entry snippets that differ
 from their executable source. Positive and intentionally invalid snippet cases
 exercise this validator.
 
-Registry installation outside the Workspace provides additional evidence for
-published versions. The lockfile records the sample's registry dependencies;
-exact Harapter 0.3.0 release-age exclusions permit those known first-party
-artifacts without exempting future versions or third-party packages. Offline
+Fresh-tarball installation outside the Workspace verifies the upcoming public
+contract. Historical registry and live evidence belongs to its recorded release;
+it does not establish the new bundle. The
+[single-package decision](../architecture/2026-09-08-single-application-entry.md)
+owns import migration and removal of old release-age exclusions. Offline
 fixtures and type checks do not replace official Runtime compatibility evidence.
 
 ## Alternatives considered
@@ -74,5 +75,5 @@ Marked snippets are checked verbatim against executable sources instead.
   final text and events through return values and callbacks.
 - The observer copy adds maintenance work, made explicit by an equality gate.
   Native state remains bound to its original Provider, Profile and storage.
-- Sample registry dependencies need deliberate updates as published contracts
-  advance. Fresh-tarball compilation detects upcoming public-export breakage.
+- Copyable application setup replaces the development Workspace dependency with
+  the released SDK. Fresh-tarball compilation detects public-export breakage.

@@ -1,17 +1,17 @@
-import { HarnessRegistry, profileId, type SecretRef } from '@harapter/core';
+import { HarnessRegistry, profileId, type SecretRef } from 'harapter';
 import {
   OPENCODE_PROVIDER_ID,
   createOpenCodeProviderFactory,
-} from '@harapter/adapter-opencode';
+} from 'harapter/opencode';
 import {
   HERMES_PROVIDER_ID,
   createHermesProviderFactory,
-} from '@harapter/adapter-hermes';
+} from 'harapter/hermes';
 import {
   DSH_PROVIDER_ID,
   DSH_GATEWAY_PROTOCOL,
   createDshProviderFactory,
-} from '@harapter/adapter-dsh';
+} from 'harapter/dsh';
 
 /** Headers come from the application's credential service, never from a persisted SessionRef. */
 export async function connectOpenCode(

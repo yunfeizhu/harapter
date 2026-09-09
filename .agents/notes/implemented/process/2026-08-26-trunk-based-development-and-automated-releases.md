@@ -72,8 +72,9 @@ bot login forms. The generated root `CHANGELOG.md` accepts Release Please's
 consecutive blank lines while every other Markdown file retains the standard
 blank-line rule, and its list markers follow the generator's asterisk style.
 
-Public Core, conformance, transport, and Provider Adapter packages use a single
-synchronized version before 1.0. The Workspace root and examples remain private.
+Only `harapter` is public; Core, conformance, transports and Adapters are
+private modules, as recorded in the
+[single-package decision](../architecture/2026-09-08-single-application-entry.md).
 Harapter publishes public packages under npm `latest` so an ordinary install
 selects the current release. Root and package READMEs omit the pre-alpha badge,
 use suffix-free installation commands, and provide explicit npm package links
@@ -99,34 +100,33 @@ visibility does not establish success by itself: the publisher still requires
 the immutable SHA-512, `latest`, and provenance checks for every package.
 
 The Release finalizer runs repository evidence at the candidate SHA, packages
-all 12 public workspaces, creates a deterministic SPDX document bound to the
-candidate commit and exact tarballs, and creates canonical SHA-256 checksums for
-the tarballs and SBOM. It uploads only absent draft assets, rejects remote name,
-size, state, or digest conflicts, and publishes only the complete set. GitHub
-creates and locks the tag and assets when the draft is published. Recovery
-reruns the failed finalizer job in the same workflow run so Release Please
-outputs and the source SHA cannot drift; it resumes a matching draft or
-reverifies an already immutable Release. When the workflow itself must be fixed,
-a new `main` dispatch may set `resume_release_tag` to an existing Release Please
-draft. That path accepts only a stable Harapter tag, requires an unpublished
-mutable draft without an existing Git ref, proves that its target commit is
-reachable from the dispatch commit, and carries the same target SHA into the
-ordinary finalizer.
+all policy-listed public workspaces, creates a deterministic SPDX document bound
+to the candidate commit and exact tarballs, and creates canonical SHA-256
+checksums for the tarballs and SBOM. It uploads only absent draft assets,
+rejects remote name, size, state, or digest conflicts, and publishes only the
+complete set. GitHub creates and locks the tag and assets when the draft is
+published. Recovery reruns the failed finalizer job in the same workflow run so
+Release Please outputs and the source SHA cannot drift; it resumes a matching
+draft or reverifies an already immutable Release. When the workflow itself must
+be fixed, a new `main` dispatch may set `resume_release_tag` to an existing
+Release Please draft. That path accepts only a stable Harapter tag, requires an
+unpublished mutable draft without an existing Git ref, proves that its target
+commit is reachable from the dispatch commit, and carries the same target SHA
+into the ordinary finalizer.
 
-npm does not allow a trusted publisher to be configured before a package exists.
-The immutable `harapter-v0.1.0` Release remains source-only; the first registry
-publication is `0.1.1` and permits one short-lived granular bootstrap token
-scoped to the protected environment. That token is revoked and removed after
-package creation and trusted-publisher setup. Later releases fail closed if OIDC
-is unavailable; the bootstrap path cannot publish another version. Registry
-recovery requires matching SHA-512 integrity, the release policy dist-tag,
-cryptographically verified attestation bundles, and provenance that identifies
-the expected repository, workflow, builder, commit, and tarball. It stops on any
-mismatch. A retry uses the same immutable tag, so a later `main` commit cannot
-change the provenance source. Ordinary rollback deprecates the bad version and
-releases a fix rather than moving tags, replacing packages, or unpublishing. The
-operational workflow is documented in
-[development.md](../../../../docs/development.md) and
+npm requires a package to exist before trusted-publisher setup. The scoped
+packages used a historical `0.1.1` bootstrap. The new single-package decision
+permits initial creation of `harapter` with a short-lived protected-environment
+token, then removes and revokes that credential after trusted-publisher setup.
+It is restricted to the absent single package or a same-version retry. Later
+versions fail closed if OIDC is unavailable. Registry recovery requires matching
+SHA-512 integrity, the release policy dist-tag, cryptographically verified
+attestation bundles, and provenance that identifies the expected repository,
+workflow, builder, commit, and tarball. It stops on any mismatch. A retry uses
+the same immutable tag, so a later `main` commit cannot change the provenance
+source. Ordinary rollback deprecates the bad version and releases a fix rather
+than moving tags, replacing packages, or unpublishing. The operational workflow
+is documented in [development.md](../../../../docs/development.md) and
 [RELEASING.md](../../../../RELEASING.md).
 
 ## Alternatives considered

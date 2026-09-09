@@ -5,15 +5,15 @@ Releases. Verified Release assets precede publication; npm remains separate.
 
 ## Release model
 
-The Workspace root and examples stay private. The public packages listed in
-[`scripts/public-packages.json`](./scripts/public-packages.json) use one
-synchronized pre-1.0 version. Internal `workspace:*` dependencies become exact
-versions in npm tarballs.
+Only `harapter` is public, as declared in
+[`scripts/public-packages.json`](./scripts/public-packages.json). Core,
+Adapters, transports, conformance, the Workspace root and examples remain
+private. Internal implementations are bundled; consumers have no `@harapter/*`
+runtime dependency.
 
-Public packages publish under `latest`; consumers install without a tag suffix.
-The default channel does not imply a 1.0 API stability guarantee. `feat`
-produces a minor release, `fix` a patch, and `!` or `BREAKING CHANGE` a major
-release.
+The SDK publishes under `latest`; consumers install without a tag suffix. The
+channel does not guarantee API stability. `feat` produces a minor release, `fix`
+a patch, and `!` or `BREAKING CHANGE` a major release.
 
 ## GitHub release flow
 
@@ -37,9 +37,9 @@ gh workflow run release-please.yml --ref main -f operation=finalize
    it. `prepare` cannot create a Release, and `finalize` cannot create a pull
    request.
 
-Each Release contains 12 tarballs, `harapter-X.Y.Z.spdx.json`, and
-`SHA256SUMS.txt`. The deterministic SPDX SBOM binds the commit, artifacts, and
-internal dependencies. Release Please owns `CHANGELOG.md`.
+Each Release contains all policy-listed tarballs, `harapter-X.Y.Z.spdx.json`,
+and `SHA256SUMS.txt`. The deterministic SPDX SBOM binds the commit, artifacts,
+and internal dependencies. Release Please owns `CHANGELOG.md`.
 
 ## npm publication flow
 
@@ -71,28 +71,26 @@ remain fail-closed.
 
 ## One-time npm bootstrap
 
-`harapter-v0.1.0` remains source-only. npm requires packages to exist before
-trusted publishers can be configured, so registry publication begins with a
-one-time `0.1.1` bootstrap:
+npm requires a package to exist before configuring its trusted publisher. The
+new unscoped `harapter` name therefore needs its own initial creation:
 
-1. Confirm `@harapter` scope control, account two-factor authentication, and
-   reviewers on the GitHub `npm` environment.
-2. Create a short-lived granular npm access token limited to creating and
-   publishing the scoped public packages. Store it only as the
-   `NPM_BOOTSTRAP_TOKEN` secret of the protected `npm` environment.
-3. Create the `harapter-v0.1.1` GitHub Release through the normal Release Please
-   flow.
-4. With explicit publication authorization, dispatch `publish-npm.yml` for
-   `harapter-v0.1.1` with `bootstrap=true`.
-5. Verify every package, its release-channel dist-tag, provenance, and content.
-   The historical `0.1.1` bootstrap used `next`; new releases use `latest`.
-6. Delete `NPM_BOOTSTRAP_TOKEN` from GitHub and revoke it on npm.
-7. Configure each published package's trusted publisher for repository
-   `yunfeizhu/harapter`, workflow `publish-npm.yml`, and environment `npm`.
-   Restrict token-based package access after trusted publishing is active.
+1. Confirm name availability, account two-factor authentication and protected
+   `npm` environment reviewers.
+2. Store a short-lived granular creation credential only as the environment's
+   `NPM_BOOTSTRAP_TOKEN`; restrict it to the required publication scope.
+3. Create the approved Release through Release Please, then explicitly authorize
+   `publish-npm.yml` from that immutable tag with `bootstrap=true`.
+4. Verify `harapter`, its `latest` tag, content and provenance. Configure its
+   trusted publisher for repository `yunfeizhu/harapter`, workflow
+   `publish-npm.yml`, environment `npm`.
+5. Delete the environment secret and revoke the token. Later releases use OIDC.
 
-The bootstrap flag accepts only `0.1.1`; it is not a fallback for later OIDC
-failures.
+Bootstrap permits only the single `harapter` policy entry and an absent npm
+name. A retry may find only the same release version and must still verify
+immutable content and provenance. A different published version, unknown
+registry state or another package rejects bootstrap. This is not an OIDC failure
+fallback. The historical scoped-package bootstrap remains owned by its immutable
+release tag.
 
 ## Verification
 
@@ -120,7 +118,10 @@ gh workflow run release-please.yml \
 
 Published versions and Git tags are immutable. Ordinary recovery deprecates a
 broken version and releases a fix; it never replaces or unpublishes one.
-Incident unpublishing requires a separate documented maintainer decision.
+Unpublishing requires a separate documented maintainer decision. The authorized
+retirement of the twelve scoped packages is recorded in the
+[single-package decision](./.agents/notes/implemented/architecture/2026-09-08-single-application-entry.md);
+execute it only after the replacement is usable and npm eligibility is checked.
 
 Authoritative platform behavior is documented by
 [Release Please](https://github.com/googleapis/release-please),

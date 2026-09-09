@@ -179,7 +179,7 @@ function fileDigest(path) {
 }
 
 function releaseTarballName(name, packageVersion) {
-  return `${name.slice(1).replace('/', '-')}-${packageVersion}.tgz`;
+  return `${name.replace(/^@/u, '').replace('/', '-')}-${packageVersion}.tgz`;
 }
 
 function releaseDependencies(manifest, manifests) {

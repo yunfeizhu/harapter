@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
-<h1 align="center"><code>@harapter/core</code></h1>
+<h1 align="center"><code>harapter</code></h1>
 
 <p align="center"><strong>The provider-agnostic lifecycle and registry at the center of Harapter.</strong></p>
 
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore?style=flat-square&amp;label=npm" alt="npm version"></a>
-  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/dm/%40harapter%2Fcore?style=flat-square" alt="npm downloads"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm downloads"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
@@ -18,7 +18,12 @@
 
 <!-- markdownlint-enable MD033 -->
 
-`@harapter/core` is the provider-agnostic TypeScript API for Harapter. It owns
+This guide describes a module included in the single `harapter` SDK. For
+ordinary application setup, start with the
+[application guide](../../packages/harapter/README.md). The first single-package
+release is pending; the installation commands apply after that release.
+
+`harapter` is the provider-agnostic TypeScript API for Harapter. It owns
 portable contracts and the runtime checks that can be applied without knowing a
 Provider identity.
 
@@ -32,7 +37,7 @@ and an absolute `HARAPTER_WORKSPACE`.
 ```sh
 npm init -y
 npm pkg set type=module
-npm install @harapter/core @harapter/adapter-codex
+npm install harapter
 npm install -D typescript @types/node
 ```
 
@@ -58,11 +63,8 @@ state.
 ```ts
 import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
-import {
-  CODEX_PROVIDER_ID,
-  createCodexProviderFactory,
-} from '@harapter/adapter-codex';
+import { isHarnessError, profileId, type HarnessSession } from 'harapter';
+import { CODEX_PROVIDER_ID, createCodexProviderFactory } from 'harapter/codex';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -139,7 +141,7 @@ void main().catch((error: unknown) => {
 ```
 
 [Complete application, recipes and error handling](../../examples/sdk-application/README.md)
-· [All published packages](https://www.npmjs.com/org/harapter)
+· [Harapter on npm](https://www.npmjs.com/package/harapter)
 
 ## Use this package when
 
@@ -152,14 +154,11 @@ void main().catch((error: unknown) => {
 ## Installation
 
 ```bash
-pnpm add @harapter/core
+pnpm add harapter
 ```
 
-The Provider-free example below also uses the deterministic test package:
-
-```bash
-pnpm add -D @harapter/conformance
-```
+The offline example uses `harapter/testing`, included in the same SDK without
+Vitest.
 
 ## Public entrypoints
 
@@ -221,36 +220,37 @@ remain host or Provider responsibilities.
 The deterministic Fake Provider gives the Core flow executable evidence without
 introducing a Provider dependency:
 
-```ts
-import { HarnessRegistry } from '@harapter/core';
-import {
-  createFakeProfile,
-  createFakeProviderFactory,
-} from '@harapter/conformance';
+<!-- sdk-example: test-with-fake.ts -->
 
+```ts
+import { HarnessRegistry } from 'harapter';
+import { createFakeProfile, createFakeProviderFactory } from 'harapter/testing';
+
+// Replace the application's real Adapter at its composition boundary.
 const registry = new HarnessRegistry();
 registry.register(createFakeProviderFactory());
-
 const client = await registry.connect(createFakeProfile());
-const session = await client.createSession();
-
 try {
-  const run = await session.start({
-    parts: [{ type: 'text', text: 'synthetic input' }],
-  });
-
-  for await (const event of run.events()) {
-    console.log(event.type);
-  }
-
-  const result = await run.result();
-  console.log(result.status);
-} finally {
+  const session = await client.createSession();
   try {
-    await session.close();
+    const run = await session.start({
+      parts: [{ type: 'text', text: 'Fictional test input.' }],
+    });
+    for await (const _event of run.events()) {
+      /* Drain even when the test has no renderer. */
+    }
+    const result = await run.result();
+    if (
+      result.status !== 'completed' ||
+      result.finalMessage !== 'Fictional test input.'
+    )
+      throw new Error('Application test failed.');
+    console.log({ applicationTestPassed: true });
   } finally {
-    await client.close();
+    await session.close();
   }
+} finally {
+  await client.close();
 }
 ```
 
@@ -277,16 +277,16 @@ The complete target contract remains in the
 
 [All packages](../../README.md#packages-on-npm)
 
-| Package                                                                                                | Documentation                                 |
-| ------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
-| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [Guide](../transport-jsonrpc-stdio/README.md) |
-| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [Guide](../transport-jsonl-process/README.md) |
-| [`@harapter/transport-http-sse`](https://www.npmjs.com/package/@harapter/transport-http-sse)           | [Guide](../transport-http-sse/README.md)      |
-| [`@harapter/transport-acp`](https://www.npmjs.com/package/@harapter/transport-acp)                     | [Guide](../transport-acp/README.md)           |
-| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)                         | [Guide](../conformance/README.md)             |
-| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)                     | [Guide](../../providers/codex/README.md)      |
-| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)                         | [Guide](../../providers/dsh/README.md)        |
-| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)                   | [Guide](../../providers/hermes/README.md)     |
-| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw)               | [Guide](../../providers/openclaw/README.md)   |
-| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode)               | [Guide](../../providers/opencode/README.md)   |
-| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)                           | [Guide](../../providers/pi/README.md)         |
+| Package                                                                       | Documentation                                 |
+| ----------------------------------------------------------------------------- | --------------------------------------------- |
+| [`harapter/transports/jsonrpc-stdio`](https://www.npmjs.com/package/harapter) | [Guide](../transport-jsonrpc-stdio/README.md) |
+| [`harapter/transports/jsonl-process`](https://www.npmjs.com/package/harapter) | [Guide](../transport-jsonl-process/README.md) |
+| [`harapter/transports/http-sse`](https://www.npmjs.com/package/harapter)      | [Guide](../transport-http-sse/README.md)      |
+| [`harapter/transports/acp`](https://www.npmjs.com/package/harapter)           | [Guide](../transport-acp/README.md)           |
+| [`harapter/conformance`](https://www.npmjs.com/package/harapter)              | [Guide](../conformance/README.md)             |
+| [`harapter/codex`](https://www.npmjs.com/package/harapter)                    | [Guide](../../providers/codex/README.md)      |
+| [`harapter/dsh`](https://www.npmjs.com/package/harapter)                      | [Guide](../../providers/dsh/README.md)        |
+| [`harapter/hermes`](https://www.npmjs.com/package/harapter)                   | [Guide](../../providers/hermes/README.md)     |
+| [`harapter/openclaw`](https://www.npmjs.com/package/harapter)                 | [Guide](../../providers/openclaw/README.md)   |
+| [`harapter/opencode`](https://www.npmjs.com/package/harapter)                 | [Guide](../../providers/opencode/README.md)   |
+| [`harapter/pi`](https://www.npmjs.com/package/harapter)                       | [Guide](../../providers/pi/README.md)         |

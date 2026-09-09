@@ -19,7 +19,7 @@
 この文書では、Language-neutral
 Contract を TypeScript に近い Pseudocode で表します。最初の SDK の実装言語を限定するものではありません。これは Target
 Design であり、実装に先行する場合があります。現在実装済みの TypeScript API は
-[`@harapter/core` README](../../packages/core/README.md)、Package
+[`harapter` README](../../packages/core/README.md)、Package
 Export、Source、Test によって定義されます。この文書の Signature や Example は、実装済みであることや Provider がサポートすることの証拠ではありません。
 
 ## 2. Registry

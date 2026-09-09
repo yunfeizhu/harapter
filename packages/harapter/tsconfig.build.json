@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "build",
+    "paths": {
+      "@harapter/core": ["../core/dist/index.d.ts"],
+      "@harapter/adapter-codex": ["../../providers/codex/dist/index.d.ts"],
+      "@harapter/adapter-dsh": ["../../providers/dsh/dist/index.d.ts"],
+      "@harapter/adapter-hermes": ["../../providers/hermes/dist/index.d.ts"],
+      "@harapter/adapter-openclaw": [
+        "../../providers/openclaw/dist/index.d.ts"
+      ],
+      "@harapter/adapter-opencode": [
+        "../../providers/opencode/dist/index.d.ts"
+      ],
+      "@harapter/adapter-pi": ["../../providers/pi/dist/index.d.ts"]
+    },
+    "rootDir": "src",
+    "tsBuildInfoFile": "build/tsconfig.build.tsbuildinfo",
+    "emitDeclarationOnly": true,
+    "declarationMap": false,
+    "sourceMap": false
+  },
+  "include": ["src/**/*.ts"]
+}

@@ -1,5 +1,5 @@
 import { PassThrough } from 'node:stream';
-import { JsonRpcStdioTransport } from '@harapter/transport-jsonrpc-stdio';
+import { JsonRpcStdioTransport } from 'harapter/transports/jsonrpc-stdio';
 
 // A deterministic in-memory peer; no Runtime or process is involved.
 const readable = new PassThrough();

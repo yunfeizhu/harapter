@@ -8,7 +8,7 @@ import {
   type RunRef,
   type RunResult,
   type SessionRef,
-} from '@harapter/core';
+} from 'harapter';
 
 /** Sensitive request data goes only to the host's explicitly selected UI. */
 export interface HostInteractionContext {
