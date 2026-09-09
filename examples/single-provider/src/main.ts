@@ -2,11 +2,8 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import {
-  CODEX_PROVIDER_ID,
-  createCodexProviderFactory,
-} from '@harapter/adapter-codex';
-import { profileId, type RunResult } from '@harapter/core';
+import { CODEX_PROVIDER_ID, createCodexProviderFactory } from 'harapter/codex';
+import { profileId, type RunResult } from 'harapter';
 import {
   runSingleProviderExample,
   type SingleProviderExampleOptions,

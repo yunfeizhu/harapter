@@ -54,6 +54,11 @@ Library は ACP、JSONL、JSON-RPC、HTTP、SSE、Process
 Hosting を再利用できますが、Transport は通信だけを担当し、Provider
 Semantics を決定しません。
 
+[`harapter` アプリケーション入口](../../packages/harapter/README.ja.md)
+は Core と内部プロトコルマッピングを構成します。アプリは一つの入口パッケージをインストールして Runtime 接続を設定し、選択した実装だけを読み込みます。Runtime を暗黙にインストールしません。公開するのは
+`harapter`
+だけで、Core、Adapter、Transport、Conformance は非公開のソースモジュールです。この境界は Provider 非依存 Core の外側にあり、Session 所有権や能力の意味を変更しません。
+
 ## 3. Core
 
 Core は特定の Provider に依存しない要素だけを含みます。
@@ -312,7 +317,7 @@ Boundary を Host の代わりに決定しません。
 
 Harness を追加するには、次の作業が必要です。
 
-1. 独立した Provider Package を作成し、Stable Provider ID を登録する
+1. 独立した Provider Module を作成し、Stable Provider ID を登録する
 2. 対象 Harness の公式 Machine Interface を選択する
 3. Connection、Session、Run、Event、Error の Mapping を実装する
 4. 実際の Capability を検出して宣言する

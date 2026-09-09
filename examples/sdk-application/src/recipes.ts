@@ -1,12 +1,5 @@
-import {
-  HarnessError,
-  type HarnessClient,
-  type SessionRef,
-} from '@harapter/core';
-import {
-  CODEX_SESSION_EXTENSION,
-  type CodexSessions,
-} from '@harapter/adapter-codex';
+import { HarnessError, type HarnessClient, type SessionRef } from 'harapter';
+import { CODEX_SESSION_EXTENSION, type CodexSessions } from 'harapter/codex';
 import { runTask, runSessionTask, type TaskOptions } from './service.js';
 
 /** A saved reference is loaded only for its authenticated owner and original Profile. */

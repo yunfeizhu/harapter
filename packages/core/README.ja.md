@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
-<h1 align="center"><code>@harapter/core</code></h1>
+<h1 align="center"><code>harapter</code></h1>
 
 <p align="center"><strong>Harapter の Provider 非依存ライフサイクルとレジストリ。</strong></p>
 
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore?style=flat-square&amp;label=npm" alt="npm バージョン"></a>
-  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/dm/%40harapter%2Fcore?style=flat-square" alt="npm ダウンロード数"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm バージョン"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm ダウンロード数"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI ステータス"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 以上">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 ライセンス"></a>
@@ -18,7 +18,10 @@
 
 <!-- markdownlint-enable MD033 -->
 
-`@harapter/core` は複数の Agent Harness を同じ TypeScript
+このガイドは単一の `harapter`
+SDK に含まれるモジュールを説明します。通常のアプリケーション接続は[アプリケーションガイド](../../packages/harapter/README.ja.md)から始めてください。単一パッケージの初回公開は未完了で、以下のインストール手順は公開後のものです。
+
+`harapter` は複数の Agent Harness を同じ TypeScript
 API で扱うための中心パッケージです。Client、Session、Run、イベント、終端結果、Capability、Error、Interaction、Provider 拡張を定義しますが、Provider
 SDK を import せず、名前から機能を推測しません。
 
@@ -30,7 +33,7 @@ Core をアプリ内の実際の Adapter に接続します。以下の完全な
 ```sh
 npm init -y
 npm pkg set type=module
-npm install @harapter/core @harapter/adapter-codex
+npm install harapter
 npm install -D typescript @types/node
 ```
 
@@ -52,11 +55,8 @@ npm install -D typescript @types/node
 ```ts
 import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
-import {
-  CODEX_PROVIDER_ID,
-  createCodexProviderFactory,
-} from '@harapter/adapter-codex';
+import { isHarnessError, profileId, type HarnessSession } from 'harapter';
+import { CODEX_PROVIDER_ID, createCodexProviderFactory } from 'harapter/codex';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -133,7 +133,7 @@ void main().catch((error: unknown) => {
 ```
 
 [完全なアプリ、レシピ、エラー処理](../../examples/sdk-application/README.ja.md)
-· [公開パッケージ一覧](https://www.npmjs.com/org/harapter)
+· [Harapter npm](https://www.npmjs.com/package/harapter)
 
 ## このパッケージが適するケース
 
@@ -146,52 +146,49 @@ void main().catch((error: unknown) => {
 npm の既定の `latest` チャネルからインストールします。
 
 ```bash
-pnpm add @harapter/core
+pnpm add harapter
 ```
 
-次の Provider-free example では test package も追加します。
-
-```bash
-pnpm add -D @harapter/conformance
-```
+オフライン例は同じ SDK の `harapter/testing` を使い、Vitest は不要です。
 
 Node.js 24 以上が必要です。Core は Harness Runtime の導入や認証を行いません。
 
 ## 30 秒クイックスタート
 
-次の例は `@harapter/conformance` の Fake
+次の例は `harapter/testing` の Fake
 Provider を使うため、認証情報も実 Runtime も不要です。
 
-```ts
-import { HarnessRegistry } from '@harapter/core';
-import {
-  createFakeProfile,
-  createFakeProviderFactory,
-} from '@harapter/conformance';
+<!-- sdk-example: test-with-fake.ts -->
 
+```ts
+import { HarnessRegistry } from 'harapter';
+import { createFakeProfile, createFakeProviderFactory } from 'harapter/testing';
+
+// Replace the application's real Adapter at its composition boundary.
 const registry = new HarnessRegistry();
 registry.register(createFakeProviderFactory());
-
 const client = await registry.connect(createFakeProfile());
-const session = await client.createSession();
-
 try {
-  const run = await session.start({
-    parts: [{ type: 'text', text: 'synthetic input' }],
-  });
-
-  for await (const event of run.events()) {
-    console.log(event.type);
-  }
-
-  const result = await run.result();
-  console.log(result.status);
-} finally {
+  const session = await client.createSession();
   try {
-    await session.close();
+    const run = await session.start({
+      parts: [{ type: 'text', text: 'Fictional test input.' }],
+    });
+    for await (const _event of run.events()) {
+      /* Drain even when the test has no renderer. */
+    }
+    const result = await run.result();
+    if (
+      result.status !== 'completed' ||
+      result.finalMessage !== 'Fictional test input.'
+    )
+      throw new Error('Application test failed.');
+    console.log({ applicationTestPassed: true });
   } finally {
-    await client.close();
+    await session.close();
   }
+} finally {
+  await client.close();
 }
 ```
 
@@ -252,16 +249,16 @@ Capability が許す場合だけ `session.ref()`
 
 [すべてのパッケージ](../../README.ja.md#npm-パッケージ一覧)
 
-| パッケージ                                                                                             | ドキュメント                                      |
-| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
-| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [ガイド](../transport-jsonrpc-stdio/README.ja.md) |
-| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [ガイド](../transport-jsonl-process/README.ja.md) |
-| [`@harapter/transport-http-sse`](https://www.npmjs.com/package/@harapter/transport-http-sse)           | [ガイド](../transport-http-sse/README.ja.md)      |
-| [`@harapter/transport-acp`](https://www.npmjs.com/package/@harapter/transport-acp)                     | [ガイド](../transport-acp/README.ja.md)           |
-| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)                         | [ガイド](../conformance/README.ja.md)             |
-| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)                     | [ガイド](../../providers/codex/README.ja.md)      |
-| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)                         | [ガイド](../../providers/dsh/README.ja.md)        |
-| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)                   | [ガイド](../../providers/hermes/README.ja.md)     |
-| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw)               | [ガイド](../../providers/openclaw/README.ja.md)   |
-| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode)               | [ガイド](../../providers/opencode/README.ja.md)   |
-| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)                           | [ガイド](../../providers/pi/README.ja.md)         |
+| パッケージ                                                                    | ドキュメント                                      |
+| ----------------------------------------------------------------------------- | ------------------------------------------------- |
+| [`harapter/transports/jsonrpc-stdio`](https://www.npmjs.com/package/harapter) | [ガイド](../transport-jsonrpc-stdio/README.ja.md) |
+| [`harapter/transports/jsonl-process`](https://www.npmjs.com/package/harapter) | [ガイド](../transport-jsonl-process/README.ja.md) |
+| [`harapter/transports/http-sse`](https://www.npmjs.com/package/harapter)      | [ガイド](../transport-http-sse/README.ja.md)      |
+| [`harapter/transports/acp`](https://www.npmjs.com/package/harapter)           | [ガイド](../transport-acp/README.ja.md)           |
+| [`harapter/conformance`](https://www.npmjs.com/package/harapter)              | [ガイド](../conformance/README.ja.md)             |
+| [`harapter/codex`](https://www.npmjs.com/package/harapter)                    | [ガイド](../../providers/codex/README.ja.md)      |
+| [`harapter/dsh`](https://www.npmjs.com/package/harapter)                      | [ガイド](../../providers/dsh/README.ja.md)        |
+| [`harapter/hermes`](https://www.npmjs.com/package/harapter)                   | [ガイド](../../providers/hermes/README.ja.md)     |
+| [`harapter/openclaw`](https://www.npmjs.com/package/harapter)                 | [ガイド](../../providers/openclaw/README.ja.md)   |
+| [`harapter/opencode`](https://www.npmjs.com/package/harapter)                 | [ガイド](../../providers/opencode/README.ja.md)   |
+| [`harapter/pi`](https://www.npmjs.com/package/harapter)                       | [ガイド](../../providers/pi/README.ja.md)         |

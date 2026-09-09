@@ -14,6 +14,51 @@ const hasExecutableSource = sourcePatterns.some((pattern) =>
 export default defineConfig({
   resolve: {
     alias: {
+      'harapter/transports/jsonrpc-stdio': fileURLToPath(
+        new URL(
+          './packages/transport-jsonrpc-stdio/src/index.ts',
+          import.meta.url,
+        ),
+      ),
+      'harapter/transports/jsonl-process': fileURLToPath(
+        new URL(
+          './packages/transport-jsonl-process/src/index.ts',
+          import.meta.url,
+        ),
+      ),
+      'harapter/transports/http-sse': fileURLToPath(
+        new URL('./packages/transport-http-sse/src/index.ts', import.meta.url),
+      ),
+      'harapter/transports/acp': fileURLToPath(
+        new URL('./packages/transport-acp/src/index.ts', import.meta.url),
+      ),
+      'harapter/conformance': fileURLToPath(
+        new URL('./packages/conformance/src/index.ts', import.meta.url),
+      ),
+      'harapter/codex': fileURLToPath(
+        new URL('./providers/codex/src/index.ts', import.meta.url),
+      ),
+      'harapter/dsh': fileURLToPath(
+        new URL('./providers/dsh/src/index.ts', import.meta.url),
+      ),
+      'harapter/hermes': fileURLToPath(
+        new URL('./providers/hermes/src/index.ts', import.meta.url),
+      ),
+      'harapter/openclaw': fileURLToPath(
+        new URL('./providers/openclaw/src/index.ts', import.meta.url),
+      ),
+      'harapter/opencode': fileURLToPath(
+        new URL('./providers/opencode/src/index.ts', import.meta.url),
+      ),
+      'harapter/pi': fileURLToPath(
+        new URL('./providers/pi/src/index.ts', import.meta.url),
+      ),
+      'harapter/testing': fileURLToPath(
+        new URL('./packages/conformance/src/fake-provider.ts', import.meta.url),
+      ),
+      harapter: fileURLToPath(
+        new URL('./packages/harapter/src/index.ts', import.meta.url),
+      ),
       '@harapter/conformance/fake': fileURLToPath(
         new URL('./packages/conformance/src/fake-provider.ts', import.meta.url),
       ),

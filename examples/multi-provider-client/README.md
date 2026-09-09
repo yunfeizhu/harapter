@@ -14,8 +14,8 @@ continue → cancel → cleanup** flow, use the
 [Session workflow guide](session-workflow.md). It uses the public Harapter 0.2.0
 APIs and keeps the original concurrent, single-task entrypoint intact.
 
-[`src/index.ts`](src/index.ts) imports only `@harapter/core`. It does not branch
-on Provider identity. [`src/codex-opencode.ts`](src/codex-opencode.ts) is an
+[`src/index.ts`](src/index.ts) imports only `harapter`. It does not branch on
+Provider identity. [`src/codex-opencode.ts`](src/codex-opencode.ts) is an
 explicit composition boundary for a Codex process and an externally managed
 OpenCode HTTP endpoint. Constructing those setups does not connect, discover,
 install, authenticate, or invoke either runtime.

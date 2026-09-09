@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
-<h1 align="center"><code>@harapter/transport-http-sse</code></h1>
+<h1 align="center"><code>harapter/transports/http-sse</code></h1>
 
 <p align="center"><strong>为 Provider Adapter 提供有界 HTTP 与按需读取的 SSE。</strong></p>
 
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/transport-http-sse"><img src="https://img.shields.io/npm/v/%40harapter%2Ftransport-http-sse?style=flat-square&amp;label=npm" alt="npm 版本"></a>
-  <a href="https://www.npmjs.com/package/@harapter/transport-http-sse"><img src="https://img.shields.io/npm/dm/%40harapter%2Ftransport-http-sse?style=flat-square" alt="npm 下载量"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm 版本"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm 下载量"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI 状态"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 或更高版本">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 许可证"></a>
@@ -18,18 +18,21 @@
 
 <!-- markdownlint-enable MD033 -->
 
+本指南描述单个 `harapter`
+SDK 内的模块。普通应用接入请先看[应用指南](../../packages/harapter/README.zh-CN.md)。单包入口的首次发布尚待完成，下面的安装命令适用于该版本发布后。
+
 这个传输包适合“HTTP 提交操作、SSE 推送进度”的 Harness 接口。它负责安全解析 Endpoint、限制请求和响应大小、增量解析 SSE、限制并发与清理资源，但不解释任何 Provider
 Route、Payload、Session 或 Run 语义。
 
 ## 应用接入还是 Adapter 开发？
 
-普通应用通常安装 `@harapter/core` 和 Provider
-Adapter；实现或测试机器接口时才直接使用本包。下面是仅使用公开导入的完整离线案例，不启动真实 Runtime，也不构成 Provider 兼容性证据。
+普通应用通过 `harapter` 的 `createHarapter`
+接入。实现或测试机器接口时才使用本 Transport 子路径。下面是仅使用公开导入的完整离线案例，不启动真实 Runtime，也不构成 Provider 兼容性证据。
 
 ```sh
 npm init -y
 npm pkg set type=module
-npm install @harapter/transport-http-sse
+npm install harapter
 npm install -D typescript @types/node
 ```
 
@@ -39,7 +42,7 @@ npm install -D typescript @types/node
 <!-- sdk-example: transport-http-sse.ts -->
 
 ```ts
-import { HttpSseTransport } from '@harapter/transport-http-sse';
+import { HttpSseTransport } from 'harapter/transports/http-sse';
 
 // Inject Fetch for an offline application test; no HTTP request leaves this process.
 const transport = new HttpSseTransport({
@@ -78,18 +81,18 @@ node app.ts
 真实集成时，将合成的流／Fetch 替换为下文所述的宿主进程或端点。启动协议、payload 校验、认证、脱敏和最终状态仍由使用它的 Adapter 负责。传输写入或 EOF 不等于 Run 成功或原生取消。
 
 [完整应用、场景案例和错误处理](../../examples/sdk-application/README.zh-CN.md) ·
-[全部公开包](https://www.npmjs.com/org/harapter)
+[全部公开包](https://www.npmjs.com/package/harapter)
 
 ## 安装
 
 ```bash
-pnpm add @harapter/transport-http-sse
+pnpm add harapter
 ```
 
 ## 组合真实传输
 
 ```ts
-import { HttpSseTransport } from '@harapter/transport-http-sse';
+import { HttpSseTransport } from 'harapter/transports/http-sse';
 
 const transport = new HttpSseTransport({
   baseUrl: 'http://127.0.0.1:4096/',
@@ -141,10 +144,10 @@ Data 和 Content-Type 都是不可信数据，Adapter 必须校验和脱敏。
 
 [全部包](../../README.zh-CN.md#npm-包导航)
 
-| 包                                                                                                     | 文档                                                   |
-| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
-| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                                       | [使用指南](../core/README.zh-CN.md)                    |
-| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [使用指南](../transport-jsonrpc-stdio/README.zh-CN.md) |
-| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [使用指南](../transport-jsonl-process/README.zh-CN.md) |
-| [`@harapter/transport-acp`](https://www.npmjs.com/package/@harapter/transport-acp)                     | [使用指南](../transport-acp/README.zh-CN.md)           |
-| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)                         | [使用指南](../conformance/README.zh-CN.md)             |
+| 包                                                                            | 文档                                                   |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------ |
+| [`harapter`](https://www.npmjs.com/package/harapter)                          | [使用指南](../core/README.zh-CN.md)                    |
+| [`harapter/transports/jsonrpc-stdio`](https://www.npmjs.com/package/harapter) | [使用指南](../transport-jsonrpc-stdio/README.zh-CN.md) |
+| [`harapter/transports/jsonl-process`](https://www.npmjs.com/package/harapter) | [使用指南](../transport-jsonl-process/README.zh-CN.md) |
+| [`harapter/transports/acp`](https://www.npmjs.com/package/harapter)           | [使用指南](../transport-acp/README.zh-CN.md)           |
+| [`harapter/conformance`](https://www.npmjs.com/package/harapter)              | [使用指南](../conformance/README.zh-CN.md)             |

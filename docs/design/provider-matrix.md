@@ -359,13 +359,13 @@ Provider still owns:
 - Provider Commands, Extensions, and Errors; and
 - version compatibility and test Fixtures.
 
-`transport-acp` composes `@harapter/transport-jsonrpc-stdio` and owns only the
+`transport-acp` composes `harapter/transports/jsonrpc-stdio` and owns only the
 ACP Schema, methods, protocol negotiation, and Capability semantics. JSON-RPC
 framing, request correlation, backpressure, queue bounds, wait timeouts, and
 connection cleanup remain with the existing Transport. The calling Provider
 Connection owns process policy.
 
-`@harapter/transport-jsonl-process` owns strict JSONL send/receive and
+`harapter/transports/jsonl-process` owns strict JSONL send/receive and
 connection boundaries for non-JSON-RPC process protocols. The Pi Agent Adapter
 implements Provider RPC correlation, Sessions, Retry, Interactions, Cancel, and
 terminality above it without adding Pi names or Event semantics to the

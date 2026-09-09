@@ -1,10 +1,10 @@
 import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
+import { isHarnessError, profileId, type HarnessSession } from 'harapter';
 import {
   OPENCLAW_PROVIDER_ID,
   createOpenClawProviderFactory,
-} from '@harapter/adapter-openclaw';
+} from 'harapter/openclaw';
 
 function required(name: string): string {
   const value = process.env[name];

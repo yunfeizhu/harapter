@@ -54,6 +54,14 @@ Shared transport libraries can reuse ACP, JSONL, JSON-RPC, HTTP, SSE, or process
 hosting, but a transport handles communication only and does not decide Provider
 semantics.
 
+The [`harapter` application entry](../../packages/harapter/README.md) composes
+Core with bundled first-party protocol mappings. An application installs one
+entry package and configures its own Runtime connections. Implementation modules
+load only when selected; Runtime distributions are never installed implicitly.
+Only `harapter` is published; Core, Adapters, transports and conformance are
+private source modules. This packaging boundary sits outside provider-agnostic
+Core and does not change Session ownership or capability semantics.
+
 ## 3. Core
 
 Core contains only Provider-agnostic behavior:
@@ -316,7 +324,7 @@ product-level boundaries for the host.
 
 Adding a Harness requires:
 
-1. create an independent Provider package and register a stable Provider ID;
+1. create an independent Provider module and register a stable Provider ID;
 2. select an official machine interface of the target Harness;
 3. implement connection, Session, Run, Event, and Error mappings;
 4. probe and declare observed capabilities;

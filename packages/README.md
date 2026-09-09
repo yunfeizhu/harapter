@@ -1,10 +1,14 @@
 # Packages
 
-Portable Core, canonical schemas, transports, and shared verification live here.
-A package must not import provider-specific SDK types unless its explicit
-purpose is a provider-neutral transport.
+The application entry, portable Core, canonical schemas, transports, and shared
+verification live here. The `harapter` entry composes Provider implementations;
+Core, schemas, transports and conformance stay Provider-agnostic.
 
-Implemented packages:
+Public entry and private implementation modules:
+
+- [`harapter`](./harapter/README.md) exposes one application API, bundles the
+  maintained protocol implementations and loads only the selected ones. Runtime
+  preparation remains host-owned; its first npm release is pending.
 
 - [`core`](./core/README.md) owns the provider-agnostic TypeScript contracts,
   dynamic Registry, capability requirements, ownership checks, errors, and
@@ -29,7 +33,7 @@ Implemented packages:
 Additional packages remain unimplemented. Their target boundaries are defined in
 the [implementation guide](../docs/design/implementation-guide.md).
 
-Public packages follow the synchronized pre-1.0 release train declared in
-[`scripts/public-packages.json`](../scripts/public-packages.json) and publish to
-the default npm `latest` dist-tag. The Workspace root and examples remain
-private.
+Only `harapter` is listed in
+[`scripts/public-packages.json`](../scripts/public-packages.json) and published
+to npm `latest`. Other packages are private Workspace modules bundled into that
+SDK. Their build versions do not form separate release trains.

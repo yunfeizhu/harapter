@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
-<h1 align="center"><code>@harapter/transport-acp</code></h1>
+<h1 align="center"><code>harapter/transports/acp</code></h1>
 
 <p align="center"><strong>A strict, Provider-neutral client for the stable Agent Client Protocol v1.</strong></p>
 
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/transport-acp"><img src="https://img.shields.io/npm/v/%40harapter%2Ftransport-acp?style=flat-square&amp;label=npm" alt="npm version"></a>
-  <a href="https://www.npmjs.com/package/@harapter/transport-acp"><img src="https://img.shields.io/npm/dm/%40harapter%2Ftransport-acp?style=flat-square" alt="npm downloads"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm downloads"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
@@ -18,9 +18,14 @@
 
 <!-- markdownlint-enable MD033 -->
 
-`@harapter/transport-acp` is Harapter's Provider-neutral client for the stable
+This guide describes a module included in the single `harapter` SDK. For
+ordinary application setup, start with the
+[application guide](../../packages/harapter/README.md). The first single-package
+release is pending; the installation commands apply after that release.
+
+`harapter/transports/acp` is Harapter's Provider-neutral client for the stable
 Agent Client Protocol v1 wire contract. It composes
-[`@harapter/transport-jsonrpc-stdio`](../transport-jsonrpc-stdio/README.md) and
+[`harapter/transports/jsonrpc-stdio`](../transport-jsonrpc-stdio/README.md) and
 adds ACP negotiation, runtime validation, capability gates, bidirectional
 permission handling, typed Session updates, and bounded unknown-message
 observation.
@@ -32,16 +37,15 @@ ownership, compatibility, and portable event and error mapping.
 
 ## Application or Adapter development?
 
-Most applications should install `@harapter/core` and a Provider Adapter
-instead. Install this package directly when implementing or testing a
-machine-interface integration. The following complete offline example uses only
-published imports. It does not start a real Runtime and is not Provider
-compatibility evidence.
+Most applications use `createHarapter` from `harapter`. Use this transport
+subpath when implementing or testing a machine-interface integration. The
+following complete offline example uses only published imports. It does not
+start a real Runtime and is not Provider compatibility evidence.
 
 ```sh
 npm init -y
 npm pkg set type=module
-npm install @harapter/transport-acp
+npm install harapter
 npm install -D typescript @types/node
 ```
 
@@ -52,7 +56,7 @@ above; Node.js 24 can execute this TypeScript directly.
 
 ```ts
 import { PassThrough } from 'node:stream';
-import { AcpClient } from '@harapter/transport-acp';
+import { AcpClient } from 'harapter/transports/acp';
 
 const readable = new PassThrough();
 const writable = new PassThrough();
@@ -90,7 +94,7 @@ startup, payload validation, authentication, redaction and terminal semantics. A
 transport write or EOF does not establish Run success or native cancellation.
 
 [Complete application, recipes and error handling](../../examples/sdk-application/README.md)
-· [All published packages](https://www.npmjs.com/org/harapter)
+· [Harapter on npm](https://www.npmjs.com/package/harapter)
 
 ## Use this package when
 
@@ -103,7 +107,7 @@ transport write or EOF does not establish Run success or native cancellation.
 ## Installation
 
 ```bash
-pnpm add @harapter/transport-acp
+pnpm add harapter
 ```
 
 ## Stable profile
@@ -218,7 +222,7 @@ portable errors without Adapter-owned validation and redaction.
 ## Compose a real transport
 
 ```ts
-import { AcpClient } from '@harapter/transport-acp';
+import { AcpClient } from 'harapter/transports/acp';
 
 const client = new AcpClient({
   readable: controlledProcess.stdout,
@@ -275,10 +279,10 @@ this package alone.
 
 [All packages](../../README.md#packages-on-npm)
 
-| Package                                                                                                | Documentation                                 |
-| ------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
-| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                                       | [Guide](../core/README.md)                    |
-| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [Guide](../transport-jsonrpc-stdio/README.md) |
-| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [Guide](../transport-jsonl-process/README.md) |
-| [`@harapter/transport-http-sse`](https://www.npmjs.com/package/@harapter/transport-http-sse)           | [Guide](../transport-http-sse/README.md)      |
-| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)                         | [Guide](../conformance/README.md)             |
+| Package                                                                       | Documentation                                 |
+| ----------------------------------------------------------------------------- | --------------------------------------------- |
+| [`harapter`](https://www.npmjs.com/package/harapter)                          | [Guide](../core/README.md)                    |
+| [`harapter/transports/jsonrpc-stdio`](https://www.npmjs.com/package/harapter) | [Guide](../transport-jsonrpc-stdio/README.md) |
+| [`harapter/transports/jsonl-process`](https://www.npmjs.com/package/harapter) | [Guide](../transport-jsonl-process/README.md) |
+| [`harapter/transports/http-sse`](https://www.npmjs.com/package/harapter)      | [Guide](../transport-http-sse/README.md)      |
+| [`harapter/conformance`](https://www.npmjs.com/package/harapter)              | [Guide](../conformance/README.md)             |

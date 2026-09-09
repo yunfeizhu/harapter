@@ -1,10 +1,7 @@
 import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
-import {
-  CODEX_PROVIDER_ID,
-  createCodexProviderFactory,
-} from '@harapter/adapter-codex';
+import { isHarnessError, profileId, type HarnessSession } from 'harapter';
+import { CODEX_PROVIDER_ID, createCodexProviderFactory } from 'harapter/codex';
 
 function required(name: string): string {
   const value = process.env[name];

@@ -21,8 +21,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/v/%40harapter%2Fcore?style=flat-square&amp;label=npm" alt="npm 版本"></a>
-  <a href="https://www.npmjs.com/package/@harapter/core"><img src="https://img.shields.io/npm/dm/%40harapter%2Fcore?style=flat-square" alt="npm 下载量"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm 版本"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm 下载量"></a>
   <a href="https://github.com/yunfeizhu/harapter/releases"><img src="https://img.shields.io/github/v/release/yunfeizhu/harapter?display_name=tag&amp;include_prereleases&amp;sort=semver&amp;style=flat-square&amp;label=release" alt="GitHub Release"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI 状态"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 或更高版本">
@@ -40,126 +40,106 @@ Loop。每个 Runtime 仍由宿主选择、安装、认证并实施安全策略�
 
 ## npm 包导航
 
-| 包                                                                                                     | 文档                                                           |
-| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
-| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                                       | [使用指南](./packages/core/README.zh-CN.md)                    |
-| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [使用指南](./packages/transport-jsonrpc-stdio/README.zh-CN.md) |
-| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [使用指南](./packages/transport-jsonl-process/README.zh-CN.md) |
-| [`@harapter/transport-http-sse`](https://www.npmjs.com/package/@harapter/transport-http-sse)           | [使用指南](./packages/transport-http-sse/README.zh-CN.md)      |
-| [`@harapter/transport-acp`](https://www.npmjs.com/package/@harapter/transport-acp)                     | [使用指南](./packages/transport-acp/README.zh-CN.md)           |
-| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)                         | [使用指南](./packages/conformance/README.zh-CN.md)             |
-| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)                     | [使用指南](./providers/codex/README.zh-CN.md)                  |
-| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)                         | [使用指南](./providers/dsh/README.zh-CN.md)                    |
-| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)                   | [使用指南](./providers/hermes/README.zh-CN.md)                 |
-| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw)               | [使用指南](./providers/openclaw/README.zh-CN.md)               |
-| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode)               | [使用指南](./providers/opencode/README.zh-CN.md)               |
-| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)                           | [使用指南](./providers/pi/README.zh-CN.md)                     |
+只安装
+[`harapter`](https://www.npmjs.com/package/harapter)。下表是同一个 SDK 的模块，不是独立 npm 包。单包入口的首次发布尚待完成。
+
+| API                                 | 使用指南                                                       |
+| ----------------------------------- | -------------------------------------------------------------- |
+| `harapter`                          | [使用指南](./packages/harapter/README.zh-CN.md)                |
+| `harapter/transports/jsonrpc-stdio` | [使用指南](./packages/transport-jsonrpc-stdio/README.zh-CN.md) |
+| `harapter/transports/jsonl-process` | [使用指南](./packages/transport-jsonl-process/README.zh-CN.md) |
+| `harapter/transports/http-sse`      | [使用指南](./packages/transport-http-sse/README.zh-CN.md)      |
+| `harapter/transports/acp`           | [使用指南](./packages/transport-acp/README.zh-CN.md)           |
+| `harapter/conformance`              | [使用指南](./packages/conformance/README.zh-CN.md)             |
+| `harapter/codex`                    | [使用指南](./providers/codex/README.zh-CN.md)                  |
+| `harapter/dsh`                      | [使用指南](./providers/dsh/README.zh-CN.md)                    |
+| `harapter/hermes`                   | [使用指南](./providers/hermes/README.zh-CN.md)                 |
+| `harapter/openclaw`                 | [使用指南](./providers/openclaw/README.zh-CN.md)               |
+| `harapter/opencode`                 | [使用指南](./providers/opencode/README.zh-CN.md)               |
+| `harapter/pi`                       | [使用指南](./providers/pi/README.zh-CN.md)                     |
 
 ## 快速上手
 
-使用 Node.js
-24 或更新版本。从你自己的项目开始，普通应用只需安装 Core 和选定的 Adapter；transport 与 conformance 主要用于 Adapter 开发和测试。接入不需要克隆 Harapter 仓库。
+在自己的 Node.js 24+ 应用中使用默认入口
+`harapter`，配置 Runtime 连接后复用同一段任务代码。该入口的首次 npm 发布尚未完成，下面的命令用于首次发布后；Core、Adapter、Transport 和 Conformance 仅作为内部模块维护。
 
-### 1. 在自己的项目中安装 SDK
+### 1. 只安装一个 Harapter 包
 
 ```sh
 mkdir my-harapter-app
 cd my-harapter-app
 npm init -y
 npm pkg set type=module
-npm install @harapter/core @harapter/adapter-codex
+npm install harapter
 npm install -D typescript @types/node
 ```
 
-| Runtime          | 已发布 Adapter                                                       | Connection 所有者         |
-| ---------------- | -------------------------------------------------------------------- | ------------------------- |
-| Codex            | [`@harapter/adapter-codex`](./providers/codex/README.zh-CN.md)       | Adapter 管理的 Process    |
-| OpenCode         | [`@harapter/adapter-opencode`](./providers/opencode/README.zh-CN.md) | 宿主/外部 HTTP Service    |
-| DeepSeek Harness | [`@harapter/adapter-dsh`](./providers/dsh/README.zh-CN.md)           | Adapter 管理的 Process    |
-| Hermes Agent     | [`@harapter/adapter-hermes`](./providers/hermes/README.zh-CN.md)     | 宿主/外部 HTTP Service    |
-| OpenClaw         | [`@harapter/adapter-openclaw`](./providers/openclaw/README.zh-CN.md) | Adapter 管理的 ACP Bridge |
-| Pi Agent         | [`@harapter/adapter-pi`](./providers/pi/README.zh-CN.md)             | Adapter 管理的 Process    |
+Harapter 内部包含协议映射，按选择加载实现，不会安装 DSH、Pi、Codex 等 Runtime。应用只需准备自己使用的 Runtime。单个 Tarball 包含全部受维护的映射代码，选择较少 Harness 不会缩小下载包。高级组装从同一个 SDK 的
+`harapter/dsh` 等子路径导入。
 
-### 2. 准备并认证 Runtime
+### 2. 配置需要使用的 Runtime
 
-本例使用 Codex，请按[官方说明](https://developers.openai.com/codex/cli/)安装，先运行一次
-`codex`
-完成登录。模型认证由 Runtime 管理，真实调用可能消耗 token。Harapter 调用其机器接口，不负责安装或认证。请创建空测试工作区，并保留默认只读策略。
+按照 [DSH 指南](./providers/dsh/README.zh-CN.md) 准备官方 CLI、模型凭据、
+`sdk-minimal` Profile 和禁用工具的 Patch。设置 `HARAPTER_HARNESS=dsh`、
+`HARAPTER_WORKSPACE`、`HARAPTER_DSH_COMMAND`、`HARAPTER_DSH_PATCH`、
+`HARAPTER_DSH_PROVIDER` 和 `HARAPTER_DSH_MODEL`。
 
-### 3. 运行完整的 SDK 调用
+使用 [OpenCode](./providers/opencode/README.zh-CN.md)
+时，准备已鉴权、禁用工具的服务，设置
+`HARAPTER_HARNESS=opencode`、`HARAPTER_WORKSPACE`（服务端绝对目录）、
+`HARAPTER_OPENCODE_URL`、`OPENCODE_SERVER_PASSWORD`，以及可选的
+`OPENCODE_SERVER_USERNAME`（默认
+`opencode`）。只需要填写选中 Profile 的环境配置。请使用空的测试 Workspace，模型调用可能产生费用。
 
-将下面的完整代码保存为 `app.ts`。它只导入上面安装的 npm 包；Node.js
-24 可以直接执行这份 TypeScript。
+### 3. 用同一段应用代码运行任务
 
-<!-- sdk-example: quick-codex.ts -->
+保存为 `app.ts`。两个连接配置都调用同一个 `runTask`，业务代码只导入 `harapter`。
+
+<!-- sdk-example: quick-unified.ts -->
 
 ```ts
-import { isAbsolute } from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
+import { isAbsolute, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
-  CODEX_PROVIDER_ID,
-  createCodexProviderFactory,
-} from '@harapter/adapter-codex';
+  createHarapter,
+  providerId,
+  profileId,
+  HarnessError,
+  isHarnessError,
+  type HarnessEvent,
+  type HarnessProfile,
+  type HarnessRegistry,
+  type HarnessSession,
+  type CreateSessionInput,
+} from 'harapter';
 
-function required(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Set ${name} in the application environment.`);
-  return value;
-}
-
-async function main() {
-  const workspace = required('HARAPTER_WORKSPACE');
-  if (!isAbsolute(workspace))
-    throw new Error('Choose an absolute Workspace path.');
-  const factory = createCodexProviderFactory();
-  const client = await factory.connect({
-    profileId: profileId('my-codex'),
-    providerId: CODEX_PROVIDER_ID,
-    displayName: 'Application codex',
-    connection: {
-      kind: 'process',
-      command: required('HARAPTER_CODEX_COMMAND'),
-      args: ['app-server', '--stdio'],
-      cwd: workspace,
-      ownership: 'adapter',
-    },
-  });
+/** The same business function runs on every configured harness. */
+export async function runTask(
+  harapter: HarnessRegistry,
+  profile: HarnessProfile,
+  text: string,
+  onEvent: (event: HarnessEvent) => void,
+  sessionOptions: CreateSessionInput = {},
+) {
+  const client = await harapter.connect(profile);
   let session: HarnessSession | undefined;
   try {
-    session = await client.createSession({
-      workspace: { uri: pathToFileURL(workspace).href },
-      providerOptions: {
-        approvalPolicy: 'never',
-        sandbox: 'read-only',
-        ephemeral: true,
-      },
-    });
+    session = await client.createSession(sessionOptions);
     const run = await session.start(
-      {
-        parts: [
-          {
-            type: 'text',
-            text: 'Reply with exactly HARAPTER_OK. Do not use tools or inspect files.',
-          },
-        ],
-      },
+      { parts: [{ type: 'text', text }] },
       { timeoutMs: 60_000 },
     );
     for await (const event of run.events()) {
+      onEvent(event);
       if (event.type === 'interaction.requested')
-        throw new Error('Configure an explicit host interaction handler.');
-      console.log({ type: event.type, sequence: event.sequence });
+        throw new HarnessError(
+          'unsupported_capability',
+          'This text example requires a non-interactive Runtime configuration.',
+          { retryable: false },
+        );
     }
-    const result = await run.result();
-    // Use result.finalMessage in your authorized application UI or response.
-    console.log({
-      status: result.status,
-      hasText: result.finalMessage !== undefined,
-    });
-    if (result.status !== 'completed') process.exitCode = 1;
+    return { result: await run.result(), sessionRef: session.ref() };
   } finally {
-    // Client shutdown also releases an active Run if application event handling fails.
     try {
       await client.close();
     } finally {
@@ -168,37 +148,121 @@ async function main() {
   }
 }
 
-void main().catch((error: unknown) => {
-  console.error({
-    error: isHarnessError(error) ? error.code : 'application_failed',
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`Set ${name} in the application environment.`);
+  return value;
+}
+
+/** Only connection configuration differs; Runtime preparation belongs to the host. */
+function selectedProfile(): HarnessProfile {
+  const workspace = required('HARAPTER_WORKSPACE');
+  if (!isAbsolute(workspace))
+    throw new Error('Choose an absolute Workspace path.');
+  const profiles = {
+    dsh: (): HarnessProfile => ({
+      profileId: profileId('local-dsh'),
+      providerId: providerId('deepseek.harness'),
+      displayName: 'Local DSH',
+      connection: {
+        kind: 'process',
+        ownership: 'adapter',
+        cwd: workspace,
+        command: required('HARAPTER_DSH_COMMAND'),
+        args: [
+          '--profile',
+          'sdk-minimal',
+          '--patch',
+          required('HARAPTER_DSH_PATCH'),
+        ],
+      },
+      providerOptions: {
+        provider: required('HARAPTER_DSH_PROVIDER'),
+        model: required('HARAPTER_DSH_MODEL'),
+      },
+    }),
+    opencode: (): HarnessProfile => ({
+      profileId: profileId('local-opencode'),
+      providerId: providerId('opencode'),
+      displayName: 'Local OpenCode',
+      connection: {
+        kind: 'endpoint',
+        ownership: 'external',
+        transport: 'http',
+        url: required('HARAPTER_OPENCODE_URL'),
+        authRef: { scheme: 'env', id: 'opencode' },
+      },
+    }),
+  };
+  const name = required('HARAPTER_HARNESS');
+  if (name !== 'dsh' && name !== 'opencode')
+    throw new Error('Select dsh or opencode.');
+  return profiles[name]();
+}
+
+async function main() {
+  const harapter = await createHarapter({
+    harnesses: ['dsh', 'opencode'],
+    resolveAuthHeaders: (ref) => {
+      if (ref.scheme !== 'env' || ref.id !== 'opencode')
+        throw new Error('Unknown authentication reference.');
+      return {
+        authorization:
+          'Basic ' +
+          Buffer.from(
+            (process.env['OPENCODE_SERVER_USERNAME'] ?? 'opencode') +
+              ':' +
+              required('OPENCODE_SERVER_PASSWORD'),
+          ).toString('base64'),
+      };
+    },
   });
-  process.exitCode = 1;
-});
+  const { result } = await runTask(
+    harapter,
+    selectedProfile(),
+    'Reply with exactly HARAPTER_OK. Do not use tools or inspect files.',
+    (event) => {
+      console.log({ type: event.type, sequence: event.sequence });
+    },
+    { workspace: { uri: pathToFileURL(required('HARAPTER_WORKSPACE')).href } },
+  );
+  // Return result.finalMessage to an authorized application UI; log metadata only.
+  console.log({
+    status: result.status,
+    hasText: result.finalMessage !== undefined,
+  });
+  if (result.status !== 'completed') process.exitCode = 1;
+}
+
+if (
+  process.argv[1] &&
+  fileURLToPath(import.meta.url) === resolve(process.argv[1])
+) {
+  void main().catch((error: unknown) => {
+    console.error(
+      JSON.stringify({
+        error: isHarnessError(error) ? error.code : 'application_failed',
+      }),
+    );
+    process.exitCode = 1;
+  });
+}
 ```
 
-在自己的项目目录中运行。下面使用 POSIX
-shell；Windows 用户在 PowerShell 中设置同名环境变量：
-
-```sh
-mkdir workspace
-export HARAPTER_CODEX_COMMAND=codex
-export HARAPTER_WORKSPACE="$PWD/workspace"
-node app.ts
-```
-
-预期先输出生命周期事件类型，最后输出
+运行 `node app.ts`。预期先输出事件类型，再输出
 `{ status: "completed", hasText: true }`。`result.finalMessage`
-才是应返回给用户受控界面的模型文本，示例日志只记录元数据。失败或取消的 Run 不是成功答案。每次调用有 60 秒截止时间，所有资源都会关闭。
+是可返回授权 UI 的最终文本，失败的 Run 仍然是失败。示例持续消费事件、设置 60 秒截止时间，并关闭自己持有的资源；外部服务继续运行。该示例要求 Runtime 使用无需交互的安全策略。
 
-### 4. 接入业务代码
+### 4. 接入真实项目
 
-把连接配置放进应用的组合模块，把调用封装为业务服务，再从请求处理器或桌面应用调用。[完整 SDK 应用](./examples/sdk-application/README.zh-CN.md)包含独立
-`package.json`、TypeScript 配置、返回文本与状态的 service，以及重连恢复、原生分叉、取消、多 Provider 并发和宿主交互处理。它依赖已发布包，可以复制到独立项目中使用。
+在请求处理器中导入这里的
+`runTask`。将连接和密钥解析放在应用组装层，每个任务选择Profile，复用任务与结果处理。[入口指南](./packages/harapter/README.zh-CN.md)
+说明配置、能力边界和错误；[Runtime Profile 示例](./examples/runtime-profiles/README.zh-CN.md)
+提供可执行源文件。[服务示例](./examples/sdk-application/README.zh-CN.md)
+继续覆盖宿主存储、重连、取消和审批 UI。
 
-通过 `isHarnessError(error)` 读取稳定的 `code` 和 `retryable`
-字段。缺少 Runtime 或认证时先修正配置再重试；持续消费 `run.events()`，以
-`run.result()`
-为最终状态依据。Session 引用只能在原 Provider/Profile 和有访问控制的宿主存储策略下保存与恢复。不要记录 raw 事件、原生状态、凭证或业务内容。
+Session 仍绑定原来的 Provider、Profile 和原生状态，切换 Runtime 后需要创建新 Session。事件外层结构统一，`event.data`
+仍遵循 Adapter 映射。不能根据 Harness 名称推断原生取消或分叉能力，也不要记录私有内容、凭据或 Session 状态。
 
 ## 为什么选择 Harapter
 
@@ -237,8 +301,8 @@ SDK，不根据 Provider 名称分支，也不根据 Provider 身份推断 Capab
 
 | 范围                 | Package 与模块                                                                                                                                                                                                                                                                                        |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Portable API**     | [`@harapter/core`](./packages/core/README.zh-CN.md)——契约、Registry、Capability Requirement、所有权检查、Error、Extension 和 Native Access                                                                                                                                                            |
-| **Conformance**      | [`@harapter/conformance`](./packages/conformance/README.zh-CN.md)——可复用的可移植行为套件和确定性 Fake Provider                                                                                                                                                                                       |
+| **Portable API**     | [`harapter`](./packages/core/README.zh-CN.md)——契约、Registry、Capability Requirement、所有权检查、Error、Extension 和 Native Access                                                                                                                                                                  |
+| **Conformance**      | [`harapter/conformance`](./packages/conformance/README.zh-CN.md)——可复用的可移植行为套件和确定性 Fake Provider                                                                                                                                                                                        |
 | **Transport**        | [JSON-RPC stdio](./packages/transport-jsonrpc-stdio/README.zh-CN.md)、[严格 JSONL process RPC](./packages/transport-jsonl-process/README.zh-CN.md)、[HTTP/SSE](./packages/transport-http-sse/README.zh-CN.md) 和 [ACP v1](./packages/transport-acp/README.zh-CN.md)                                   |
 | **Provider Adapter** | [Codex](./providers/codex/README.zh-CN.md)、[OpenCode](./providers/opencode/README.zh-CN.md)、[DeepSeek Harness](./providers/dsh/README.zh-CN.md)、[Hermes Agent](./providers/hermes/README.zh-CN.md)、[OpenClaw](./providers/openclaw/README.zh-CN.md) 和 [Pi Agent](./providers/pi/README.zh-CN.md) |
 | **参考实现**         | [单 Provider 生命周期](./examples/single-provider/README.md)与[并发多 Provider Client](./examples/multi-provider-client/README.md)                                                                                                                                                                    |
@@ -291,9 +355,9 @@ pnpm build
 
 ## 项目状态
 
-Harapter 使用同步的 **0.x** 包版本和 npm 默认的 `latest`
-渠道。公共包具备经过审查的 Manifest、Tarball 消费测试、Provenance、发布与回滚控制。API 在 1.0 前仍可能变化；当前已发布版本以 npm 或 GitHub
-Releases 页面为准。Workspace 根目录与示例仍保持 Private，Harapter 不发布 PyPI 或独立 CLI 发行物。
+npm 只发布 `harapter`，使用 `latest`
+标签。Core、Adapter、Transport、Conformance、Workspace 根目录和示例均为私有模块。Release
+Please 管理公开包版本，Tarball 检查、Provenance 和回滚控制仍然适用。单包入口的首次发布尚待完成；Harapter 不发布 PyPI 包或独立 CLI。
 
 当前稳定化工作聚焦于消费者反馈、由宿主运行的实验 Adapter Live
 Evidence 和发布准备。Portable Wire Schema、非 TypeScript SDK 和 Local-socket
@@ -334,11 +398,10 @@ Abort 与 Provider 确认的 Cancellation 是不同的生命周期结果。
 
 ### Package 如何进行版本管理和发布？
 
-公开的 Core、Conformance、Transport 和 Adapter
-Package 在 1.0 前使用同一版本，并发布到
-`latest`。Workspace 根目录和示例保持 Private。Release Please 管理版本和 GitHub
-Release；每个不可变 Release 都包含 12 个已验证 Tarball、SPDX
-SBOM 和 SHA-256 校验文件。另一个需要单独授权的 Workflow 使用 Provenance 将这些相同 Tarball 发布到 npm。
+Release Please 管理单个 `harapter` 包的版本，并创建包含已验证 Tarball、SPDX
+SBOM 和 SHA-256 校验文件的不可变 GitHub
+Release。另一个经过单独授权的 Workflow 将同一个 Tarball 携带 Provenance 发布到 npm 的
+`latest`。内部模块没有独立发布流程。
 
 ## 明确不做什么
 

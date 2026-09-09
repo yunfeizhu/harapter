@@ -359,14 +359,14 @@ Adapter を共有できるわけではありません。各 Provider は引き�
 - Provider Command、Extension、Error
 - Version Compatibility と Test Fixture
 
-`transport-acp` は `@harapter/transport-jsonrpc-stdio` を組み合わせ、ACP
+`transport-acp` は `harapter/transports/jsonrpc-stdio` を組み合わせ、ACP
 Schema、Method、Protocol Negotiation、Capability
 Semantics だけを所有します。JSON-RPC Framing、Request
 Correlation、Backpressure、Queue Bound、Wait Timeout、Connection
 Cleanup は既存 Transport が所有し続けます。Process Policy は呼び出し元 Provider
 Connection が所有します。
 
-`@harapter/transport-jsonl-process` は、非 JSON-RPC Process
+`harapter/transports/jsonl-process` は、非 JSON-RPC Process
 Protocol の厳密な JSONL Send/Receive と Connection Boundary を所有します。Pi
 Agent Adapter はその上で Provider RPC
 Correlation、Session、Retry、Interaction、Cancel、Terminality を実装し、Transport に Pi の名前や Event

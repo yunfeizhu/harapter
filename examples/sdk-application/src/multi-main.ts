@@ -1,6 +1,6 @@
 import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { isHarnessError } from '@harapter/core';
+import { isHarnessError } from 'harapter';
 import { connectCodex } from './codex.js';
 import { connectOpenCode } from './endpoints.js';
 import { runAcrossProviders } from './recipes.js';

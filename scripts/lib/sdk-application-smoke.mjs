@@ -26,13 +26,28 @@ export function checkSdkApplication(repositoryRoot, consumerRoot) {
   const sources = Object.fromEntries(
     files.map((file) => [file, readFileSync(join(source, file), 'utf8')]),
   );
+  sources['quick-unified.ts'] = readFileSync(
+    resolve(repositoryRoot, 'examples/runtime-profiles/src/quick-unified.ts'),
+    'utf8',
+  );
+  files.push('quick-unified.ts');
   const policy = JSON.parse(
     readFileSync(
       resolve(repositoryRoot, 'scripts/public-packages.json'),
       'utf8',
     ),
   );
-  for (const root of ['', ...policy.packages.map((entry) => entry.path)]) {
+  const modules = JSON.parse(
+    readFileSync(
+      resolve(repositoryRoot, 'scripts/harapter-modules.json'),
+      'utf8',
+    ),
+  ).modules;
+  for (const root of [
+    '',
+    ...policy.packages.map((entry) => entry.path),
+    ...modules.map((entry) => entry.path),
+  ]) {
     for (const suffix of ['', '.zh-CN', '.ja']) {
       const path = join(root, `README${suffix}.md`);
       if (
@@ -46,8 +61,7 @@ export function checkSdkApplication(repositoryRoot, consumerRoot) {
         );
     }
   }
-  for (const file of files)
-    writeFileSync(join(directory, file), readFileSync(join(source, file)));
+  for (const file of files) writeFileSync(join(directory, file), sources[file]);
   if (
     readFileSync(join(source, 'interactions.ts'), 'utf8') !==
     readFileSync(
@@ -92,6 +106,7 @@ export function checkSdkApplication(repositoryRoot, consumerRoot) {
     'offline application passed\n',
   );
   check(process.execPath, ['dist/main.js'], 1, '');
+  check(process.execPath, ['dist/quick-unified.js'], 1, '');
   check(process.execPath, ['dist/session-main.js'], 1, '');
   check(process.execPath, ['dist/multi-main.js'], 1, '');
   check(

@@ -1,9 +1,6 @@
 import { pathToFileURL } from 'node:url';
-import { HarnessRegistry, profileId } from '@harapter/core';
-import {
-  CODEX_PROVIDER_ID,
-  createCodexProviderFactory,
-} from '@harapter/adapter-codex';
+import { HarnessRegistry, profileId } from 'harapter';
+import { CODEX_PROVIDER_ID, createCodexProviderFactory } from 'harapter/codex';
 
 /** Runtime installation, sign-in and Workspace selection belong to the application. */
 export async function connectCodex(command: string, workspace: string) {

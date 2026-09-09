@@ -2,37 +2,37 @@ import {
   CODEX_SESSION_EXTENSION,
   createCodexProviderFactory,
   type CodexSessions,
-} from '@harapter/adapter-codex';
+} from 'harapter/codex';
 import {
   DSH_GATEWAY_SESSION_EXTENSION,
   createDshProviderFactory,
   type DshGatewaySessions,
   type DshProviderFactoryOptions,
-} from '@harapter/adapter-dsh';
+} from 'harapter/dsh';
 import {
   HERMES_SESSION_EXTENSION,
   createHermesProviderFactory,
   type HermesSessions,
   type HermesProviderFactoryOptions,
-} from '@harapter/adapter-hermes';
+} from 'harapter/hermes';
 import {
   OPENCLAW_SESSION_EXTENSION,
   createOpenClawProviderFactory,
   type OpenClawSessions,
   type OpenClawProviderFactoryOptions,
-} from '@harapter/adapter-openclaw';
+} from 'harapter/openclaw';
 import {
   OPENCODE_SESSION_EXTENSION,
   createOpenCodeProviderFactory,
   type OpenCodeSessions,
   type OpenCodeProviderFactoryOptions,
-} from '@harapter/adapter-opencode';
+} from 'harapter/opencode';
 import {
   PI_SESSION_EXTENSION,
   createPiProviderFactory,
   type PiSessions,
-} from '@harapter/adapter-pi';
-import { HarnessError, type HarnessClient } from '@harapter/core';
+} from 'harapter/pi';
+import { HarnessError, type HarnessClient } from 'harapter';
 import type { MultiProviderSetup } from './index.js';
 import type {
   SessionHistoryBinding,

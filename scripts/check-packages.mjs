@@ -21,6 +21,7 @@ import {
 } from './lib/package-publication.mjs';
 import { checkSessionWorkflowCommand } from './lib/session-workflow-smoke.mjs';
 import { checkSdkApplication } from './lib/sdk-application-smoke.mjs';
+import { checkHarapterConsumer } from './lib/harapter-consumer-smoke.mjs';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const policy = readJson(
@@ -29,12 +30,35 @@ const policy = readJson(
 const failures = validatePublicPackagePolicy(policy);
 const entries = Array.isArray(policy.packages) ? policy.packages : [];
 exitWithFailures(failures);
+const modules = readJson(
+  resolve(repositoryRoot, 'scripts/harapter-modules.json'),
+).modules;
 const knownPackageNames = new Set(entries.map(({ name }) => name));
 const manifests = new Map();
+const internalPackageNames = new Set();
+for (const entry of modules) {
+  const manifest = readJson(
+    resolve(repositoryRoot, entry.path, 'package.json'),
+  );
+  if (
+    manifest?.name !== entry.name ||
+    manifest.private !== true ||
+    manifest.publishConfig !== undefined
+  ) {
+    failures.push(
+      `${entry.path}/package.json must be a private internal module without publishConfig.`,
+    );
+  } else {
+    internalPackageNames.add(entry.name);
+  }
+}
 
 const declaredPaths = new Set(entries.map(({ path }) => path));
 for (const path of findPackageDirectories()) {
-  if (!declaredPaths.has(path)) {
+  if (
+    !declaredPaths.has(path) &&
+    readJson(resolve(repositoryRoot, path, 'package.json'))?.private !== true
+  ) {
     failures.push(
       `${path}/package.json must be listed in scripts/public-packages.json.`,
     );
@@ -53,6 +77,7 @@ for (const entry of entries) {
     ...validatePublicPackageManifest({
       entry,
       knownPackageNames,
+      internalPackageNames,
       packageJson,
     }),
   );
@@ -190,14 +215,24 @@ try {
       2,
     )}\n`,
   );
-  const runtimeSmoke = entries
+  const exportEntries = [
+    ...entries,
+    ...modules
+      .filter((entry) => entry.subpath !== '.')
+      .map((entry) => ({
+        name: `harapter/${entry.subpath.slice(2)}`,
+        smokeExport: entry.smokeExport,
+      })),
+    { name: 'harapter/testing', smokeExport: 'createFakeProviderFactory' },
+  ];
+  const runtimeSmoke = exportEntries
     .map(
       ({ name, smokeExport }) =>
         `if (!("${smokeExport}" in await import("${name}"))) throw new Error("${name} is missing its smoke export.");`,
     )
     .join('\n');
   writeFileSync(resolve(consumerRoot, 'smoke.mjs'), `${runtimeSmoke}\n`);
-  const typeSmoke = entries
+  const typeSmoke = exportEntries
     .map(
       ({ name, smokeExport }, index) =>
         `import { ${smokeExport} as smoke${String(index)} } from '${name}';\nvoid smoke${String(index)};`,
@@ -257,6 +292,15 @@ try {
   run(process.execPath, ['smoke.mjs'], consumerRoot, 'runtime consumer smoke');
   checkSessionWorkflowCommand(repositoryRoot, consumerRoot);
   checkSdkApplication(repositoryRoot, consumerRoot);
+  checkHarapterConsumer({
+    repositoryRoot,
+    fixtureRoot,
+    tarballs,
+    dependencyStore,
+    packageManager: rootPackageJson.packageManager,
+    pnpm: pnpmCommand(),
+    run,
+  });
   run(
     resolve(repositoryRoot, 'node_modules/.bin/tsc'),
     [
@@ -352,7 +396,7 @@ try {
 }
 
 console.log(
-  `Validated ${String(entries.length)} public package tarballs, a clean consumer install, the standalone SDK application, 4 Session workflow CLI cases, and 10 offline interaction CLI cases.`,
+  `Validated ${String(entries.length)} public package tarballs, a clean consumer install, a Harapter-only Runtime fixture consumer, the standalone SDK application, 4 Session workflow CLI cases, and 10 offline interaction CLI cases.`,
 );
 
 function findPackageDirectories() {

@@ -1,8 +1,5 @@
-import { HarnessRegistry } from '@harapter/core';
-import {
-  createFakeProfile,
-  createFakeProviderFactory,
-} from '@harapter/conformance/fake';
+import { HarnessRegistry } from 'harapter';
+import { createFakeProfile, createFakeProviderFactory } from 'harapter/testing';
 
 // Replace the application's real Adapter at its composition boundary.
 const registry = new HarnessRegistry();

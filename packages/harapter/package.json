@@ -1,0 +1,122 @@
+{
+  "name": "harapter",
+  "version": "0.3.0",
+  "description": "One Harapter API for configured agent harness runtimes.",
+  "keywords": [
+    "agent",
+    "harness",
+    "ai",
+    "typescript"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yunfeizhu/harapter.git",
+    "directory": "packages/harapter"
+  },
+  "bugs": {
+    "url": "https://github.com/yunfeizhu/harapter/issues"
+  },
+  "homepage": "https://github.com/yunfeizhu/harapter/tree/main/packages/harapter#readme",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.zh-CN.md",
+    "README.ja.md"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./transports/jsonrpc-stdio": {
+      "types": "./dist/transports/jsonrpc-stdio.d.ts",
+      "default": "./dist/transports/jsonrpc-stdio.js"
+    },
+    "./transports/jsonl-process": {
+      "types": "./dist/transports/jsonl-process.d.ts",
+      "default": "./dist/transports/jsonl-process.js"
+    },
+    "./transports/http-sse": {
+      "types": "./dist/transports/http-sse.d.ts",
+      "default": "./dist/transports/http-sse.js"
+    },
+    "./transports/acp": {
+      "types": "./dist/transports/acp.d.ts",
+      "default": "./dist/transports/acp.js"
+    },
+    "./conformance": {
+      "types": "./dist/conformance.d.ts",
+      "default": "./dist/conformance.js"
+    },
+    "./codex": {
+      "types": "./dist/codex.d.ts",
+      "default": "./dist/codex.js"
+    },
+    "./dsh": {
+      "types": "./dist/dsh.d.ts",
+      "default": "./dist/dsh.js"
+    },
+    "./hermes": {
+      "types": "./dist/hermes.d.ts",
+      "default": "./dist/hermes.js"
+    },
+    "./openclaw": {
+      "types": "./dist/openclaw.d.ts",
+      "default": "./dist/openclaw.js"
+    },
+    "./opencode": {
+      "types": "./dist/opencode.d.ts",
+      "default": "./dist/opencode.js"
+    },
+    "./pi": {
+      "types": "./dist/pi.d.ts",
+      "default": "./dist/pi.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "default": "./dist/testing.js"
+    }
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/",
+    "tag": "latest"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json && node ../../scripts/build-harapter.mjs"
+  },
+  "dependencies": {
+    "ws": "8.21.0"
+  },
+  "devDependencies": {
+    "@harapter/adapter-codex": "workspace:*",
+    "@harapter/adapter-dsh": "workspace:*",
+    "@harapter/adapter-hermes": "workspace:*",
+    "@harapter/adapter-openclaw": "workspace:*",
+    "@harapter/adapter-opencode": "workspace:*",
+    "@harapter/adapter-pi": "workspace:*",
+    "rolldown": "1.2.5",
+    "@harapter/core": "workspace:*",
+    "@harapter/transport-jsonrpc-stdio": "workspace:*",
+    "@harapter/transport-jsonl-process": "workspace:*",
+    "@harapter/transport-http-sse": "workspace:*",
+    "@harapter/transport-acp": "workspace:*",
+    "@harapter/conformance": "workspace:*"
+  },
+  "peerDependencies": {
+    "vitest": ">=4.1.11 <5"
+  },
+  "peerDependenciesMeta": {
+    "vitest": {
+      "optional": true
+    }
+  }
+}

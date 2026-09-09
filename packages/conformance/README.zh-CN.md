@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
-<h1 align="center"><code>@harapter/conformance</code></h1>
+<h1 align="center"><code>harapter/conformance</code></h1>
 
 <p align="center"><strong>可复用的 Harapter 生命周期测试与确定性 Fake Provider。</strong></p>
 
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/conformance"><img src="https://img.shields.io/npm/v/%40harapter%2Fconformance?style=flat-square&amp;label=npm" alt="npm 版本"></a>
-  <a href="https://www.npmjs.com/package/@harapter/conformance"><img src="https://img.shields.io/npm/dm/%40harapter%2Fconformance?style=flat-square" alt="npm 下载量"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm 版本"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm 下载量"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI 状态"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 或更高版本">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 许可证"></a>
@@ -18,19 +18,23 @@
 
 <!-- markdownlint-enable MD033 -->
 
+本指南描述单个 `harapter`
+SDK 内的模块。普通应用接入请先看[应用指南](../../packages/harapter/README.zh-CN.md)。单包入口的首次发布尚待完成，下面的安装命令适用于该版本发布后。
+
 这个包面向 Adapter 作者和 Harapter 应用测试。它提供共享的 Vitest 行为套件、Run
 Trace 校验器，以及不依赖任何真实 Runtime 的 Fake
 Provider。通过共享套件只证明可移植契约成立，不等于某个真实 Provider 已获得支持证据。
 
 ## 无需 Runtime 的应用测试
 
-应用测试可使用轻量入口
-`@harapter/conformance/fake`，运行时无需 Vitest；使用主入口的一致性测试套件时再安装 Vitest。Fake 的确定性结果是测试证据，不代表某个真实 Provider 的行为。
+应用测试可使用轻量入口 `harapter/testing`，运行时无需 Vitest；使用
+`harapter/conformance`
+的一致性测试套件时再安装 Vitest。Fake 的确定性结果是测试证据，不代表某个真实 Provider 的行为。
 
 ```sh
 npm init -y
 npm pkg set type=module
-npm install @harapter/core @harapter/conformance
+npm install harapter
 npm install -D typescript @types/node
 ```
 
@@ -40,11 +44,8 @@ npm install -D typescript @types/node
 <!-- sdk-example: test-with-fake.ts -->
 
 ```ts
-import { HarnessRegistry } from '@harapter/core';
-import {
-  createFakeProfile,
-  createFakeProviderFactory,
-} from '@harapter/conformance/fake';
+import { HarnessRegistry } from 'harapter';
+import { createFakeProfile, createFakeProviderFactory } from 'harapter/testing';
 
 // Replace the application's real Adapter at its composition boundary.
 const registry = new HarnessRegistry();
@@ -79,12 +80,13 @@ node app.ts
 ```
 
 [完整应用、场景案例和错误处理](../../examples/sdk-application/README.zh-CN.md) ·
-[全部公开包](https://www.npmjs.com/org/harapter)
+[全部公开包](https://www.npmjs.com/package/harapter)
 
 ## 安装
 
 ```bash
-pnpm add -D @harapter/conformance vitest@^4.1.11
+pnpm add harapter
+pnpm add -D vitest@^4.1.11
 ```
 
 ## 在 Adapter 测试中使用
@@ -92,7 +94,7 @@ pnpm add -D @harapter/conformance vitest@^4.1.11
 每个测试用例都必须得到全新的 Factory 和 Profile，避免状态在用例间泄漏：
 
 ```ts
-import { definePortableProviderConformanceSuite } from '@harapter/conformance';
+import { definePortableProviderConformanceSuite } from 'harapter/conformance';
 import { createAdapterFactory, createTestProfile } from './test-support.js';
 
 definePortableProviderConformanceSuite({
@@ -109,11 +111,11 @@ access 和幂等清理。Provider 仍需自行补充协议解析、畸形输入�
 ## 在应用测试中使用 Fake Provider
 
 ```ts
-import { HarnessRegistry } from '@harapter/core';
+import { HarnessRegistry } from 'harapter';
 import {
   createFakeProfile,
   createFakeProviderFactory,
-} from '@harapter/conformance';
+} from 'harapter/conformance';
 
 const registry = new HarnessRegistry();
 registry.register(createFakeProviderFactory({ cancelMode: 'native' }));
@@ -164,7 +166,7 @@ access，以及一个经过限制的未知 Provider 事件，适合验证宿主�
 `kind: 'provider'`，DSH 当前没有宿主响应接口，因此不启用该套件。
 
 ```ts
-import { defineInteractionConformanceSuite } from '@harapter/conformance';
+import { defineInteractionConformanceSuite } from 'harapter/conformance';
 
 defineInteractionConformanceSuite({
   name: 'Example approval fixture',
@@ -183,7 +185,7 @@ defineInteractionConformanceSuite({
 
 ## 在 Vitest 外使用 Fake 交互
 
-公共子路径 `@harapter/conformance/fake` 导出 `createFakeProfile`、
+公共子路径 `harapter/testing` 导出 `createFakeProfile`、
 `createFakeProviderFactory`、默认身份和
 `FakeProviderOptions`，不导入 Vitest，可用于离线 Node 演示。原包入口仍为 Vitest 使用者导出这些符号。
 
@@ -204,16 +206,16 @@ Run 发出一次请求并等待明确回答。其他可选请求字段必须是�
 
 [全部包](../../README.zh-CN.md#npm-包导航)
 
-| 包                                                                                                     | 文档                                                   |
-| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
-| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                                       | [使用指南](../core/README.zh-CN.md)                    |
-| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [使用指南](../transport-jsonrpc-stdio/README.zh-CN.md) |
-| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [使用指南](../transport-jsonl-process/README.zh-CN.md) |
-| [`@harapter/transport-http-sse`](https://www.npmjs.com/package/@harapter/transport-http-sse)           | [使用指南](../transport-http-sse/README.zh-CN.md)      |
-| [`@harapter/transport-acp`](https://www.npmjs.com/package/@harapter/transport-acp)                     | [使用指南](../transport-acp/README.zh-CN.md)           |
-| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)                     | [使用指南](../../providers/codex/README.zh-CN.md)      |
-| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)                         | [使用指南](../../providers/dsh/README.zh-CN.md)        |
-| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)                   | [使用指南](../../providers/hermes/README.zh-CN.md)     |
-| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw)               | [使用指南](../../providers/openclaw/README.zh-CN.md)   |
-| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode)               | [使用指南](../../providers/opencode/README.zh-CN.md)   |
-| [`@harapter/adapter-pi`](https://www.npmjs.com/package/@harapter/adapter-pi)                           | [使用指南](../../providers/pi/README.zh-CN.md)         |
+| 包                                                                            | 文档                                                   |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------ |
+| [`harapter`](https://www.npmjs.com/package/harapter)                          | [使用指南](../core/README.zh-CN.md)                    |
+| [`harapter/transports/jsonrpc-stdio`](https://www.npmjs.com/package/harapter) | [使用指南](../transport-jsonrpc-stdio/README.zh-CN.md) |
+| [`harapter/transports/jsonl-process`](https://www.npmjs.com/package/harapter) | [使用指南](../transport-jsonl-process/README.zh-CN.md) |
+| [`harapter/transports/http-sse`](https://www.npmjs.com/package/harapter)      | [使用指南](../transport-http-sse/README.zh-CN.md)      |
+| [`harapter/transports/acp`](https://www.npmjs.com/package/harapter)           | [使用指南](../transport-acp/README.zh-CN.md)           |
+| [`harapter/codex`](https://www.npmjs.com/package/harapter)                    | [使用指南](../../providers/codex/README.zh-CN.md)      |
+| [`harapter/dsh`](https://www.npmjs.com/package/harapter)                      | [使用指南](../../providers/dsh/README.zh-CN.md)        |
+| [`harapter/hermes`](https://www.npmjs.com/package/harapter)                   | [使用指南](../../providers/hermes/README.zh-CN.md)     |
+| [`harapter/openclaw`](https://www.npmjs.com/package/harapter)                 | [使用指南](../../providers/openclaw/README.zh-CN.md)   |
+| [`harapter/opencode`](https://www.npmjs.com/package/harapter)                 | [使用指南](../../providers/opencode/README.zh-CN.md)   |
+| [`harapter/pi`](https://www.npmjs.com/package/harapter)                       | [使用指南](../../providers/pi/README.zh-CN.md)         |

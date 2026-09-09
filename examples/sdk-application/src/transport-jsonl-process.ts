@@ -1,5 +1,5 @@
 import { PassThrough } from 'node:stream';
-import { JsonlProcessTransport } from '@harapter/transport-jsonl-process';
+import { JsonlProcessTransport } from 'harapter/transports/jsonl-process';
 
 const readable = new PassThrough();
 const writable = new PassThrough();

@@ -1,14 +1,11 @@
 import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import {
-  CODEX_PROVIDER_ID,
-  createCodexProviderFactory,
-} from '@harapter/adapter-codex';
+import { CODEX_PROVIDER_ID, createCodexProviderFactory } from 'harapter/codex';
 import {
   OPENCODE_PROVIDER_ID,
   createOpenCodeProviderFactory,
-} from '@harapter/adapter-opencode';
-import { HarnessError, profileId } from '@harapter/core';
+} from 'harapter/opencode';
+import { HarnessError, profileId } from 'harapter';
 import type { MultiProviderSetup } from './index.js';
 
 /** Explicit host inputs for the Codex and OpenCode reference composition. */

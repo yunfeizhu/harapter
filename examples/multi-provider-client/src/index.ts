@@ -14,7 +14,7 @@ import {
   type RunOptions,
   type RunResult,
   type SessionRef,
-} from '@harapter/core';
+} from 'harapter';
 import {
   observeInteractiveRun,
   type HostInteractionHandler,

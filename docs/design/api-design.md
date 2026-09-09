@@ -25,9 +25,9 @@ This document uses TypeScript-like pseudocode to express language-neutral
 contracts. It does not constrain the implementation language of the first SDK.
 It describes target design and may precede implementation. The current
 implemented TypeScript API is defined by the
-[`@harapter/core` README](../../packages/core/README.md), package exports,
-source, and tests. A signature or example here is not evidence that it is
-implemented or that a Provider supports it.
+[`harapter` README](../../packages/core/README.md), package exports, source, and
+tests. A signature or example here is not evidence that it is implemented or
+that a Provider supports it.
 
 ## 2. Registry
 

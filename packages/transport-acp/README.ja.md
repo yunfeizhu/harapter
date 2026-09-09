@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
-<h1 align="center"><code>@harapter/transport-acp</code></h1>
+<h1 align="center"><code>harapter/transports/acp</code></h1>
 
 <p align="center"><strong>stable Agent Client Protocol v1 の strict Provider-neutral client。</strong></p>
 
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/transport-acp"><img src="https://img.shields.io/npm/v/%40harapter%2Ftransport-acp?style=flat-square&amp;label=npm" alt="npm バージョン"></a>
-  <a href="https://www.npmjs.com/package/@harapter/transport-acp"><img src="https://img.shields.io/npm/dm/%40harapter%2Ftransport-acp?style=flat-square" alt="npm ダウンロード数"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm バージョン"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm ダウンロード数"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI ステータス"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 以上">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 ライセンス"></a>
@@ -18,20 +18,23 @@
 
 <!-- markdownlint-enable MD033 -->
 
-`@harapter/transport-jsonrpc-stdio` を組み合わせ、stable ACP v1
+このガイドは単一の `harapter`
+SDK に含まれるモジュールを説明します。通常のアプリケーション接続は[アプリケーションガイド](../../packages/harapter/README.ja.md)から始めてください。単一パッケージの初回公開は未完了で、以下のインストール手順は公開後のものです。
+
+`harapter/transports/jsonrpc-stdio` を組み合わせ、stable ACP v1
 negotiation、Session method、Prompt、typed update、Permission
 Request、Capability Gate、未知 message の bounded observation を実装します。ACP
 Agent の起動、Provider 選択、Harapter Event mapping は行いません。
 
 ## アプリ開発か Adapter 開発か
 
-通常のアプリには `@harapter/core` と Provider
-Adapter を導入します。マシンインターフェースを実装、テストする場合に本パッケージを直接使います。次の完全なオフライン例は公開インポートのみを使います。実際の Runtime を起動せず、Provider 互換性の証拠ではありません。
+通常のアプリは `harapter` の `createHarapter`
+を使用します。マシンインターフェースの実装やテストでは Transport サブパスを使います。次の完全なオフライン例は公開インポートのみを使います。実際の Runtime を起動せず、Provider 互換性の証拠ではありません。
 
 ```sh
 npm init -y
 npm pkg set type=module
-npm install @harapter/transport-acp
+npm install harapter
 npm install -D typescript @types/node
 ```
 
@@ -43,7 +46,7 @@ npm install -D typescript @types/node
 
 ```ts
 import { PassThrough } from 'node:stream';
-import { AcpClient } from '@harapter/transport-acp';
+import { AcpClient } from 'harapter/transports/acp';
 
 const readable = new PassThrough();
 const writable = new PassThrough();
@@ -78,18 +81,18 @@ node app.ts
 実際の統合では合成ストリーム／Fetch を、後述するホスト所有プロセスやエンドポイントに置き換えます。起動手順、payload の検証、認証、編集処理、最終状態の解釈は Adapter が担当します。書き込みや EOF は Run 成功やネイティブキャンセルを意味しません。
 
 [完全なアプリ、レシピ、エラー処理](../../examples/sdk-application/README.ja.md)
-· [公開パッケージ一覧](https://www.npmjs.com/org/harapter)
+· [Harapter npm](https://www.npmjs.com/package/harapter)
 
 ## インストール
 
 ```bash
-pnpm add @harapter/transport-acp
+pnpm add harapter
 ```
 
 ## 実際のトランスポートを構成する
 
 ```ts
-import { AcpClient } from '@harapter/transport-acp';
+import { AcpClient } from 'harapter/transports/acp';
 
 const client = new AcpClient({
   readable: controlledProcess.stdout,
@@ -156,10 +159,10 @@ Error は明示的 unredacted boundary です。全 protocol と race semantics 
 
 [すべてのパッケージ](../../README.ja.md#npm-パッケージ一覧)
 
-| パッケージ                                                                                             | ドキュメント                                      |
-| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
-| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                                       | [ガイド](../core/README.ja.md)                    |
-| [`@harapter/transport-jsonrpc-stdio`](https://www.npmjs.com/package/@harapter/transport-jsonrpc-stdio) | [ガイド](../transport-jsonrpc-stdio/README.ja.md) |
-| [`@harapter/transport-jsonl-process`](https://www.npmjs.com/package/@harapter/transport-jsonl-process) | [ガイド](../transport-jsonl-process/README.ja.md) |
-| [`@harapter/transport-http-sse`](https://www.npmjs.com/package/@harapter/transport-http-sse)           | [ガイド](../transport-http-sse/README.ja.md)      |
-| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)                         | [ガイド](../conformance/README.ja.md)             |
+| パッケージ                                                                    | ドキュメント                                      |
+| ----------------------------------------------------------------------------- | ------------------------------------------------- |
+| [`harapter`](https://www.npmjs.com/package/harapter)                          | [ガイド](../core/README.ja.md)                    |
+| [`harapter/transports/jsonrpc-stdio`](https://www.npmjs.com/package/harapter) | [ガイド](../transport-jsonrpc-stdio/README.ja.md) |
+| [`harapter/transports/jsonl-process`](https://www.npmjs.com/package/harapter) | [ガイド](../transport-jsonl-process/README.ja.md) |
+| [`harapter/transports/http-sse`](https://www.npmjs.com/package/harapter)      | [ガイド](../transport-http-sse/README.ja.md)      |
+| [`harapter/conformance`](https://www.npmjs.com/package/harapter)              | [ガイド](../conformance/README.ja.md)             |

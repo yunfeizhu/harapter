@@ -5,6 +5,11 @@ portable packages under `packages/`.
 
 ## Package boundaries
 
+- `harapter` owns the application entry and bundles maintained first-party
+  protocol implementations. It is the only public package; other Workspace
+  packages are private implementation modules. Its explicit harness selection
+  stays outside Core.
+
 - `schema` owns versioned wire and persisted data definitions without importing
   a provider SDK.
 - `core` owns portable clients, sessions, runs, events, interactions,

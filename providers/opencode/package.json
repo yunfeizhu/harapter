@@ -2,29 +2,14 @@
   "name": "@harapter/adapter-opencode",
   "version": "0.3.0",
   "description": "OpenCode HTTP provider adapter for Harapter.",
-  "keywords": [
-    "agent",
-    "harness",
-    "opencode",
-    "adapter"
-  ],
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yunfeizhu/harapter.git",
     "directory": "providers/opencode"
   },
-  "bugs": {
-    "url": "https://github.com/yunfeizhu/harapter/issues"
-  },
-  "homepage": "https://github.com/yunfeizhu/harapter/tree/main/providers/opencode#readme",
   "type": "module",
   "sideEffects": false,
-  "files": [
-    "dist",
-    "README.zh-CN.md",
-    "README.ja.md"
-  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -36,12 +21,6 @@
   "engines": {
     "node": ">=24"
   },
-  "publishConfig": {
-    "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/",
-    "tag": "latest"
-  },
   "scripts": {
     "build": "tsc --project tsconfig.build.json"
   },
@@ -51,5 +30,6 @@
   },
   "devDependencies": {
     "@harapter/conformance": "workspace:*"
-  }
+  },
+  "private": true
 }

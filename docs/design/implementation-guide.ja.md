@@ -138,7 +138,7 @@ Argument、Capability、Command、Extension は共有しません。最初の Op
 Adapter は Official ACP Bridge を使用し、Gateway WebSocket
 Client を直接実装しません。
 
-ACP Layer は `@harapter/transport-jsonrpc-stdio` の Framing、Request
+ACP Layer は `harapter/transports/jsonrpc-stdio` の Framing、Request
 Correlation、Backpressure、Bounded Queue、Wait Timeout、Connection
 Cleanup を再利用します。2 つ目の JSON-RPC Transport を実装しません。Bridge
 Process の Create、Terminate、Restart、Ownership は Provider
@@ -147,7 +147,7 @@ Cancellation と解釈しません。
 
 ### 2.5 Headless JSONL と Local Service
 
-- `@harapter/transport-jsonl-process` は非 JSON-RPC 双方向 Headless JSONL
+- `harapter/transports/jsonl-process` は非 JSON-RPC 双方向 Headless JSONL
   Protocol に Strict LF Framing、Bounded Queue、Serialized
   Write、Backpressure、Connection Cleanup を提供します。Request
   Correlation、Event Classification、Terminality は Provider

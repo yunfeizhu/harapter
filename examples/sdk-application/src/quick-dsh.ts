@@ -1,10 +1,7 @@
 import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
-import {
-  DSH_PROVIDER_ID,
-  createDshProviderFactory,
-} from '@harapter/adapter-dsh';
+import { isHarnessError, profileId, type HarnessSession } from 'harapter';
+import { DSH_PROVIDER_ID, createDshProviderFactory } from 'harapter/dsh';
 
 function required(name: string): string {
   const value = process.env[name];

@@ -21,6 +21,7 @@ import {
   validateRegistryDistribution,
   validateRegistryDistTag,
   validateReleaseVersion,
+  validatePublicationMode,
 } from './lib/package-publication.mjs';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -49,7 +50,7 @@ const childEnvironment = { ...process.env };
 delete childEnvironment.NODE_AUTH_TOKEN;
 delete childEnvironment.NPM_AUTH_TOKEN;
 delete childEnvironment.NPM_TOKEN;
-const versionFailures = validateReleaseVersion(version, { bootstrap });
+const versionFailures = validateReleaseVersion(version);
 if (versionFailures.length > 0) {
   fail(versionFailures.join('\n'));
 }
@@ -160,6 +161,21 @@ try {
   const localIntegrities = new Map(
     [...artifacts].map(([name, artifact]) => [name, artifact.localIntegrity]),
   );
+  // E404 alone means the name is available. Authentication, timeout and malformed
+  // responses fail before any write. A same-version bootstrap retry must still
+  // pass the immutable content and provenance checks below.
+  const modeFailures = validatePublicationMode({
+    entries,
+    version,
+    bootstrap,
+    publishedVersions: new Map(
+      entries.map(({ name }) => [
+        name,
+        readRegistryJson(name, undefined, 'versions'),
+      ]),
+    ),
+  });
+  if (modeFailures.length > 0) fail(modeFailures.join('\n'));
   await executeRegistryPublication({
     entries,
     inspectExisting: (entry) => {
@@ -201,7 +217,7 @@ try {
         ],
         repositoryRoot,
         `${entry.name} publish`,
-        bootstrapToken === undefined
+        bootstrapToken === undefined || entry.name !== 'harapter'
           ? childEnvironment
           : { ...childEnvironment, NODE_AUTH_TOKEN: bootstrapToken },
       );
@@ -280,7 +296,7 @@ function readRegistryJson(
     'npm',
     [
       'view',
-      `${name}@${packageVersion}`,
+      packageVersion === undefined ? name : `${name}@${packageVersion}`,
       property,
       '--json',
       '--registry',

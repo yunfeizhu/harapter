@@ -49,6 +49,11 @@ Store、Checkpoint 和内部安全机制仍由对应 Harness 自己拥有。
 Core、Provider Adapter 和 Harness
 Runtime 是三层独立边界。共享 Transport 库可以复用 ACP、JSONL、JSON-RPC、HTTP、SSE 或进程托管，但 Transport 只负责通信，不决定 Provider 语义。
 
+[`harapter` 应用入口](../../packages/harapter/README.zh-CN.md)
+将 Core 与内部协议映射组装在一起。应用安装一个入口包并配置自己的 Runtime 连接，按选择加载实现模块，不会隐式安装 Runtime。仅发布
+`harapter`，Core、Adapter、Transport 和 Conformance 作为私有源码模块维护。这个打包边界位于 Provider-agnostic
+Core 之外，不改变 Session 归属或能力语义。
+
 ## 3. Core
 
 Core 只包含与具体 Provider 无关的内容：
@@ -275,7 +280,7 @@ Event 只能被单向投影为宿主产品事件，不能替代宿主产品的�
 
 新增 Harness 只需要：
 
-1. 创建独立 Provider 包并注册稳定 Provider ID；
+1. 创建独立 Provider 模块并注册稳定 Provider ID；
 2. 选择目标 Harness 的官方机器接口；
 3. 实现连接、Session、Run、Event 和 Error 映射；
 4. 探测并声明真实 Capability；

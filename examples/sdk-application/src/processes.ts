@@ -1,13 +1,10 @@
-import { HarnessRegistry, profileId } from '@harapter/core';
-import {
-  DSH_PROVIDER_ID,
-  createDshProviderFactory,
-} from '@harapter/adapter-dsh';
+import { HarnessRegistry, profileId } from 'harapter';
+import { DSH_PROVIDER_ID, createDshProviderFactory } from 'harapter/dsh';
 import {
   OPENCLAW_PROVIDER_ID,
   createOpenClawProviderFactory,
-} from '@harapter/adapter-openclaw';
-import { PI_PROVIDER_ID, createPiProviderFactory } from '@harapter/adapter-pi';
+} from 'harapter/openclaw';
+import { PI_PROVIDER_ID, createPiProviderFactory } from 'harapter/pi';
 
 export async function connectDsh(
   command: string,

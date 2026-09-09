@@ -2,10 +2,13 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
 
-Start with npm packages in your own Node.js 24+ / TypeScript application. This
-directory is a complete, private sample application, not an npm package you must
-install. Its dependencies are published versions; its TypeScript configuration
-has no dependency on the Harapter repository.
+Use the single `harapter` SDK in your own Node.js 24+ / TypeScript application.
+This private sample uses a Workspace dependency during development. Its first
+single-package release is pending. After release, copy this directory, remove
+the `harapter: "workspace:*"` dependency from package.json, and run
+`npm install harapter` to use the public package. The standalone build uses
+`tsconfig.build.json`; the source-checking `tsconfig.json` is only for
+repository development.
 
 ## Create and run the project
 
@@ -15,7 +18,7 @@ application, copy this directory into your own project (or save the linked files
 below). Run these commands inside that independent directory:
 
 ```sh
-npm install
+npm install harapter
 npm run build
 npm run offline
 ```
@@ -45,8 +48,8 @@ requires no Runtime or model credential and prints `offline application passed`.
 
 | File                                       | Role                                               |
 | ------------------------------------------ | -------------------------------------------------- |
-| [package.json](package.json)               | Registry dependencies and npm scripts              |
-| [tsconfig.json](tsconfig.json)             | Independent strict ESM build                       |
+| [package.json](package.json)               | Workspace dependency and application scripts       |
+| [tsconfig.build.json](tsconfig.build.json) | Independent strict ESM build                       |
 | [src/main.ts](src/main.ts)                 | One live Codex task, SIGINT and safe status output |
 | [src/service.ts](src/service.ts)           | Business operation, resume, timeout and result     |
 | [src/interactions.ts](src/interactions.ts) | Asynchronous host interaction observer             |
@@ -182,22 +185,22 @@ by its Adapter.
 
 ## What is verified
 
-The application is compiled and exercised outside the Workspace against npm
-packages and, in repository checks, fresh release tarballs. Offline tests cover
-application behavior; they do not establish real Provider compatibility.
-Existing
+The application is compiled and exercised outside the Workspace against the
+single freshly packed SDK tarball. Offline tests cover application behavior;
+they do not establish real Provider compatibility. Existing
 [official Runtime evidence](../../docs/provider-interaction-evidence.md) owns
 that boundary. Live entrypoints use your existing authentication, may consume
 tokens and can create native Session data. Use an empty test Workspace and the
 Runtime's own tool/sandbox policy. An external HTTP server or Gateway remains
 running after Client cleanup.
 
-On 2026-09-08, the independent npm consumer using Harapter 0.3.0 also ran
-`quick-codex`, `main`, and `session-main` against official Codex CLI 0.153.4:
-five real Runtime Runs completed, including reconnect/resume and native fork. An
-isolated loopback synthetic model served the requests; no tool calls or model
-credentials were used. This is application integration evidence, not a new
-compatibility claim for every Provider or a paid-model canary.
+Before this packaging migration, on 2026-09-08, a consumer of the scoped
+Harapter 0.3.0 packages ran `quick-codex`, `main`, and `session-main` against
+official Codex CLI 0.153.4: five real Runtime Runs completed, including
+reconnect/resume and native fork. An isolated loopback synthetic model served
+the requests; no tool calls or model credentials were used. This is application
+integration evidence, not a new compatibility claim for every Provider or a
+paid-model canary.
 
 ## For repository contributors
 

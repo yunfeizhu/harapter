@@ -2,29 +2,14 @@
   "name": "@harapter/transport-http-sse",
   "version": "0.3.0",
   "description": "Bounded HTTP and Server-Sent Events transport for Harapter providers.",
-  "keywords": [
-    "agent",
-    "http",
-    "sse",
-    "transport"
-  ],
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yunfeizhu/harapter.git",
     "directory": "packages/transport-http-sse"
   },
-  "bugs": {
-    "url": "https://github.com/yunfeizhu/harapter/issues"
-  },
-  "homepage": "https://github.com/yunfeizhu/harapter/tree/main/packages/transport-http-sse#readme",
   "type": "module",
   "sideEffects": false,
-  "files": [
-    "dist",
-    "README.zh-CN.md",
-    "README.ja.md"
-  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -36,13 +21,8 @@
   "engines": {
     "node": ">=24"
   },
-  "publishConfig": {
-    "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/",
-    "tag": "latest"
-  },
   "scripts": {
     "build": "tsc --project tsconfig.build.json"
-  }
+  },
+  "private": true
 }

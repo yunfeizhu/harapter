@@ -1,8 +1,5 @@
-import { HarnessRegistry, isHarnessError } from '@harapter/core';
-import {
-  createFakeProfile,
-  createFakeProviderFactory,
-} from '@harapter/conformance/fake';
+import { HarnessRegistry, isHarnessError } from 'harapter';
+import { createFakeProfile, createFakeProviderFactory } from 'harapter/testing';
 import { terminalApproval } from './approval.js';
 import { runTask } from './service.js';
 

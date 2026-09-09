@@ -1,5 +1,9 @@
 # Examples
 
+The [Runtime profile application](./runtime-profiles/README.md) demonstrates the
+new single-package `harapter` entry with shared DSH and OpenCode task code. Its
+first npm release is pending; follow its guide for current source evidence.
+
 Start with the [standalone SDK application](sdk-application/README.md). It uses
 published npm dependencies and includes real-runtime entrypoints,
 business-module integration, streaming, resume/fork, cancellation, approvals and

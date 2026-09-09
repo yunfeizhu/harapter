@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
-<h1 align="center"><code>@harapter/adapter-pi</code></h1>
+<h1 align="center"><code>harapter/pi</code></h1>
 
 <p align="center"><strong>Run Pi Agent's strict JSONL RPC mode through Harapter.</strong></p>
 
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@harapter/adapter-pi"><img src="https://img.shields.io/npm/v/%40harapter%2Fadapter-pi?style=flat-square&amp;label=npm" alt="npm version"></a>
-  <a href="https://www.npmjs.com/package/@harapter/adapter-pi"><img src="https://img.shields.io/npm/dm/%40harapter%2Fadapter-pi?style=flat-square" alt="npm downloads"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm downloads"></a>
   <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
@@ -18,8 +18,13 @@
 
 <!-- markdownlint-enable MD033 -->
 
-`@harapter/adapter-pi` maps the official Pi Agent RPC mode to the portable
-Harapter lifecycle.
+This guide describes a module included in the single `harapter` SDK. For
+ordinary application setup, start with the
+[application guide](../../packages/harapter/README.md). The first single-package
+release is pending; the installation commands apply after that release.
+
+`harapter/pi` maps the official Pi Agent RPC mode to the portable Harapter
+lifecycle.
 
 The host installs, configures, authenticates, and operates Pi Agent. Harapter
 starts only the exact adapter-owned command selected by the Profile. It does not
@@ -34,7 +39,7 @@ Harapter checkout or private imports are needed.
 ```sh
 npm init -y
 npm pkg set type=module
-npm install @harapter/core @harapter/adapter-pi
+npm install harapter
 npm install -D typescript @types/node
 ```
 
@@ -59,8 +64,8 @@ state.
 
 ```ts
 import { isAbsolute } from 'node:path';
-import { isHarnessError, profileId, type HarnessSession } from '@harapter/core';
-import { PI_PROVIDER_ID, createPiProviderFactory } from '@harapter/adapter-pi';
+import { isHarnessError, profileId, type HarnessSession } from 'harapter';
+import { PI_PROVIDER_ID, createPiProviderFactory } from 'harapter/pi';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -131,7 +136,7 @@ void main().catch((error: unknown) => {
 ```
 
 [Complete application, recipes and error handling](../../examples/sdk-application/README.md)
-· [All published packages](https://www.npmjs.com/org/harapter)
+· [Harapter on npm](https://www.npmjs.com/package/harapter)
 
 ## Use this Adapter when
 
@@ -144,7 +149,7 @@ void main().catch((error: unknown) => {
 ## Installation
 
 ```bash
-pnpm add @harapter/core @harapter/adapter-pi
+pnpm add harapter
 ```
 
 ## Runtime prerequisites and compatibility
@@ -165,8 +170,8 @@ allowlist. Pi Agent is MIT licensed; Harapter does not redistribute it. See the
 A Pi Profile uses an adapter-owned process. The host provides the base command:
 
 ```ts
-import { HarnessRegistry, profileId } from '@harapter/core';
-import { PI_PROVIDER_ID, createPiProviderFactory } from '@harapter/adapter-pi';
+import { HarnessRegistry, profileId } from 'harapter';
+import { PI_PROVIDER_ID, createPiProviderFactory } from 'harapter/pi';
 
 const registry = new HarnessRegistry();
 registry.register(createPiProviderFactory());
@@ -382,7 +387,7 @@ Portable `session.fork` remains unsupported: these typed native operations have
 different history and parent-lifecycle semantics.
 
 ```ts
-import { PI_SESSION_EXTENSION, type PiSessions } from '@harapter/adapter-pi';
+import { PI_SESSION_EXTENSION, type PiSessions } from 'harapter/pi';
 
 const sessions = client.extensions().get<PiSessions>(PI_SESSION_EXTENSION);
 if (sessions === undefined)
@@ -401,15 +406,15 @@ tests use real runtimes with a local synthetic model, not a hosted model.
 
 [All packages](../../README.md#packages-on-npm)
 
-| Package                                                                                  | Documentation                                 |
-| ---------------------------------------------------------------------------------------- | --------------------------------------------- |
-| [`@harapter/core`](https://www.npmjs.com/package/@harapter/core)                         | [Guide](../../packages/core/README.md)        |
-| [`@harapter/conformance`](https://www.npmjs.com/package/@harapter/conformance)           | [Guide](../../packages/conformance/README.md) |
-| [`@harapter/adapter-codex`](https://www.npmjs.com/package/@harapter/adapter-codex)       | [Guide](../codex/README.md)                   |
-| [`@harapter/adapter-dsh`](https://www.npmjs.com/package/@harapter/adapter-dsh)           | [Guide](../dsh/README.md)                     |
-| [`@harapter/adapter-hermes`](https://www.npmjs.com/package/@harapter/adapter-hermes)     | [Guide](../hermes/README.md)                  |
-| [`@harapter/adapter-openclaw`](https://www.npmjs.com/package/@harapter/adapter-openclaw) | [Guide](../openclaw/README.md)                |
-| [`@harapter/adapter-opencode`](https://www.npmjs.com/package/@harapter/adapter-opencode) | [Guide](../opencode/README.md)                |
+| Package                                                          | Documentation                                 |
+| ---------------------------------------------------------------- | --------------------------------------------- |
+| [`harapter`](https://www.npmjs.com/package/harapter)             | [Guide](../../packages/core/README.md)        |
+| [`harapter/conformance`](https://www.npmjs.com/package/harapter) | [Guide](../../packages/conformance/README.md) |
+| [`harapter/codex`](https://www.npmjs.com/package/harapter)       | [Guide](../codex/README.md)                   |
+| [`harapter/dsh`](https://www.npmjs.com/package/harapter)         | [Guide](../dsh/README.md)                     |
+| [`harapter/hermes`](https://www.npmjs.com/package/harapter)      | [Guide](../hermes/README.md)                  |
+| [`harapter/openclaw`](https://www.npmjs.com/package/harapter)    | [Guide](../openclaw/README.md)                |
+| [`harapter/opencode`](https://www.npmjs.com/package/harapter)    | [Guide](../opencode/README.md)                |
 
 Official Runtime 0.85.1 also has
 [synthetic-model interaction evidence](../../docs/provider-interaction-evidence.md)

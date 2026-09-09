@@ -58,9 +58,11 @@ export function validatePublicPackagePolicy(policy) {
     }
     if (
       typeof entry.name !== 'string' ||
-      !/^@harapter\/[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(entry.name)
+      !/^(?:harapter|@harapter\/[a-z0-9]+(?:-[a-z0-9]+)*)$/u.test(entry.name)
     ) {
-      failures.push(`${label}.name must be an @harapter package name.`);
+      failures.push(
+        `${label}.name must be harapter or an @harapter package name.`,
+      );
     } else if (names.has(entry.name)) {
       failures.push(`${label}.name must be unique.`);
     } else {
@@ -224,6 +226,7 @@ export async function executeRegistryPublication({
 export function validatePublicPackageManifest({
   entry,
   knownPackageNames,
+  internalPackageNames = new Set(),
   packageJson,
 }) {
   const manifestPath = `${entry.path}/package.json`;
@@ -306,10 +309,13 @@ export function validatePublicPackageManifest({
     'peerDependencies',
   ]) {
     for (const [name, range] of Object.entries(packageJson[section] ?? {})) {
-      if (!name.startsWith('@harapter/')) {
+      if (name !== 'harapter' && !name.startsWith('@harapter/')) {
         continue;
       }
-      if (!knownPackageNames.has(name)) {
+      if (
+        !knownPackageNames.has(name) &&
+        !(section === 'devDependencies' && internalPackageNames.has(name))
+      ) {
         failures.push(
           `${manifestPath} ${section} contains unknown public package ${name}.`,
         );
@@ -387,14 +393,53 @@ export function validatePackedFiles(entry, files) {
   return failures;
 }
 
-export function validateReleaseVersion(version, { bootstrap = false } = {}) {
+export function validateReleaseVersion(version) {
   if (!isReleaseVersion(version, { allowZero: false })) {
     return [`Release version ${String(version)} is not publishable.`];
   }
-  if (bootstrap && version !== '0.1.1') {
-    return ['The npm bootstrap path is restricted to release 0.1.1.'];
-  }
   return [];
+}
+
+/** Only initial creation of the single public SDK may use a registry token. */
+export function validatePublicationMode({
+  entries,
+  version,
+  bootstrap,
+  publishedVersions,
+}) {
+  const failures = validateReleaseVersion(version);
+  if (bootstrap && (entries.length !== 1 || entries[0]?.name !== 'harapter')) {
+    failures.push('Bootstrap is restricted to the single harapter package.');
+  }
+  for (const { name } of entries) {
+    if (!publishedVersions.has(name)) {
+      failures.push(`${name} registry inspection is missing.`);
+      continue;
+    }
+    const versions = publishedVersions.get(name);
+    if (versions === undefined) {
+      if (!bootstrap)
+        failures.push(
+          `${name} does not exist; its first publication requires the authorized bootstrap path.`,
+        );
+      continue;
+    }
+    if (
+      !Array.isArray(versions) ||
+      versions.length === 0 ||
+      versions.some((value) => typeof value !== 'string')
+    ) {
+      failures.push(`${name} returned invalid version history.`);
+    } else if (
+      bootstrap &&
+      (versions.length !== 1 || versions[0] !== version)
+    ) {
+      failures.push(
+        `${name} already has a different release; bootstrap cannot replace trusted publishing.`,
+      );
+    }
+  }
+  return failures;
 }
 
 export function expectedReleaseAssetNames(policy, version) {
@@ -849,14 +894,15 @@ function isReleaseVersion(version, { allowZero }) {
 }
 
 function releaseTarballFileName(name, version) {
-  return `${name.slice(1).replace('/', '-')}-${version}.tgz`;
+  return `${name.replace(/^@/u, '').replace('/', '-')}-${version}.tgz`;
 }
 
 function releasePackageSpdxId(name) {
-  return `SPDXRef-Package-${name.slice(1).replace('/', '-')}`;
+  return `SPDXRef-Package-${name.replace(/^@/u, '').replace('/', '-')}`;
 }
 
 function releasePackagePurl(name, version) {
+  if (name === 'harapter') return `pkg:npm/harapter@${version}`;
   const [scope, packageName] = name.slice(1).split('/');
   return `pkg:npm/%40${scope}/${packageName}@${version}`;
 }
@@ -883,7 +929,7 @@ function validateReleaseSbomInput({ created, packages, releaseSha, version }) {
     if (
       !isMapping(entry) ||
       typeof entry.name !== 'string' ||
-      !/^@harapter\/[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(entry.name) ||
+      !/^(?:harapter|@harapter\/[a-z0-9]+(?:-[a-z0-9]+)*)$/u.test(entry.name) ||
       !/^[a-f0-9]{64}$/u.test(entry.sha256 ?? '') ||
       !Array.isArray(entry.dependencies) ||
       entry.dependencies.some((dependency) => typeof dependency !== 'string')
