@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0](https://github.com/yunfeizhu/harapter/compare/harapter-v0.3.0...harapter-v1.0.0) (2026-09-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* consolidate public packages into harapter ([#134](https://github.com/yunfeizhu/harapter/issues/134))
+
+### Features
+
+* consolidate public packages into harapter ([#134](https://github.com/yunfeizhu/harapter/issues/134)) ([4506c4c](https://github.com/yunfeizhu/harapter/commit/4506c4c142fd1652e61829d4c4027c7f8b9a508b))
+
 ## [0.3.0](https://github.com/yunfeizhu/harapter/compare/harapter-v0.2.0...harapter-v0.3.0) (2026-09-08)
 
 

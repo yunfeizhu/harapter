@@ -1,6 +1,6 @@
 {
   "name": "harapter",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "One Harapter API for configured agent harness runtimes.",
   "keywords": [
     "agent",
