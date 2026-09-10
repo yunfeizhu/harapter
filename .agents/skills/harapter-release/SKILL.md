@@ -1,10 +1,9 @@
 ---
 name: harapter-release
 description:
-  Verify a Harapter Release Please pull request and complete an authorized
-  GitHub and npm release safely, including version impact, package artifacts,
-  provenance, tags, and recovery. Do not use to invent manual versions or bypass
-  the reviewed publication workflows.
+  Verify Harapter Release Please pull requests and complete authorized GitHub
+  and npm releases, including versions, artifacts, provenance and recovery.
+  Never invent versions or bypass the reviewed publication workflows.
 ---
 
 # Harapter Release
@@ -19,7 +18,10 @@ user's explicit authorization.
    repository setting for Actions-created pull requests only with authorization,
    then dispatch `release-please.yml` with `--ref main -f operation=prepare`.
    Never dispatch the write-capable workflow from another ref.
-2. Confirm the pull request is owned by Release Please and targets `main`.
+2. Confirm Release Please ownership and base `main`; review the exact head.
+   Within release authorization, approve its pending native `ci.yml` run as
+   documented in [RELEASING.md](../../../RELEASING.md). Match the run's PR and
+   head before approval. Manual CI cannot replace native PR checks or approval.
 3. Inspect every releasable squash commit since the previous tag. Verify that
    `feat`, `fix`, and breaking-change markers produce the intended SemVer bump.
 4. Compare `version.txt`, the root manifest, every manifest listed in
@@ -28,9 +30,9 @@ user's explicit authorization.
    to hide a configuration error.
 5. Verify that changelog entries describe user-visible additions, removals, and
    breaking migration requirements without leaking private data.
-6. Require all applicable CI, conformance, build, and security checks on the
-   exact release pull request head. A skipped credential-backed test is not live
-   compatibility evidence.
+6. Require all applicable checks on the reviewed head and recheck it before
+   manual merge. A changed head needs review and checks again. Skipped
+   credential-backed tests are not live compatibility evidence.
 7. Confirm `pnpm check` validated the publish metadata, dependency order,
    tarball contents, Workspace dependency rewrites, runtime imports, and strict
    TypeScript imports.
@@ -43,9 +45,8 @@ version, and publish under the default npm `latest` dist-tag. Never publish from
 a checkout, local tarball, mutable branch, or unreviewed workflow. npm uses only
 the verified tarballs attached to an immutable GitHub Release.
 
-Verify that `latest` identifies the release being published. Default-channel
-installation does not imply a 1.0 API stability guarantee. Historical immutable
-releases retain their original channel policy.
+Verify `latest` identifies this release. Historical releases retain their
+channel policy; default-channel installation does not guarantee API stability.
 
 Normal npm publication uses the protected `npm` GitHub environment, OIDC trusted
 publishing, and provenance without a registry token. Release Please tags the

@@ -1,19 +1,16 @@
 # Releasing Harapter
 
-Release Please owns versions, changelogs, tag metadata, and draft GitHub
-Releases. Verified Release assets precede publication; npm remains separate.
+Release Please owns versions, changelogs, tags and draft Releases. Verified
+assets precede publication; npm remains separate.
 
 ## Release model
 
-Only `harapter` is public, as declared in
-[`scripts/public-packages.json`](./scripts/public-packages.json). Core,
-Adapters, transports, conformance, the Workspace root and examples remain
-private. Internal implementations are bundled; consumers have no `@harapter/*`
-runtime dependency.
-
-The SDK publishes under `latest`; consumers install without a tag suffix. The
-channel does not guarantee API stability. `feat` produces a minor release, `fix`
-a patch, and `!` or `BREAKING CHANGE` a major release.
+Only `harapter` is public under
+[`scripts/public-packages.json`](./scripts/public-packages.json). Other
+workspaces stay private; implementation modules are bundled without
+`@harapter/*` dependencies. npm `latest` is the default channel, not an API
+stability guarantee. `feat` produces a minor release, `fix` a patch, and `!` or
+`BREAKING CHANGE` a major.
 
 ## GitHub release flow
 
@@ -25,33 +22,36 @@ gh workflow run release-please.yml --ref main -f operation=prepare
 gh workflow run release-please.yml --ref main -f operation=finalize
 ```
 
-1. Squash-merge eligible Conventional Commit pull requests into `main`.
-2. With release authorization, dispatch `prepare` from `main`.
-3. Use the [Harapter release skill](./.agents/skills/harapter-release/SKILL.md)
-   to verify the generated version artifacts and changelog.
-4. Require all checks on the exact head, then manually merge after review;
-   release pull requests never use auto-merge.
-5. Keep GitHub immutable releases enabled.
-6. With publication authorization, dispatch `finalize`. It creates only the
-   draft Release; the finalizer verifies the commit and assets before publishing
-   it. `prepare` cannot create a Release, and `finalize` cannot create a pull
-   request.
+1. Squash-merge eligible Conventional Commit PRs into `main`.
+2. With release authorization, dispatch `prepare` from `main`. Verify generated
+   versions and changelog using the
+   [release skill](./.agents/skills/harapter-release/SKILL.md).
+3. Review the exact bot PR head, then approve its pending native `ci.yml` run.
+   [GitHub requires approval for bot-created PR workflows](https://docs.github.com/en/actions/concepts/security/github_token).
+   Select **Approve workflows to run**, or use the
+   [workflow-run approval API](https://docs.github.com/en/rest/actions/workflow-runs).
+   Match the pending run's PR and head before approving.
+4. Wait for `Repository checks`, `Pull request metadata`, and
+   `Dependency review`. Recheck the unchanged head and merge manually; never
+   enable auto-merge.
+5. Keep immutable releases enabled. With publication authorization, dispatch
+   `finalize`. It creates a draft, verifies its commit and assets, then
+   publishes. `prepare` cannot create Releases; `finalize` cannot create PRs.
 
-Each Release contains all policy-listed tarballs, `harapter-X.Y.Z.spdx.json`,
-and `SHA256SUMS.txt`. The deterministic SPDX SBOM binds the commit, artifacts,
-and internal dependencies. Release Please owns `CHANGELOG.md`.
+Preparation neither approves workflows nor dispatches duplicate CI. Manual CI
+checks the repository only; it cannot replace PR approval or required checks. Do
+not change tokens or merge protection to avoid approval.
+
+Release assets are the policy-listed tarballs, `harapter-X.Y.Z.spdx.json`, and
+`SHA256SUMS.txt`. The deterministic SPDX SBOM binds the commit and tarballs.
 
 ## npm publication flow
 
-`publish-npm.yml` resolves a `harapter-vX.Y.Z` tag to its immutable commit,
-reproduces its assets, then publishes the exact tarballs in dependency order
-with provenance. The dispatch ref must match; branches and local artifacts are
-rejected.
+The protected `npm` environment gates OIDC publication with provenance and no
+long-lived token. `publish-npm.yml` reproduces the immutable Release assets and
+publishes those tarballs. Its dispatch ref and input must identify the same tag.
 
-The protected `npm` environment gates publication. Normal releases use GitHub
-Actions OIDC without a long-lived token.
-
-After the GitHub Release exists, an authorized maintainer dispatches:
+After GitHub publication, an authorized maintainer runs:
 
 ```bash
 release_tag=harapter-vX.Y.Z
@@ -61,18 +61,14 @@ gh workflow run publish-npm.yml \
   -f bootstrap=false
 ```
 
-Replace `X.Y.Z` with the approved version.
-
-The publisher submits missing tarballs, then polls the batch for up to 20
-minutes. This covers npm's documented
-[publish-time scanning delay](https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata/)
-without serializing scans. SHA-512, `latest`, provenance, timeout, and conflicts
-remain fail-closed.
+Replace `X.Y.Z` with the approved version. Missing tarballs share a 20-minute
+availability window for
+[npm scanning](https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata/).
+SHA-512, `latest`, provenance, timeout and conflicts remain fail-closed.
 
 ## One-time npm bootstrap
 
-npm requires a package to exist before configuring its trusted publisher. The
-new unscoped `harapter` name therefore needs its own initial creation:
+npm requires the `harapter` package to exist before trusted-publisher setup:
 
 1. Confirm name availability, account two-factor authentication and protected
    `npm` environment reviewers.

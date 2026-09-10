@@ -244,13 +244,14 @@ do not start Release Please; a maintainer enables Actions-created pull requests
 and manually dispatches the workflow. An automatic `main` trigger requires a
 separate repository-policy change.
 
-Maintainers dispatch `operation=prepare` from `main`, manually merge its release
-pull request, then dispatch `operation=finalize`. Preparation changes only the
-pull request; finalization creates only the draft Release. An isolated finalizer
-checks the SHA, builds all policy-listed tarballs, an SPDX SBOM, and SHA-256
-checksums, verifies their digests, then publishes the immutable Release. Do not
-create these artifacts manually. See [RELEASING.md](../RELEASING.md) for the
-procedure.
+Maintainers dispatch `operation=prepare` from `main`, review and approve the
+pull request's native CI, then manually merge after its required checks pass.
+Preparation does not dispatch duplicate CI. They then dispatch
+`operation=finalize`: preparation changes only the pull request; finalization
+creates only the draft Release. An isolated finalizer checks the SHA, builds all
+policy-listed tarballs, an SPDX SBOM, and SHA-256 checksums, verifies their
+digests, then publishes the immutable Release. Do not create these artifacts
+manually. See [RELEASING.md](../RELEASING.md) for the procedure.
 
 Only `harapter` publishes under npm `latest`; implementation modules stay
 private. Consumers install without a dist-tag suffix. `pnpm check` validates

@@ -59,18 +59,25 @@ for the isolated finalizer. This separation prevents a draft from being omitted
 from Release Please's published-release search while the same run constructs a
 duplicate next-version pull request. The finalizer builds and verifies every
 asset before publication creates the immutable tag. The release job rejects
-non-`main` refs, and the CI dispatch rejects a branch head that differs from the
-queried pull request head. Enabling an automatic `main` trigger is a separate
-reviewed repository-policy change. The first approved pre-alpha release is
-`0.1.0`. Release Please owns its generated changelog formatting and retains its
-default visible commit types. A user-visible addition or removal uses `feat`,
-`fix`, or a breaking-change marker; `refactor` is reserved for
-behavior-preserving work because making a normally hidden type visible can
-create an otherwise unintended patch release. Markdown and link validation
-remain in force, and repository metadata accepts both observed GitHub Actions
-bot login forms. The generated root `CHANGELOG.md` accepts Release Please's
-consecutive blank lines while every other Markdown file retains the standard
-blank-line rule, and its list markers follow the generator's asterisk style.
+non-`main` refs. Native `pull_request` CI owns release pull request checks:
+after reviewing the generated head, the authorized maintainer approves any
+pending bot workflow and waits for all required checks before manual merge.
+GitHub's
+[bot workflow approval rule](https://docs.github.com/en/actions/concepts/security/github_token)
+applies to Release Please's `GITHUB_TOKEN`. Preparation does not approve or
+dispatch CI, and its job has no Actions write permission. Manual CI dispatch
+runs repository evidence only, without caller-supplied pull request metadata.
+Enabling an automatic `main` trigger is a separate reviewed repository-policy
+change. The first approved pre-alpha release is `0.1.0`. Release Please owns its
+generated changelog formatting and retains its default visible commit types. A
+user-visible addition or removal uses `feat`, `fix`, or a breaking-change
+marker; `refactor` is reserved for behavior-preserving work because making a
+normally hidden type visible can create an otherwise unintended patch release.
+Markdown and link validation remain in force, and repository metadata accepts
+both observed GitHub Actions bot login forms. The generated root `CHANGELOG.md`
+accepts Release Please's consecutive blank lines while every other Markdown file
+retains the standard blank-line rule, and its list markers follow the
+generator's asterisk style.
 
 Only `harapter` is public; Core, conformance, transports and Adapters are
 private modules, as recorded in the
@@ -174,6 +181,17 @@ The upstream action tracks this behavior in
 but Harapter keeps the two manual operations independent rather than depending
 on an unmerged upstream change.
 
+### Dispatch separate CI for every generated release pull request
+
+An explicit dispatch can verify the queried head, but it does not satisfy the
+approval gate on GitHub's native bot-created pull request run. During the 1.1.1
+release, the dispatched CI succeeded while the pull request remained blocked;
+approving its native run repeated the three jobs before the PR became clean.
+Harapter uses that native event path and documents its approval boundary, giving
+up automatic pre-approval evidence in exchange for one CI run and less workflow
+privilege. A token workaround or automated approval would erase the review
+boundary rather than clarify it.
+
 ### Version every public package independently
 
 Independent versions reduce updates for packages that did not change, but they
@@ -255,20 +273,23 @@ check rejects tool-specific or mismatched branch prefixes. Early feature work
 accumulates without creating release pull requests until a maintainer explicitly
 activates the first pre-alpha release. Release preparation and GitHub
 publication use explicit `prepare` and `finalize` workflow dispatches around the
-manual release pull request merge. Their outcome checks reject a preparation
-that creates a Release or a finalization that creates a pull request. Draft
-recovery is accepted only with `finalize`. npm publication adds a third,
-separately authorized dispatch from the immutable GitHub Release tag. Public
-packages share the generated version and Harapter publishes them with `latest`
-for ordinary npm installation. The publisher uses one bounded shared
-availability window for independent npm scans. The first publication has a
-documented one-time token bootstrap, while subsequent releases require OIDC.
-Maintainers preserve `Repository checks`, `Pull request metadata`, and
-`Dependency review` as required status checks. Local delivery retains one
-independent model review and test rerun while its termination rule prevents P2
-churn. Pull requests no longer wait for a second model review or permit
-automated review-comment repair. Eligible contributors explicitly enable native
-auto-merge, and GitHub waits for the deterministic requirements and resolved
-conversations. The migration first removes the synthetic `AI code review`
-required context while preserving strict updates and the three deterministic
-contexts, then deletes its workflow producer.
+manual release pull request merge. Generated pull requests may wait for an
+authorized maintainer to approve native CI; preparation cannot approve that run
+or create a duplicate dispatch. The maintainer rechecks the candidate head
+before approval and merge. Their outcome checks reject a preparation that
+creates a Release or a finalization that creates a pull request. Draft recovery
+is accepted only with `finalize`. npm publication adds a third, separately
+authorized dispatch from the immutable GitHub Release tag. Public packages share
+the generated version and Harapter publishes them with `latest` for ordinary npm
+installation. The publisher uses one bounded shared availability window for
+independent npm scans. The first publication has a documented one-time token
+bootstrap, while subsequent releases require OIDC. Maintainers preserve
+`Repository checks`, `Pull request metadata`, and `Dependency review` as
+required status checks. Local delivery retains one independent model review and
+test rerun while its termination rule prevents P2 churn. Pull requests no longer
+wait for a second model review or permit automated review-comment repair.
+Eligible contributors explicitly enable native auto-merge, and GitHub waits for
+the deterministic requirements and resolved conversations. The migration first
+removes the synthetic `AI code review` required context while preserving strict
+updates and the three deterministic contexts, then deletes its workflow
+producer.
