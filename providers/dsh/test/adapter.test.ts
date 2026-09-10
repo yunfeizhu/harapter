@@ -192,6 +192,39 @@ describe('DeepSeek Harness Provider Adapter', () => {
     expect(JSON.stringify(events)).not.toContain('Synthetic title');
   });
 
+  it('accepts SDK 0.1.5 system messages and attempts across a persistent Session', async () => {
+    const client = await connect('sdk-0.1.5');
+    const session = await client.createSession();
+    for (const text of ['first committed answer', 'second committed answer']) {
+      const run = await session.start(textInput(text));
+      const [events, result] = await Promise.all([
+        collectEvents(run),
+        run.result(),
+      ]);
+      expect(result).toMatchObject({ status: 'completed', finalMessage: text });
+      expect(events).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: 'provider',
+            providerEventType: 'system/message',
+          }),
+          expect.objectContaining({
+            type: 'provider',
+            providerEventType: 'assistant/attempt',
+          }),
+        ]),
+      );
+      expect(
+        events.filter((event) => event.type === 'message.completed'),
+      ).toHaveLength(1);
+      expect(
+        events.filter((event) => event.type === 'message.delta'),
+      ).toHaveLength(0);
+      expect(events.at(-1)?.type).toBe('run.completed');
+      expect(JSON.stringify(events)).not.toContain('Synthetic private');
+    }
+  });
+
   it.each([
     ['aborted-terminal', 'cancelled', 'run.cancelled', 'aborted'],
     ['blocked-terminal', 'failed', 'run.failed', 'blocked'],
@@ -218,6 +251,8 @@ describe('DeepSeek Harness Provider Adapter', () => {
 
   it.each([
     ['missing-terminal', 'missing_terminal_reason'],
+    ['sdk-0.1.5-system-only', 'missing_terminal_reason'],
+    ['sdk-0.1.5-attempt-only', 'missing_terminal_reason'],
     ['duplicate-terminal', 'duplicate_terminal_reason'],
     ['unknown-terminal', 'unknown_terminal_reason'],
     ['malformed-aborted-terminal', 'malformed_aborted_reason'],

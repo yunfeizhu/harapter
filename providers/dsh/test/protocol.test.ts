@@ -700,6 +700,102 @@ describe('DeepSeek Harness protocol mapping', () => {
     }
   });
 
+  it('keeps system messages and uncommitted attempts observable without response authority', () => {
+    for (const content of [
+      [],
+      [{ type: 'text', text: 'synthetic private instructions' }],
+    ]) {
+      const mapped = mapDshSessionEvent(
+        sessionEvent('system/message', {
+          turn: 1,
+          step: 1,
+          message: {
+            id: 'synthetic-system',
+            role: 'system',
+            content,
+            source: { kind: 'plugin', plugin: 'synthetic-private-plugin' },
+          },
+        }),
+      );
+      expect(mapped).toMatchObject({
+        events: [{ type: 'provider', providerEventType: 'system/message' }],
+        insertedMessageCount: 0,
+        insertedMessageIds: [],
+      });
+      expect(mapped.terminal).toBeUndefined();
+      expect(mapped.events[0]?.finalMessage).toBeUndefined();
+      expect(JSON.stringify(mapped)).not.toContain(
+        'synthetic private instructions',
+      );
+      expect(JSON.stringify(mapped)).not.toContain('synthetic-private-plugin');
+    }
+    const attempt = mapDshSessionEvent(
+      sessionEvent('assistant/attempt', {
+        turn: 1,
+        step: 1,
+        stream: [
+          {
+            type: 'text-chunks',
+            time0: 1,
+            index: 0,
+            dt: [0],
+            texts: ['synthetic private uncommitted answer'],
+          },
+        ],
+      }),
+    );
+    expect(attempt.events).toEqual([
+      expect.objectContaining({
+        type: 'provider',
+        providerEventType: 'assistant/attempt',
+      }),
+    ]);
+    expect(attempt.terminal).toBeUndefined();
+    expect(attempt.events[0]?.finalMessage).toBeUndefined();
+    expect(JSON.stringify(attempt)).not.toContain(
+      'synthetic private uncommitted answer',
+    );
+  });
+
+  it('rejects malformed system messages and uncommitted attempts', () => {
+    const message = {
+      id: 'synthetic-system',
+      role: 'system',
+      content: [],
+      source: { kind: 'plugin', plugin: 'synthetic-plugin' },
+    };
+    for (const data of [
+      { step: 1, message },
+      { turn: 1, step: 0, message },
+      { turn: 1, step: 1 },
+      ...[
+        { id: '' },
+        { role: 'assistant' },
+        { content: null },
+        { content: [{}] },
+        { source: { kind: 'user' } },
+        { source: { kind: 'plugin', plugin: '' } },
+      ].map((change) => ({
+        turn: 1,
+        step: 1,
+        message: { ...message, ...change },
+      })),
+    ]) {
+      expect(() =>
+        mapDshSessionEvent(sessionEvent('system/message', data)),
+      ).toThrow(expect.objectContaining({ code: 'provider_api_incompatible' }));
+    }
+    for (const data of [
+      { turn: 1, stream: [] },
+      { turn: 1, step: 1 },
+      { turn: 1, step: 1, stream: {} },
+    ]) {
+      expect(() =>
+        mapDshSessionEvent(sessionEvent('assistant/attempt', data)),
+      ).toThrow(expect.objectContaining({ code: 'provider_api_incompatible' }));
+    }
+  });
+
   it('bounds and redacts raw events without leaking identifiers or content', () => {
     const event = redactDshEvent('unsafe method value', {
       method: 'session.event',
@@ -735,6 +831,8 @@ describe('DeepSeek Harness protocol mapping', () => {
       'failed.jsonl',
       'missing-terminal.jsonl',
       'unknown-terminal.jsonl',
+      '../sdk-jsonrpc-0.1.5/completed.jsonl',
+      '../sdk-jsonrpc-0.1.5/failed-attempt.jsonl',
     ];
     for (const name of names) {
       const records = await readJsonLines(name);
@@ -762,10 +860,15 @@ describe('DeepSeek Harness protocol mapping', () => {
       ).toBe(true);
       expect(correlated).toBe(true);
     }
-    const manifest = JSON.parse(
-      await readFile(`${fixtureDirectory}/manifest.json`, 'utf8'),
-    ) as Record<string, unknown>;
-    expect(manifest['providerId']).toBe(DSH_PROVIDER_ID);
+    for (const directory of [
+      fixtureDirectory,
+      `${fixtureDirectory}/../sdk-jsonrpc-0.1.5`,
+    ]) {
+      const manifest = JSON.parse(
+        await readFile(`${directory}/manifest.json`, 'utf8'),
+      ) as Record<string, unknown>;
+      expect(manifest['providerId']).toBe(DSH_PROVIDER_ID);
+    }
   });
 });
 

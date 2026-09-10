@@ -1711,6 +1711,38 @@ requireSuccess(
   run(prepareLiveCanary, ['validate-dsh-config', dshConfigPath]),
   'DSH safe effective config',
 );
+const currentDshRows = safeDshRows.filter(
+  ({ id }) => id !== 'fs-local' && id !== 'str-replace-editor',
+);
+const currentDshConfigPath = join(
+  fixtureRoot,
+  'live-config',
+  'dsh-current.json',
+);
+writeFileSync(currentDshConfigPath, JSON.stringify(currentDshRows), 'utf8');
+requireSuccess(
+  run(prepareLiveCanary, ['validate-dsh-config', currentDshConfigPath]),
+  'DSH 0.1.5 minimal Profile without legacy filesystem plugins',
+);
+for (const rows of [
+  safeDshRows.filter(({ id }) => id !== 'fs-local'),
+  currentDshRows.filter(({ id }) => id !== 'session'),
+  currentDshRows.map((row) =>
+    row.id === 'persistent-bash' ? { ...row, disabled: false } : row,
+  ),
+  currentDshRows.map((row) =>
+    row.id === 'session'
+      ? { ...row, name: '@deepseek-ai/dsh-tool-future' }
+      : row,
+  ),
+]) {
+  writeFileSync(currentDshConfigPath, JSON.stringify(rows), 'utf8');
+  requireFailure(
+    run(prepareLiveCanary, ['validate-dsh-config', currentDshConfigPath]),
+    'The DSH effective config does not match the reviewed canary surface.',
+    'DSH incomplete or unsafe current Profile',
+  );
+}
 const unsafeDshConfigPath = join(
   fixtureRoot,
   'live-config',
