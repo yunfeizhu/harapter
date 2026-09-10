@@ -4,3 +4,8 @@ packages:
   - examples/*
 
 autoInstallPeers: false
+
+overrides:
+  # GHSA-7w5x-hrqm-74c2: remove when markdownlint-cli2 resolves a patched
+  # smol-toml version without this rule.
+  'markdownlint-cli2@0.23.2>smol-toml': 1.7.1
