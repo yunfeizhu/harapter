@@ -15,6 +15,7 @@
   <a href="./README.md">English</a> ·
   <a href="./README.zh-CN.md">简体中文</a> ·
   <a href="./README.ja.md">日本語</a> ·
+  <a href="./docs/api-reference.ja.md">API リファレンス</a> ·
   <a href="./docs/design/README.ja.md">設計</a> ·
   <a href="./examples/README.md">サンプル</a> ·
   <a href="./CONTRIBUTING.md">コントリビューション</a>
@@ -38,232 +39,93 @@ Adapter が公式 SDK やマシンプロトコルへ変換します。
 これはアプリケーションと選択した Runtime の間に置く基盤であり、新しい Agent
 Loop ではありません。各 Runtime の選択、インストール、認証、セキュリティは引き続きホストが管理します。
 
-## npm パッケージ一覧
+## 一つの SDK
 
-インストールするのは [`harapter`](https://www.npmjs.com/package/harapter)
-だけです。下表は同じ SDK のモジュールで、独立した npm パッケージではありません。単一パッケージの初回公開は未完了です。
-
-| API                                 | ガイド                                                    |
-| ----------------------------------- | --------------------------------------------------------- |
-| `harapter`                          | [ガイド](./packages/harapter/README.ja.md)                |
-| `harapter/transports/jsonrpc-stdio` | [ガイド](./packages/transport-jsonrpc-stdio/README.ja.md) |
-| `harapter/transports/jsonl-process` | [ガイド](./packages/transport-jsonl-process/README.ja.md) |
-| `harapter/transports/http-sse`      | [ガイド](./packages/transport-http-sse/README.ja.md)      |
-| `harapter/transports/acp`           | [ガイド](./packages/transport-acp/README.ja.md)           |
-| `harapter/conformance`              | [ガイド](./packages/conformance/README.ja.md)             |
-| `harapter/codex`                    | [ガイド](./providers/codex/README.ja.md)                  |
-| `harapter/dsh`                      | [ガイド](./providers/dsh/README.ja.md)                    |
-| `harapter/hermes`                   | [ガイド](./providers/hermes/README.ja.md)                 |
-| `harapter/openclaw`                 | [ガイド](./providers/openclaw/README.ja.md)               |
-| `harapter/opencode`                 | [ガイド](./providers/opencode/README.ja.md)               |
-| `harapter/pi`                       | [ガイド](./providers/pi/README.ja.md)                     |
+**`harapter`** だけをインストールし、ルートから `run()`
+を呼び出します。タスクごとに Harness を選ぶと、Harapter がプロトコルの選択、接続、実行、ハンドルの解放を行います。単発の呼び出しに Adapter の import、Registry、設定ファイルは不要です。
 
 ## クイックスタート
 
-Node.js 24+ のアプリケーションで既定の入口 `harapter`
-を利用し、Runtime の接続設定を切り替えて共通のタスク処理を使います。初回 npm 公開は未完了で、以下のコマンドは初回公開後の手順です。Core、Adapter、Transport、Conformance は内部モジュールとして保守します。
-
-### 1. Harapter を一つインストール
+Node.js 24+ と ESM アプリケーションを使用します：
 
 ```sh
-mkdir my-harapter-app
-cd my-harapter-app
-npm init -y
-npm pkg set type=module
 npm install harapter
-npm install -D typescript @types/node
 ```
 
-Harapter はプロトコルのマッピングを同梱し、選択した実装を読み込みます。DSH、Pi、Codex などの Runtime はインストールしません。アプリが使う Runtime だけを用意します。Tarball には全ての保守対象マッピングが含まれ、選択でダウンロード量は変わりません。高度な構成では同じ SDK の
-`harapter/dsh` などのサブパスを利用します。
+`run()` は `harapter@1.0.0`
+の後に追加された API です。1.0.0 には含まれないため、この API を含む後続リリースまたはソースビルドを使用してください。
 
-### 2. 使用する Runtime を設定
+このマシンですでに Pi を使用していますか？次を `app.ts`
+として保存します。Harapter は `PATH` から `pi`
+を探し、既存のモデルとログイン設定を使用します。
 
-[DSH ガイド](./providers/dsh/README.ja.md) に従って公式 CLI、モデル認証情報、
-`sdk-minimal` Profile、ツール無効の Patch を準備します。`HARAPTER_HARNESS=dsh`、
-`HARAPTER_WORKSPACE`、`HARAPTER_DSH_COMMAND`、`HARAPTER_DSH_PATCH`、
-`HARAPTER_DSH_PROVIDER`、`HARAPTER_DSH_MODEL` を設定します。
-
-[OpenCode](./providers/opencode/README.ja.md)
-の場合は、認証済みでツールを無効にしたサーバーを用意し、`HARAPTER_HARNESS=opencode`、`HARAPTER_WORKSPACE`（サーバー上の絶対ディレクトリ）、`HARAPTER_OPENCODE_URL`、`OPENCODE_SERVER_PASSWORD`、任意の
-`OPENCODE_SERVER_USERNAME`（既定値
-`opencode`）を設定します。選択した Profile の設定だけが必要です。空のテスト Workspace を使い、モデル利用料金に注意してください。
-
-### 3. 共通のアプリケーション処理を実行
-
-`app.ts` として保存します。両方の接続設定は同じ `runTask` を呼び、業務コードは
-`harapter` だけをインポートします。
-
-<!-- sdk-example: quick-unified.ts -->
+<!-- sdk-example: quick-run.ts -->
 
 ```ts
-import { isAbsolute, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import {
-  createHarapter,
-  providerId,
-  profileId,
-  HarnessError,
-  isHarnessError,
-  type HarnessEvent,
-  type HarnessProfile,
-  type HarnessRegistry,
-  type HarnessSession,
-  type CreateSessionInput,
-} from 'harapter';
+import { run, isHarnessError } from 'harapter';
 
-/** The same business function runs on every configured harness. */
-export async function runTask(
-  harapter: HarnessRegistry,
-  profile: HarnessProfile,
-  text: string,
-  onEvent: (event: HarnessEvent) => void,
-  sessionOptions: CreateSessionInput = {},
-) {
-  const client = await harapter.connect(profile);
-  let session: HarnessSession | undefined;
-  try {
-    session = await client.createSession(sessionOptions);
-    const run = await session.start(
-      { parts: [{ type: 'text', text }] },
-      { timeoutMs: 60_000 },
-    );
-    for await (const event of run.events()) {
-      onEvent(event);
-      if (event.type === 'interaction.requested')
-        throw new HarnessError(
-          'unsupported_capability',
-          'This text example requires a non-interactive Runtime configuration.',
-          { retryable: false },
-        );
-    }
-    return { result: await run.result(), sessionRef: session.ref() };
-  } finally {
-    try {
-      await client.close();
-    } finally {
-      await session?.close();
-    }
-  }
-}
-
-function required(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Set ${name} in the application environment.`);
-  return value;
-}
-
-/** Only connection configuration differs; Runtime preparation belongs to the host. */
-function selectedProfile(): HarnessProfile {
-  const workspace = required('HARAPTER_WORKSPACE');
-  if (!isAbsolute(workspace))
-    throw new Error('Choose an absolute Workspace path.');
-  const profiles = {
-    dsh: (): HarnessProfile => ({
-      profileId: profileId('local-dsh'),
-      providerId: providerId('deepseek.harness'),
-      displayName: 'Local DSH',
-      connection: {
-        kind: 'process',
-        ownership: 'adapter',
-        cwd: workspace,
-        command: required('HARAPTER_DSH_COMMAND'),
-        args: [
-          '--profile',
-          'sdk-minimal',
-          '--patch',
-          required('HARAPTER_DSH_PATCH'),
-        ],
-      },
-      providerOptions: {
-        provider: required('HARAPTER_DSH_PROVIDER'),
-        model: required('HARAPTER_DSH_MODEL'),
-      },
-    }),
-    opencode: (): HarnessProfile => ({
-      profileId: profileId('local-opencode'),
-      providerId: providerId('opencode'),
-      displayName: 'Local OpenCode',
-      connection: {
-        kind: 'endpoint',
-        ownership: 'external',
-        transport: 'http',
-        url: required('HARAPTER_OPENCODE_URL'),
-        authRef: { scheme: 'env', id: 'opencode' },
-      },
-    }),
-  };
-  const name = required('HARAPTER_HARNESS');
-  if (name !== 'dsh' && name !== 'opencode')
-    throw new Error('Select dsh or opencode.');
-  return profiles[name]();
-}
-
-async function main() {
-  const harapter = await createHarapter({
-    harnesses: ['dsh', 'opencode'],
-    resolveAuthHeaders: (ref) => {
-      if (ref.scheme !== 'env' || ref.id !== 'opencode')
-        throw new Error('Unknown authentication reference.');
-      return {
-        authorization:
-          'Basic ' +
-          Buffer.from(
-            (process.env['OPENCODE_SERVER_USERNAME'] ?? 'opencode') +
-              ':' +
-              required('OPENCODE_SERVER_PASSWORD'),
-          ).toString('base64'),
-      };
-    },
-  });
-  const { result } = await runTask(
-    harapter,
-    selectedProfile(),
-    'Reply with exactly HARAPTER_OK. Do not use tools or inspect files.',
-    (event) => {
-      console.log({ type: event.type, sequence: event.sequence });
-    },
-    { workspace: { uri: pathToFileURL(required('HARAPTER_WORKSPACE')).href } },
-  );
-  // Return result.finalMessage to an authorized application UI; log metadata only.
-  console.log({
-    status: result.status,
-    hasText: result.finalMessage !== undefined,
-  });
+try {
+  const result = await run({ harness: 'pi', input: 'Hello!' });
+  // Return result.finalMessage to your application's caller.
+  console.log({ status: result.status });
   if (result.status !== 'completed') process.exitCode = 1;
-}
-
-if (
-  process.argv[1] &&
-  fileURLToPath(import.meta.url) === resolve(process.argv[1])
-) {
-  void main().catch((error: unknown) => {
-    console.error(
-      JSON.stringify({
-        error: isHarnessError(error) ? error.code : 'application_failed',
-      }),
-    );
-    process.exitCode = 1;
+} catch (error) {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
   });
+  process.exitCode = 1;
 }
 ```
 
-`node app.ts` を実行すると、イベント種別に続いて
-`{ status: "completed", hasText: true }` を表示します。`result.finalMessage`
-は認可済み UI に返す任意の最終テキストです。失敗した Run は失敗のまま扱います。イベントを消費し、60 秒の期限を設定してリソースを閉じますが、外部サーバーは停止しません。この例では対話不要の Runtime ポリシーを使用してください。
+`result.finalMessage` は任意の回答、`result.status`
+は最終状態です。この例は状態だけを表示します。SDK がイベントを読み取り、Client と Session を閉じます。
 
-### 4. 実際のプロジェクトへの統合
+新規プロジェクトでは先に `npm init -y` と `npm pkg set type=module`
+を実行します。Node.js 24 でファイルを実行します：
 
-リクエストハンドラーで `runTask`
-をインポートします。接続と秘密情報の解決は構成層に置き、タスクごとに Profile を選択してタスクと結果の処理を共有します。
-[入口ガイド](./packages/harapter/README.ja.md)
-は設定、能力の境界、エラーを定義し、
-[Runtime Profile の例](./examples/runtime-profiles/README.ja.md)
-は実行可能なソースです。 [サービスの例](./examples/sdk-application/README.ja.md)
-にはホストストレージ、再接続、キャンセル、承認 UI のレシピがあります。
+```sh
+node app.ts
+```
 
-Session は元の Provider、Profile、ネイティブ状態に固定されます。Runtime の変更後は新しい Session を作成します。イベントの外側の構造は共通ですが、`event.data`
-は Adapter のマッピングに従います。名前からキャンセルや fork 能力を推測せず、私的な内容、認証情報、Session 状態をログへ出しません。
+選択した Harness はインストールとログインが済んでいるか、HTTP サービスが稼働している必要があります。Harapter は Runtime 本来のツールと権限ポリシーを使用します。タスクは選択した Workspace にアクセスし、モデル利用料金が発生する場合があります。
+
+[SDK](./packages/harapter/README.ja.md) · [API](./docs/api-reference.ja.md#run)
+· [DSH](./packages/harapter/README.ja.md#同じ呼び出しで-dsh-を使う)
+
+## 会話を続ける
+
+`openSession()` を一度呼び、各メッセージを `send()` で送信します。同じ native
+Session が履歴を保持します。この API は 1.0.0 より後の追加であり、1.0.0 リリースには含まれません。
+
+<!-- sdk-example: quick-chat.ts -->
+
+```ts
+import { openSession, isHarnessError } from 'harapter';
+
+try {
+  const chat = await openSession({ harness: 'pi' });
+  try {
+    const first = await chat.send('My name is Alex.');
+    // Return finalMessage to your application's authorized conversation UI.
+    console.log({
+      status: first.status,
+      hasText: first.finalMessage !== undefined,
+    });
+    const second = await chat.send('What is my name?');
+    console.log({
+      status: second.status,
+      hasText: second.finalMessage !== undefined,
+    });
+  } finally {
+    await chat.close();
+  }
+} catch (error) {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+}
+```
 
 ## Harapter を使う理由
 
@@ -300,10 +162,10 @@ ID による Capability 推測を行いません。プロトコル変換、互�
 
 ## 実装済みモジュール
 
-| 領域                 | Package とモジュール                                                                                                                                                                                                                                                              |
+| 領域                 | 役割とガイド                                                                                                                                                                                                                                                                      |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Portable API**     | [`harapter`](./packages/core/README.ja.md) — 契約、Registry、Capability Requirement、所有権検証、Error、Extension、Native Access                                                                                                                                                  |
-| **Conformance**      | [`harapter/conformance`](./packages/conformance/README.ja.md) — 再利用可能なポータブル動作スイートと決定論的 Fake Provider                                                                                                                                                        |
+| **Conformance**      | [適合性テスト](./packages/conformance/README.ja.md) — 再利用可能なポータブル動作スイートと決定論的 Fake Provider                                                                                                                                                                  |
 | **Transport**        | [JSON-RPC stdio](./packages/transport-jsonrpc-stdio/README.ja.md)、[strict JSONL process RPC](./packages/transport-jsonl-process/README.ja.md)、[HTTP/SSE](./packages/transport-http-sse/README.ja.md)、[ACP v1](./packages/transport-acp/README.ja.md)                           |
 | **Provider Adapter** | [Codex](./providers/codex/README.ja.md)、[OpenCode](./providers/opencode/README.ja.md)、[DeepSeek Harness](./providers/dsh/README.ja.md)、[Hermes Agent](./providers/hermes/README.ja.md)、[OpenClaw](./providers/openclaw/README.ja.md)、[Pi Agent](./providers/pi/README.ja.md) |
 | **リファレンス**     | [Single-Provider ライフサイクル](./examples/single-provider/README.md)と[並行 Multi-Provider Client](./examples/multi-provider-client/README.md)                                                                                                                                  |
@@ -363,7 +225,7 @@ pnpm build
 
 npm に公開するのは `harapter` だけで、`latest`
 を使用します。Core、Adapter、Transport、Conformance、Workspace ルート、サンプルは非公開です。Release
-Please が公開バージョンを管理し、Tarball 検証、Provenance、復旧制御を維持します。単一パッケージの初回公開は未完了です。PyPI パッケージや独立 CLI は公開しません。
+Please が公開バージョンを管理し、Tarball 検証、Provenance、復旧制御を維持します。PyPI パッケージや独立 CLI は公開しません。
 
 現在は、利用者からのフィードバック、ホストが実行する Experimental
 Adapter の Live Evidence、リリース準備に集中しています。Portable Wire

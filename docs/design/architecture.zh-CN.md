@@ -20,6 +20,11 @@ Store、Checkpoint 和内部安全机制仍由对应 Harness 自己拥有。
 - 上游破坏性变化被限制在单个 Provider Adapter 内；
 - 未被官方机器接口暴露的能力不会被模拟成正式支持。
 
+已实现的 SDK 在 Core 之外提供单次调用
+`run()`：选择内置映射、创建新 Session、读取事件并释放句柄。此可选入口不改变可移植的有状态契约，不安装 Runtime，也不管理审批策略。参见
+[API 参考](../api-reference.zh-CN.md#run)
+和[决策记录](../../.agents/notes/implemented/feature/2026-09-09-single-call-run.md)。
+
 ## 2. 逻辑架构
 
 ```text

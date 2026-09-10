@@ -19,7 +19,8 @@
 <!-- markdownlint-enable MD033 -->
 
 このガイドは単一の `harapter`
-SDK に含まれるモジュールを説明します。通常のアプリケーション接続は[アプリケーションガイド](../../packages/harapter/README.ja.md)から始めてください。単一パッケージの初回公開は未完了で、以下のインストール手順は公開後のものです。
+SDK に含まれるモジュールを説明します。通常のアプリケーション接続は[アプリケーションガイド](../../packages/harapter/README.ja.md)から始めてください。`harapter`
+をインストールすれば利用でき、このモジュール用の npm 依存を追加する必要はありません。
 
 `harapter/transports/jsonrpc-stdio` を組み合わせ、stable ACP v1
 negotiation、Session method、Prompt、typed update、Permission
@@ -157,7 +158,7 @@ Error は明示的 unredacted boundary です。全 protocol と race semantics 
 
 ## 関連パッケージ
 
-[すべてのパッケージ](../../README.ja.md#npm-パッケージ一覧)
+[SDK ガイド](../../README.ja.md#一つの-sdk)
 
 | パッケージ                                                                    | ドキュメント                                      |
 | ----------------------------------------------------------------------------- | ------------------------------------------------- |

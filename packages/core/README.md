@@ -20,8 +20,8 @@
 
 This guide describes a module included in the single `harapter` SDK. For
 ordinary application setup, start with the
-[application guide](../../packages/harapter/README.md). The first single-package
-release is pending; the installation commands apply after that release.
+[application guide](../../packages/harapter/README.md). Install `harapter`; this
+module does not require a separate npm dependency.
 
 `harapter` is the provider-agnostic TypeScript API for Harapter. It owns
 portable contracts and the runtime checks that can be applied without knowing a
@@ -275,7 +275,7 @@ The complete target contract remains in the
 
 ## Related packages
 
-[All packages](../../README.md#packages-on-npm)
+[SDK guide](../../README.md#one-sdk)
 
 | Package                                                                       | Documentation                                 |
 | ----------------------------------------------------------------------------- | --------------------------------------------- |

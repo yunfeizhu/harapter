@@ -19,12 +19,86 @@
 <!-- markdownlint-enable MD033 -->
 
 このガイドは単一の `harapter`
-SDK に含まれるモジュールを説明します。通常のアプリケーション接続は[アプリケーションガイド](../../packages/harapter/README.ja.md)から始めてください。単一パッケージの初回公開は未完了で、以下のインストール手順は公開後のものです。
+SDK に含まれるモジュールを説明します。通常のアプリケーション接続は[アプリケーションガイド](../../packages/harapter/README.ja.md)から始めてください。`harapter`
+をインストールすれば利用でき、このモジュール用の npm 依存を追加する必要はありません。
 
 `harapter/pi` は公式 Pi Agent `--mode rpc`
 を Harapter に mapping します。Session ごとに独立 Process を使い、stream
 Event、persisted Resume、native Abort を提供します。Extension、Skill、Prompt
 Template discovery は無効化されます。
+
+## 埋め込み SDK 戦略（0.85.1）
+
+任意の `sdk` 接続は `@earendil-works/pi-coding-agent@0.85.1`
+の公式公開 AgentSession
+API を適応します（MIT、完全一致 Version）。下記 RPC 戦略も利用できます。Pi
+Runtime は Harapter の既定依存や Workspace
+Lockfile に入りません。Host が Runtime を用意して `PiSdkSessionFactory`
+を渡し、共有 ModelRuntime、認証、設定を所有します。
+
+SDK 戦略は新規 Session、多ターン Text Run、Message/Reasoning/Tool
+Event、確認済み native
+Abort、有界で秘匿化した未知 Event、所有 Resource の破棄をサポートします。Portable
+Resume、Fork、Interaction Response、Model/Workspace 上書き、任意の Native
+Access は対象外です。RPC 戦略は独自の対応 Control を保持します。SDK
+Extension の UI は Host が用意し、Harapter は承認 Handler を設置したり Tool
+Policy を変更したりしません。
+
+成功には prompt
+Promise の完了と最終 Assistant の stopReason=stop の両方が必要です。agent_end の後に Retry が続く可能性があるため、それだけでは成功しません。欠落・不正な結果は失敗です。Native
+Cancellation には Abort 確認と対応する aborted 結果が必要です。確認不能・失敗の場合は Session を閉じ connection_aborted を返します。SDK
+Session は Process 隔離されず、Host Code が破棄を無視すると強制終了できません。
+
+```ts
+import { openSession, isHarnessError } from 'harapter';
+import { createAgentSession } from '@earendil-works/pi-coding-agent';
+
+try {
+  const chat = await openSession({
+    harness: 'pi',
+    runtime: {
+      kind: 'pi-sdk',
+      version: '0.85.1',
+      createSession: async () => (await createAgentSession()).session,
+    },
+  });
+  try {
+    const result = await chat.send('Hello!');
+    // Return result.finalMessage to your application's authorized conversation UI.
+    console.log({
+      status: result.status,
+      hasText: result.finalMessage !== undefined,
+    });
+  } finally {
+    await chat.close();
+  }
+} catch (error) {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+}
+```
+
+既定上限：`operationTimeoutMs` は 30000 ms、`maxRunEvents`
+は 128（範囲 2–4096）、Client ごとに最大 16 の実行中または作成中 Session、保持 Event ごとに最大 262144 文字です。`connection: { kind: 'sdk', ownership: 'adapter', factory }`
+には `providerOptions: { sdkVersion: '0.85.1' }`
+が必要です。他 Version と Host 所有の `connection.client`
+は Factory 呼び出し前に拒否します。
+
+[Official SDK contract](https://github.com/earendil-works/pi/blob/v0.85.1/packages/coding-agent/docs/sdk.md)
+· [Fixtures](../../fixtures/pi/sdk-0.85.1/manifest.json)
+
+```sh
+pnpm vitest run providers/pi/test/sdk.test.ts
+pnpm build
+node providers/pi/test/sdk-native.mjs "$PI_SDK_PACKAGE_ROOT"
+```
+
+この任意コマンドは外部にインストールした 0.85.1 SDK とメモリ内合成 Model
+Stream で二ターンの履歴、native
+Abort、破棄を確認します。Model 認証情報や Network は使用しません。SDK 統合の証拠であり、実際の Model
+Service の検証ではありません。以降は RPC 戦略を説明します。
 
 ## 自分のアプリですぐに使う
 
@@ -238,7 +312,7 @@ await child.close();
 
 ## 関連パッケージ
 
-[すべてのパッケージ](../../README.ja.md#npm-パッケージ一覧)
+[SDK ガイド](../../README.ja.md#一つの-sdk)
 
 | パッケージ                                                       | ドキュメント                                      |
 | ---------------------------------------------------------------- | ------------------------------------------------- |

@@ -26,11 +26,20 @@ export function checkSdkApplication(repositoryRoot, consumerRoot) {
   const sources = Object.fromEntries(
     files.map((file) => [file, readFileSync(join(source, file), 'utf8')]),
   );
-  sources['quick-unified.ts'] = readFileSync(
-    resolve(repositoryRoot, 'examples/runtime-profiles/src/quick-unified.ts'),
-    'utf8',
-  );
-  files.push('quick-unified.ts');
+  for (const name of [
+    'quick-unified.ts',
+    'quick-start.ts',
+    'runtime-config.ts',
+    'quick-run.ts',
+    'quick-dsh-run.ts',
+    'quick-chat.ts',
+  ]) {
+    sources[name] = readFileSync(
+      resolve(repositoryRoot, 'examples/runtime-profiles/src', name),
+      'utf8',
+    );
+    files.push(name);
+  }
   const policy = JSON.parse(
     readFileSync(
       resolve(repositoryRoot, 'scripts/public-packages.json'),
@@ -107,7 +116,23 @@ export function checkSdkApplication(repositoryRoot, consumerRoot) {
   );
   check(process.execPath, ['dist/main.js'], 1, '');
   check(process.execPath, ['dist/quick-unified.js'], 1, '');
+  check(
+    process.execPath,
+    ['dist/quick-start.js'],
+    1,
+    '',
+    "{ error: 'application_failed' }\n",
+  );
   check(process.execPath, ['dist/session-main.js'], 1, '');
+  for (const name of ['quick-run', 'quick-dsh-run', 'quick-chat'])
+    check(
+      process.execPath,
+      [`dist/${name}.js`],
+      1,
+      '',
+      "{ error: 'runtime_not_found' }\n",
+      { PATH: '' },
+    );
   check(process.execPath, ['dist/multi-main.js'], 1, '');
   check(
     process.execPath,
@@ -137,6 +162,7 @@ export function checkSdkApplication(repositoryRoot, consumerRoot) {
     status,
     stdout,
     stderr = status === 1 ? '{"error":"application_failed"}\n' : '',
+    environment = {},
   ) {
     const result = spawnSync(command, args, {
       cwd: directory,
@@ -146,6 +172,7 @@ export function checkSdkApplication(repositoryRoot, consumerRoot) {
       env: {
         PATH: process.env.PATH ?? '',
         SYSTEMROOT: process.env.SYSTEMROOT ?? '',
+        ...environment,
       },
     });
     if (

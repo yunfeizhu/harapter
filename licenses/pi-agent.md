@@ -3,7 +3,8 @@
 - Upstream: [Pi Agent](https://github.com/earendil-works/pi)
 - License: [MIT License](https://github.com/earendil-works/pi/blob/main/LICENSE)
 - Harapter use: documented `pi --mode rpc` strict JSONL machine interface for
-  `@harapter/adapter-pi`
+  the private Pi module in `harapter`; the optional embedded strategy uses the
+  public AgentSession SDK from version 0.85.1 under the same MIT license.
 - Redistribution: Harapter does not redistribute the Pi Agent Runtime, CLI,
   packages, extensions, models, credentials, session files, or host
   configuration. Users or hosts install, configure, authenticate, and operate

@@ -92,15 +92,20 @@ writeFileSync(
     declarations,
   ),
 );
-const mainDeclaration = resolve(outputDirectory, 'index.d.ts');
-writeFileSync(
-  mainDeclaration,
-  rewriteDeclarationImports(
-    readFileSync(resolve(packageRoot, 'build/index.d.ts'), 'utf8'),
-    mainDeclaration,
-    declarations,
-  ),
-);
+// Keep local declaration imports resolvable as the application entry grows across files.
+const applicationDeclarations = resolve(packageRoot, 'build');
+for (const file of globSync('**/*.d.ts', { cwd: applicationDeclarations })) {
+  const target = resolve(outputDirectory, file);
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(
+    target,
+    rewriteDeclarationImports(
+      readFileSync(resolve(applicationDeclarations, file), 'utf8'),
+      target,
+      declarations,
+    ),
+  );
+}
 const bundle = await rolldown({
   cwd: packageRoot,
   input,

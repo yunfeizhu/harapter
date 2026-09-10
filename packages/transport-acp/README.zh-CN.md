@@ -19,7 +19,8 @@
 <!-- markdownlint-enable MD033 -->
 
 本指南描述单个 `harapter`
-SDK 内的模块。普通应用接入请先看[应用指南](../../packages/harapter/README.zh-CN.md)。单包入口的首次发布尚待完成，下面的安装命令适用于该版本发布后。
+SDK 内的模块。普通应用接入请先看[应用指南](../../packages/harapter/README.zh-CN.md)。安装
+`harapter` 即可，无需为此模块另装 npm 包。
 
 这个包组合 `harapter/transports/jsonrpc-stdio`，实现稳定 ACP
 v1 的协商、Session 方法、Prompt、类型化更新、Permission Request、Capability
@@ -153,7 +154,7 @@ Error 是显式不脱敏边界，调用方必须自行执行数据策略。完�
 
 ## 相关包
 
-[全部包](../../README.zh-CN.md#npm-包导航)
+[SDK 指南](../../README.zh-CN.md#一个-sdk)
 
 | 包                                                                            | 文档                                                   |
 | ----------------------------------------------------------------------------- | ------------------------------------------------------ |

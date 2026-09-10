@@ -21,3 +21,8 @@ export {
   type PiSessionState,
 } from './protocol.js';
 export { PI_SESSION_EXTENSION, type PiSessions } from './sessions.js';
+export type {
+  PiSdkSession,
+  PiSdkSessionFactory,
+  PiSdkProfileOptions,
+} from './sdk-types.js';

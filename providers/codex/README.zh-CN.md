@@ -19,7 +19,8 @@
 <!-- markdownlint-enable MD033 -->
 
 本指南描述单个 `harapter`
-SDK 内的模块。普通应用接入请先看[应用指南](../../packages/harapter/README.zh-CN.md)。单包入口的首次发布尚待完成，下面的安装命令适用于该版本发布后。
+SDK 内的模块。普通应用接入请先看[应用指南](../../packages/harapter/README.zh-CN.md)。安装
+`harapter` 即可，无需为此模块另装 npm 包。
 
 `harapter/codex` 连接 Codex 官方稳定 App
 Server，把 Thread、Turn、流式 Event、Interaction、终态和原生中断映射为 Harapter
@@ -243,7 +244,7 @@ await child.close();
 
 ## 相关包
 
-[全部包](../../README.zh-CN.md#npm-包导航)
+[SDK 指南](../../README.zh-CN.md#一个-sdk)
 
 | 包                                                               | 文档                                                   |
 | ---------------------------------------------------------------- | ------------------------------------------------------ |

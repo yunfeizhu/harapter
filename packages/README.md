@@ -1,39 +1,38 @@
-# Packages
+# Public SDK and private source modules
 
-The application entry, portable Core, canonical schemas, transports, and shared
-verification live here. The `harapter` entry composes Provider implementations;
-Core, schemas, transports and conformance stay Provider-agnostic.
+Harapter publishes **one npm package:
+[`harapter`](https://www.npmjs.com/package/harapter)**. Application developers
+should start with its [SDK guide](./harapter/README.md) and import the common
+API from `harapter`.
 
-Public entry and private implementation modules:
+The other directories here contain implementation code and tests used to build
+that SDK. They have `private: true` in their manifests and are not separate
+packages that consumers need to install. Workspace manifests let repository
+contributors build and test each boundary independently.
 
-- [`harapter`](./harapter/README.md) exposes one application API, bundles the
-  maintained protocol implementations and loads only the selected ones. Runtime
-  preparation remains host-owned; its first npm release is pending.
+| Directory                                                        | Role                   | Responsibility                                                                       |
+| ---------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------ |
+| [`harapter`](./harapter/README.md)                               | Public package         | Exposes the common application API and bundles the maintained implementations.       |
+| [`core`](./core/README.md)                                       | Private implementation | Portable contracts, Registry, capabilities, ownership checks, errors and extensions. |
+| [`transport-jsonrpc-stdio`](./transport-jsonrpc-stdio/README.md) | Private implementation | Bidirectional JSON-RPC framing, correlation, backpressure and stream lifecycle.      |
+| [`transport-jsonl-process`](./transport-jsonl-process/README.md) | Private implementation | Bounded JSONL framing and process streams for protocols that are not JSON-RPC.       |
+| [`transport-http-sse`](./transport-http-sse/README.md)           | Private implementation | Bounded HTTP requests and Server-Sent Events parsing.                                |
+| [`transport-acp`](./transport-acp/README.md)                     | Private implementation | ACP negotiation, permission messages and Session updates over JSON-RPC stdio.        |
+| [`conformance`](./conformance/README.md)                         | Private test support   | Shared portable behavior tests and the deterministic Fake Provider.                  |
 
-- [`core`](./core/README.md) owns the provider-agnostic TypeScript contracts,
-  dynamic Registry, capability requirements, ownership checks, errors, and
-  extension lookup.
-- [`conformance`](./conformance/README.md) owns the reusable portable behavior
-  suite and deterministic Fake Provider.
-- [`transport-jsonrpc-stdio`](./transport-jsonrpc-stdio/README.md) owns bounded
-  bidirectional JSONL framing, request correlation, ordered inbound delivery,
-  backpressure, and stream lifecycle without Provider semantics.
-- [`transport-jsonl-process`](./transport-jsonl-process/README.md) owns strict
-  LF-delimited JSON object framing, bounded ordered delivery, serialized writes,
-  local write waits, and stream lifecycle for Provider-owned process protocols
-  that are not JSON-RPC.
-- [`transport-http-sse`](./transport-http-sse/README.md) owns endpoint-bound,
-  bounded HTTP requests and pull-driven Server-Sent Events parsing without
-  Provider semantics.
-- [`transport-acp`](./transport-acp/README.md) composes the JSON-RPC stdio
-  transport with stable ACP v1 negotiation, capability validation, bidirectional
-  permission handling, typed Session updates, and bounded unknown observations
-  without Provider or process semantics.
+Harness mappings live in the private modules under
+[`providers/`](../providers/README.md). Only the `harapter` composition layer
+selects them; Core, transports and conformance remain provider-agnostic.
 
-Additional packages remain unimplemented. Their target boundaries are defined in
-the [implementation guide](../docs/design/implementation-guide.md).
+These implementations are still needed. Deleting `core` or a transport would
+remove code used by the SDK, not merely remove an old npm listing. Their source
+directory layout is an internal organization choice and does not require a
+multi-package consumer API.
 
 Only `harapter` is listed in
 [`scripts/public-packages.json`](../scripts/public-packages.json) and published
-to npm `latest`. Other packages are private Workspace modules bundled into that
-SDK. Their build versions do not form separate release trains.
+to npm `latest`. The [SDK build](../scripts/build-harapter.mjs) bundles the
+private source modules and their declarations into its `dist` directory.
+Internal module versions are workspace build metadata, not separate public
+release versions. Runtime installation and authentication remain owned by the
+host application.

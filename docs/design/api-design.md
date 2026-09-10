@@ -29,6 +29,13 @@ implemented TypeScript API is defined by the
 tests. A signature or example here is not evidence that it is implemented or
 that a Provider supports it.
 
+The implemented SDK also offers a single-call `run()` facade outside Core. It
+selects a built-in mapping, creates a fresh Session, consumes events and
+releases handles. This optional entry does not change the portable stateful
+contracts, install Runtimes or own approval policy. See the
+[API reference](../api-reference.md#run) and
+[decision note](../../.agents/notes/implemented/feature/2026-09-09-single-call-run.md).
+
 ## 2. Registry
 
 ```ts
