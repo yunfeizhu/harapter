@@ -12,32 +12,7 @@ on:
       - opened
       - reopened
       - synchronize
-  workflow_dispatch:
-    inputs:
-      pr_author:
-        description: Pull request author login for a Release Please dispatch
-        required: false
-        type: string
-      pr_body:
-        description: Pull request body for a Release Please dispatch
-        required: false
-        type: string
-      pr_branch:
-        description: Pull request head branch for a Release Please dispatch
-        required: false
-        type: string
-      pr_title:
-        description: Pull request title for a Release Please dispatch
-        required: false
-        type: string
-      base_sha:
-        description: Pull request base SHA for dependency review
-        required: false
-        type: string
-      head_sha:
-        description: Pull request head SHA for dependency review
-        required: false
-        type: string
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -52,15 +27,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Verify dispatched pull request head
-        if: github.event_name == 'workflow_dispatch' && inputs.pr_branch != ''
-        env:
-          ACTUAL_HEAD_SHA: ${{ github.sha }}
-          EXPECTED_HEAD_SHA: ${{ inputs.head_sha }}
-        run: |
-          test -n "$EXPECTED_HEAD_SHA"
-          test "$ACTUAL_HEAD_SHA" = "$EXPECTED_HEAD_SHA"
-
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -83,20 +49,10 @@ jobs:
 
   pull-request-metadata:
     name: Pull request metadata
-    if: >-
-      github.event_name == 'pull_request' || inputs.pr_branch != ''
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - name: Verify dispatched pull request head
-        if: github.event_name == 'workflow_dispatch' && inputs.pr_branch != ''
-        env:
-          ACTUAL_HEAD_SHA: ${{ github.sha }}
-          EXPECTED_HEAD_SHA: ${{ inputs.head_sha }}
-        run: |
-          test -n "$EXPECTED_HEAD_SHA"
-          test "$ACTUAL_HEAD_SHA" = "$EXPECTED_HEAD_SHA"
-
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -110,31 +66,20 @@ jobs:
 
       - name: Validate pull request metadata
         env:
-          PR_AUTHOR: >-
-            ${{ github.event.pull_request.user.login || inputs.pr_author }}
-          PR_BODY: ${{ github.event.pull_request.body || inputs.pr_body }}
-          PR_BRANCH: ${{ github.head_ref || inputs.pr_branch }}
-          PR_TITLE: ${{ github.event.pull_request.title || inputs.pr_title }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_BRANCH: ${{ github.head_ref }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: node scripts/check-pr-metadata.mjs
 
   dependency-review:
     name: Dependency review
-    if: >-
-      github.event_name == 'pull_request' || inputs.pr_branch != ''
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
     steps:
-      - name: Verify dispatched pull request head
-        if: github.event_name == 'workflow_dispatch' && inputs.pr_branch != ''
-        env:
-          ACTUAL_HEAD_SHA: ${{ github.sha }}
-          EXPECTED_HEAD_SHA: ${{ inputs.head_sha }}
-        run: |
-          test -n "$EXPECTED_HEAD_SHA"
-          test "$ACTUAL_HEAD_SHA" = "$EXPECTED_HEAD_SHA"
-
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -143,8 +88,8 @@ jobs:
       - name: Review dependency changes
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
-          base-ref: ${{ github.event.pull_request.base.sha || inputs.base_sha }}
-          head-ref: ${{ github.event.pull_request.head.sha || inputs.head_sha }}
+          base-ref: ${{ github.event.pull_request.base.sha }}
+          head-ref: ${{ github.event.pull_request.head.sha }}
           fail-on-severity: moderate
           license-check: true
           deny-licenses:

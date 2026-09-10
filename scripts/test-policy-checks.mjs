@@ -163,21 +163,64 @@ const ciWorkflow = readFileSync(
   resolve(repositoryRoot, '.github/workflows/ci.yml'),
   'utf8',
 );
-assert.doesNotMatch(ciWorkflow, / {2}all-checks:/u);
-assert.match(ciWorkflow, /inputs\.pr_branch != ''/u);
-assert.match(ciWorkflow, /base-ref: .*inputs\.base_sha/u);
-assert.match(ciWorkflow, /head-ref: .*inputs\.head_sha/u);
-assert.match(ciWorkflow, / {2}pull_request:\n(?:.|\n)*? {6}- edited\n/u);
+const ci = load(ciWorkflow, { schema: JSON_SCHEMA });
+assert.ok(isObject(ci));
+assert.deepEqual(Object.keys(ci['on']).sort(), [
+  'pull_request',
+  'push',
+  'workflow_dispatch',
+]);
+assert.deepEqual(
+  ci['on']['workflow_dispatch'],
+  {},
+  'Manual CI dispatch must not accept pull request metadata.',
+);
+assert.deepEqual(ci['on']['pull_request'], {
+  branches: ['main'],
+  types: ['edited', 'opened', 'reopened', 'synchronize'],
+});
+assert.deepEqual(ci['permissions'], { contents: 'read' });
+assert.deepEqual(Object.keys(ci['jobs']).sort(), [
+  'dependency-review',
+  'pull-request-metadata',
+  'repository-checks',
+]);
+const ciRepositoryJob = requiredJob(ci['jobs'], 'repository-checks');
+assert.equal(ciRepositoryJob['name'], 'Repository checks');
+assert.equal(ciRepositoryJob['if'], undefined);
 assert.equal(
-  (ciWorkflow.match(/- name: Verify dispatched pull request head/gu) ?? [])
-    .length,
-  3,
+  requiredStep(ciRepositoryJob, 'Run repository checks')['run'],
+  'pnpm check',
+);
+const ciMetadataJob = requiredJob(ci['jobs'], 'pull-request-metadata');
+assert.equal(ciMetadataJob['name'], 'Pull request metadata');
+assert.equal(ciMetadataJob['if'], "github.event_name == 'pull_request'");
+assert.deepEqual(
+  requiredStep(ciMetadataJob, 'Validate pull request metadata')['env'],
+  {
+    PR_AUTHOR: '${{ github.event.pull_request.user.login }}',
+    PR_BODY: '${{ github.event.pull_request.body }}',
+    PR_BRANCH: '${{ github.head_ref }}',
+    PR_TITLE: '${{ github.event.pull_request.title }}',
+  },
+);
+const ciDependencyJob = requiredJob(ci['jobs'], 'dependency-review');
+assert.equal(ciDependencyJob['name'], 'Dependency review');
+assert.equal(ciDependencyJob['if'], "github.event_name == 'pull_request'");
+assert.deepEqual(ciDependencyJob['permissions'], { contents: 'read' });
+const dependencyReview = requiredStep(
+  ciDependencyJob,
+  'Review dependency changes',
 );
 assert.equal(
-  (ciWorkflow.match(/test "\$ACTUAL_HEAD_SHA" = "\$EXPECTED_HEAD_SHA"/gu) ?? [])
-    .length,
-  3,
+  dependencyReview['with']['base-ref'],
+  '${{ github.event.pull_request.base.sha }}',
 );
+assert.equal(
+  dependencyReview['with']['head-ref'],
+  '${{ github.event.pull_request.head.sha }}',
+);
+assert.equal(dependencyReview['with']['fail-on-severity'], 'moderate');
 
 const releaseWorkflow = readFileSync(
   resolve(repositoryRoot, '.github/workflows/release-please.yml'),
@@ -209,6 +252,21 @@ assert.deepEqual(Object.keys(releasePlease['jobs']).sort(), [
   'release-please',
 ]);
 const releasePleaseJob = requiredJob(releasePlease['jobs'], 'release-please');
+assert.deepEqual(releasePleaseJob['permissions'], {
+  contents: 'write',
+  issues: 'write',
+  'pull-requests': 'write',
+});
+assert.deepEqual(
+  releasePleaseJob['steps'].map((step) => step['name']),
+  [
+    'Validate release operation',
+    'Run Release Please',
+    'Verify Release Please outcome',
+    'Resolve existing Release Please draft',
+  ],
+  'Release preparation must leave native PR CI approval to the maintainer.',
+);
 const validateReleaseOperation = requiredStep(
   releasePleaseJob,
   'Validate release operation',
@@ -379,9 +437,6 @@ assert.match(
   /test "\$immutable" = "true"/u,
 );
 assert.match(releaseWorkflow, /--repo "\$GITHUB_REPOSITORY"/u);
-assert.match(releaseWorkflow, /-f pr_author="\$pr_author"/u);
-assert.match(releaseWorkflow, /-f base_sha="\$base_sha"/u);
-assert.match(releaseWorkflow, /-f head_sha="\$head_sha"/u);
 assert.match(releaseWorkflow, /^\s{2}workflow_dispatch:/mu);
 assert.doesNotMatch(releaseWorkflow, /^\s{2}push:/mu);
 assert.match(releaseWorkflow, /if: github\.ref == 'refs\/heads\/main'/u);

@@ -545,6 +545,11 @@ describe('DeepSeek Harness Provider Adapter', () => {
       done: false,
       value: { type: 'run.started' },
     });
+    // Drain the correlated receipt before asserting that a read stays pending.
+    await expect(first.next()).resolves.toMatchObject({
+      done: false,
+      value: { type: 'provider', providerEventType: 'agent/inbox/spliced' },
+    });
     const pending = first.next();
     await expect(first.next()).rejects.toMatchObject({ code: 'run_conflict' });
     const second = run.events()[Symbol.asyncIterator]();
