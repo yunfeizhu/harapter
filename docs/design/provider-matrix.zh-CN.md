@@ -252,6 +252,16 @@ Runtime 或 SDK 依赖。
 官方入口：[Pi Agent RPC mode](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/rpc.md)、
 [Pi Agent](https://github.com/earendil-works/pi)。
 
+可选 `sdk` 连接适配 `@earendil-works/pi-coding-agent@0.85.1`
+的官方公开 AgentSession 接口（MIT，精确版本）。下文 RPC 策略仍可用。Pi
+Runtime 不进入 Harapter 默认依赖或 workspace lockfile；宿主安装 Runtime 并提供
+`PiSdkSessionFactory`，共享 ModelRuntime、认证和设置资源仍归宿主管理。
+
+SDK 策略支持创建新 Session、多轮文本 Run、消息/推理/工具事件、经确认的原生 abort、有界脱敏未知事件和资源释放。此策略不支持 portable
+resume、fork、交互响应、model/workspace 覆盖或任意 native 访问；RPC 策略保留其各自已支持的控制。SDK 扩展只能使用宿主提供的原生 UI，Harapter 不安装审批处理器或修改工具策略。
+
+[SDK evidence](../../providers/pi/README.zh-CN.md)
+
 ## 5. 公共能力预期
 
 | 能力               | Codex  | OpenCode | Goose  | Qwen   | Crush  | Copilot | Cursor |

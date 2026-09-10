@@ -38,7 +38,7 @@ describe('Pi Agent Provider Adapter', () => {
     expect(factory.descriptor()).toEqual({
       providerId: PI_PROVIDER_ID,
       displayName: 'Pi Agent',
-      connectionKinds: ['process'],
+      connectionKinds: ['process', 'sdk'],
       documentationUrl:
         'https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/rpc.md',
     });

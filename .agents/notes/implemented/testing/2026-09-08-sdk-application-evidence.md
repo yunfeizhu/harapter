@@ -37,6 +37,17 @@ missing-configuration entrypoints, and rejects README entry snippets that differ
 from their executable source. Positive and intentionally invalid snippet cases
 exercise this validator.
 
+The [Runtime profile example](../../../../examples/runtime-profiles/README.md)
+now begins with independent single-file Pi and DSH calls. Marked snippets match
+these sources and compile against the public tarball. Missing executable checks
+run their real entries with an empty PATH; the installed consumer exercises the
+same exported `run()` with DSH, Pi and authenticated OpenCode fixtures. This
+keeps protocol and lifecycle composition out of the first application file. The
+[single-call decision](../feature/2026-09-09-single-call-run.md) owns the new
+facade and its cleanup semantics. Explicit Session composition remains in
+`quick-start.ts` and `runtime-config.ts`, with its existing DSH/OpenCode entry
+tests, and in the longer `runTask` service recipe.
+
 Fresh-tarball installation outside the Workspace verifies the upcoming public
 contract. Historical registry and live evidence belongs to its recorded release;
 it does not establish the new bundle. The

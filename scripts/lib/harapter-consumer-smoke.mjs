@@ -53,6 +53,20 @@ export function checkHarapterConsumer({
       resolve(repositoryRoot, 'examples/runtime-profiles/src/quick-unified.ts'),
     ),
   );
+  for (const name of [
+    'quick-start.ts',
+    'runtime-config.ts',
+    'quick-run.ts',
+    'quick-dsh-run.ts',
+    'quick-chat.ts',
+  ]) {
+    writeFileSync(
+      resolve(directory, name),
+      readFileSync(
+        resolve(repositoryRoot, 'examples/runtime-profiles/src', name),
+      ),
+    );
+  }
   writeFileSync(
     resolve(directory, 'fake.ts'),
     readFileSync(
@@ -79,6 +93,11 @@ export function checkHarapterConsumer({
       '--outDir',
       'dist',
       'app.ts',
+      'quick-start.ts',
+      'runtime-config.ts',
+      'quick-run.ts',
+      'quick-dsh-run.ts',
+      'quick-chat.ts',
       'fake.ts',
     ],
     directory,
@@ -102,7 +121,7 @@ export function checkHarapterConsumer({
     `
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-import {createHarapter, profileId, providerId, HarnessError} from 'harapter';
+import {createHarapter, profileId, providerId, HarnessError, run, openSession} from 'harapter';
 import {runTask} from './dist/app.js';
 import {createDshProviderFactory} from 'harapter/dsh';
 import {startOpenCodeFixtureServer} from ${JSON.stringify(fixtureServer)};
@@ -138,6 +157,26 @@ try {
     return outcome;
   }));
   assert.deepEqual(outcomes.map((outcome) => outcome.result.finalMessage), ['synthetic answer', 'fixture answer']);
+  // The same public one-call function switches harnesses without application Profiles.
+  for (const connection of [
+    {harness: 'dsh', command: process.execPath, args: [${JSON.stringify(fixtureRuntime)}], model: {provider: 'synthetic-provider', id: 'synthetic-model'}},
+    {harness: 'pi', command: process.execPath, args: [${JSON.stringify(resolve(repositoryRoot, 'providers/pi/test/fixture-runtime.mjs'))}]},
+    {harness: 'opencode', url: server.url, headers: {authorization: 'Bearer synthetic-token'}},
+  ]) {
+    const events = [];
+    const result = await run({...connection, input: 'synthetic answer', onEvent: (event) => { events.push(event.type); }});
+    assert.equal(result.status, 'completed');
+    assert.equal(typeof result.finalMessage, 'string');
+    assert.equal(events[0], 'run.started');
+    assert.equal(events.at(-1), 'run.completed');
+    const chat = await openSession(connection);
+    try {
+      const ref = chat.ref();
+      assert.equal((await chat.send('synthetic first')).status, 'completed');
+      assert.equal((await chat.send('synthetic second')).status, 'completed');
+      assert.deepEqual(chat.ref(), ref);
+    } finally { await chat.close(); }
+  }
   assert.equal(server.deleteRequests(), 0);
   assert.equal(server.disposeRequests(), 0);
 } finally {await server.close();}

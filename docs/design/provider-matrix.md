@@ -303,6 +303,23 @@ Official references:
 [Pi Agent RPC mode](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/rpc.md),
 [Pi Agent](https://github.com/earendil-works/pi).
 
+The optional `sdk` connection adapts the official public AgentSession interface
+from `@earendil-works/pi-coding-agent@0.85.1` (MIT; exact version). The RPC
+strategy below remains available. No Pi Runtime enters Harapter dependencies or
+the workspace lockfile. The host installs the Runtime and supplies a
+`PiSdkSessionFactory`; shared ModelRuntime/auth/settings resources remain
+host-owned.
+
+The SDK strategy supports fresh Session creation, multi-turn text Runs,
+message/reasoning/tool events, native abort with confirmation, bounded redacted
+unknown observations, and owned disposal. Portable resume, fork, interaction
+responses, model/workspace overrides and arbitrary native access are unsupported
+in this strategy. The RPC strategy retains its separate supported controls. SDK
+extensions may use only host-provided native UI; Harapter does not install an
+approval handler or alter tool policy.
+
+[SDK evidence](../../providers/pi/README.md)
+
 ## 5. Expected portable capabilities
 
 | Capability          | Codex       | OpenCode    | Goose       | Qwen        | Crush       | Copilot     | Cursor      |

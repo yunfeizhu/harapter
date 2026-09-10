@@ -19,7 +19,8 @@
 <!-- markdownlint-enable MD033 -->
 
 このガイドは単一の `harapter`
-SDK に含まれるモジュールを説明します。通常のアプリケーション接続は[アプリケーションガイド](../../packages/harapter/README.ja.md)から始めてください。単一パッケージの初回公開は未完了で、以下のインストール手順は公開後のものです。
+SDK に含まれるモジュールを説明します。通常のアプリケーション接続は[アプリケーションガイド](../../packages/harapter/README.ja.md)から始めてください。`harapter`
+をインストールすれば利用でき、このモジュール用の npm 依存を追加する必要はありません。
 
 `harapter` は複数の Agent Harness を同じ TypeScript
 API で扱うための中心パッケージです。Client、Session、Run、イベント、終端結果、Capability、Error、Interaction、Provider 拡張を定義しますが、Provider
@@ -247,7 +248,7 @@ Capability が許す場合だけ `session.ref()`
 
 ## 関連パッケージ
 
-[すべてのパッケージ](../../README.ja.md#npm-パッケージ一覧)
+[SDK ガイド](../../README.ja.md#一つの-sdk)
 
 | パッケージ                                                                    | ドキュメント                                      |
 | ----------------------------------------------------------------------------- | ------------------------------------------------- |

@@ -1,0 +1,14 @@
+{
+  "fixtureFormatVersion": 1,
+  "providerId": "pi.agent",
+  "interface": "Pi public embedded AgentSession SDK",
+  "upstreamEvidence": {
+    "repository": "https://github.com/earendil-works/pi",
+    "commit": "d981de1229ef899957bbe968bc8dcda02a21f477",
+    "runtimeVersion": "0.85.1",
+    "package": "@earendil-works/pi-coding-agent",
+    "license": "MIT"
+  },
+  "captureMethod": "Deterministic synthetic SDK message authored against official v0.85.1 docs and public AgentSession types. Separate sdk-native.mjs evidence exercises the installed 0.85.1 SDK with an in-memory synthetic model stream, two turns, native abort and disposal; no paid model service is invoked.",
+  "redactionMethod": "All content, identifiers and usage are fictional. No real provider traffic, credentials, model keys, private paths or Session state is captured."
+}

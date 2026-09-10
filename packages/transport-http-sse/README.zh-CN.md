@@ -19,7 +19,8 @@
 <!-- markdownlint-enable MD033 -->
 
 本指南描述单个 `harapter`
-SDK 内的模块。普通应用接入请先看[应用指南](../../packages/harapter/README.zh-CN.md)。单包入口的首次发布尚待完成，下面的安装命令适用于该版本发布后。
+SDK 内的模块。普通应用接入请先看[应用指南](../../packages/harapter/README.zh-CN.md)。安装
+`harapter` 即可，无需为此模块另装 npm 包。
 
 这个传输包适合“HTTP 提交操作、SSE 推送进度”的 Harness 接口。它负责安全解析 Endpoint、限制请求和响应大小、增量解析 SSE、限制并发与清理资源，但不解释任何 Provider
 Route、Payload、Session 或 Run 语义。
@@ -142,7 +143,7 @@ Data 和 Content-Type 都是不可信数据，Adapter 必须校验和脱敏。
 
 ## 相关包
 
-[全部包](../../README.zh-CN.md#npm-包导航)
+[SDK 指南](../../README.zh-CN.md#一个-sdk)
 
 | 包                                                                            | 文档                                                   |
 | ----------------------------------------------------------------------------- | ------------------------------------------------------ |

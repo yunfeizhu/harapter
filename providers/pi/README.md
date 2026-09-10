@@ -20,8 +20,8 @@
 
 This guide describes a module included in the single `harapter` SDK. For
 ordinary application setup, start with the
-[application guide](../../packages/harapter/README.md). The first single-package
-release is pending; the installation commands apply after that release.
+[application guide](../../packages/harapter/README.md). Install `harapter`; this
+module does not require a separate npm dependency.
 
 `harapter/pi` maps the official Pi Agent RPC mode to the portable Harapter
 lifecycle.
@@ -30,6 +30,83 @@ The host installs, configures, authenticates, and operates Pi Agent. Harapter
 starts only the exact adapter-owned command selected by the Profile. It does not
 install a Pi Runtime or SDK, select models, manage credentials, read Session
 files, or change host security policy.
+
+## Embedded SDK strategy (0.85.1)
+
+The optional `sdk` connection adapts the official public AgentSession interface
+from `@earendil-works/pi-coding-agent@0.85.1` (MIT; exact version). The RPC
+strategy below remains available. No Pi Runtime enters Harapter dependencies or
+the workspace lockfile. The host installs the Runtime and supplies a
+`PiSdkSessionFactory`; shared ModelRuntime/auth/settings resources remain
+host-owned.
+
+The SDK strategy supports fresh Session creation, multi-turn text Runs,
+message/reasoning/tool events, native abort with confirmation, bounded redacted
+unknown observations, and owned disposal. Portable resume, fork, interaction
+responses, model/workspace overrides and arbitrary native access are unsupported
+in this strategy. The RPC strategy retains its separate supported controls. SDK
+extensions may use only host-provided native UI; Harapter does not install an
+approval handler or alter tool policy.
+
+Completion requires the prompt promise to settle and an authoritative final
+assistant stop reason of `stop`. An `agent_end` event alone is insufficient
+because retries may follow. Missing or malformed outcomes fail. Native
+cancellation requires both confirmed abort and the corresponding aborted
+outcome; failed or unconfirmed cancellation closes the Session and reports
+connection_aborted. SDK Sessions are not process-isolated and cannot be forcibly
+terminated if host code ignores disposal.
+
+```ts
+import { openSession, isHarnessError } from 'harapter';
+import { createAgentSession } from '@earendil-works/pi-coding-agent';
+
+try {
+  const chat = await openSession({
+    harness: 'pi',
+    runtime: {
+      kind: 'pi-sdk',
+      version: '0.85.1',
+      createSession: async () => (await createAgentSession()).session,
+    },
+  });
+  try {
+    const result = await chat.send('Hello!');
+    // Return result.finalMessage to your application's authorized conversation UI.
+    console.log({
+      status: result.status,
+      hasText: result.finalMessage !== undefined,
+    });
+  } finally {
+    await chat.close();
+  }
+} catch (error) {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+}
+```
+
+Limits: `operationTimeoutMs` defaults to 30000, `maxRunEvents` to 128 (2–4096),
+16 active/opening Sessions per Client, 262144 characters per retained event.
+`connection: { kind: 'sdk', ownership: 'adapter', factory }` requires
+`providerOptions: { sdkVersion: '0.85.1' }`. Other versions and host-owned
+`connection.client` handles are rejected before factory invocation.
+
+[Official SDK contract](https://github.com/earendil-works/pi/blob/v0.85.1/packages/coding-agent/docs/sdk.md)
+· [Fixtures](../../fixtures/pi/sdk-0.85.1/manifest.json)
+
+```sh
+pnpm vitest run providers/pi/test/sdk.test.ts
+pnpm build
+node providers/pi/test/sdk-native.mjs "$PI_SDK_PACKAGE_ROOT"
+```
+
+The opt-in command uses an externally installed 0.85.1 SDK and a synthetic
+in-memory model stream. It verifies two-turn history, native abort and disposal
+without model credentials or network access. This is SDK integration evidence,
+not evidence from a real model service. The sections below describe the RPC
+strategy.
 
 ## Quick start in an application
 
@@ -404,7 +481,7 @@ tests use real runtimes with a local synthetic model, not a hosted model.
 
 ## Related packages
 
-[All packages](../../README.md#packages-on-npm)
+[SDK guide](../../README.md#one-sdk)
 
 | Package                                                          | Documentation                                 |
 | ---------------------------------------------------------------- | --------------------------------------------- |

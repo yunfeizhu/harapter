@@ -19,11 +19,74 @@
 <!-- markdownlint-enable MD033 -->
 
 本指南描述单个 `harapter`
-SDK 内的模块。普通应用接入请先看[应用指南](../../packages/harapter/README.zh-CN.md)。单包入口的首次发布尚待完成，下面的安装命令适用于该版本发布后。
+SDK 内的模块。普通应用接入请先看[应用指南](../../packages/harapter/README.zh-CN.md)。安装
+`harapter` 即可，无需为此模块另装 npm 包。
 
 `harapter/pi` 将官方 Pi Agent `--mode rpc`
 接口映射为 Harapter。每个 Session 使用独立进程，支持流式 Event、持久化 Resume 和原生 Abort，同时禁用 Extension、Skill 与 Prompt
 Template 自动发现，防止普通文本绕过 Agent 生命周期。
+
+## 嵌入式 SDK 策略（0.85.1）
+
+可选 `sdk` 连接适配 `@earendil-works/pi-coding-agent@0.85.1`
+的官方公开 AgentSession 接口（MIT，精确版本）。下文 RPC 策略仍可用。Pi
+Runtime 不进入 Harapter 默认依赖或 workspace lockfile；宿主安装 Runtime 并提供
+`PiSdkSessionFactory`，共享 ModelRuntime、认证和设置资源仍归宿主管理。
+
+SDK 策略支持创建新 Session、多轮文本 Run、消息/推理/工具事件、经确认的原生 abort、有界脱敏未知事件和资源释放。此策略不支持 portable
+resume、fork、交互响应、model/workspace 覆盖或任意 native 访问；RPC 策略保留其各自已支持的控制。SDK 扩展只能使用宿主提供的原生 UI，Harapter 不安装审批处理器或修改工具策略。
+
+成功终态必须同时满足 prompt
+Promise 已结束、最后 assistant 的 stopReason 为 stop。单个 agent_end 事件不能代表成功，因为后面可能继续重试。缺失或格式错误的结果判为失败。原生取消必须同时获得 abort 确认和对应 aborted 结果；取消失败或无法确认时，关闭 Session 并返回 connection_aborted。SDK
+Session 没有进程隔离，宿主代码忽略释放时无法强制终止。
+
+```ts
+import { openSession, isHarnessError } from 'harapter';
+import { createAgentSession } from '@earendil-works/pi-coding-agent';
+
+try {
+  const chat = await openSession({
+    harness: 'pi',
+    runtime: {
+      kind: 'pi-sdk',
+      version: '0.85.1',
+      createSession: async () => (await createAgentSession()).session,
+    },
+  });
+  try {
+    const result = await chat.send('Hello!');
+    // Return result.finalMessage to your application's authorized conversation UI.
+    console.log({
+      status: result.status,
+      hasText: result.finalMessage !== undefined,
+    });
+  } finally {
+    await chat.close();
+  }
+} catch (error) {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+}
+```
+
+默认上限：`operationTimeoutMs` 为 30000 毫秒，`maxRunEvents`
+为 128（范围 2–4096），每个 Client 最多 16 个活动或创建中的 Session，单个保留事件最多 262144 个字符。`connection: { kind: 'sdk', ownership: 'adapter', factory }`
+必须配合 `providerOptions: { sdkVersion: '0.85.1' }`。其他版本及宿主拥有的
+`connection.client` 会在调用工厂前被拒绝。
+
+[Official SDK contract](https://github.com/earendil-works/pi/blob/v0.85.1/packages/coding-agent/docs/sdk.md)
+· [Fixtures](../../fixtures/pi/sdk-0.85.1/manifest.json)
+
+```sh
+pnpm vitest run providers/pi/test/sdk.test.ts
+pnpm build
+node providers/pi/test/sdk-native.mjs "$PI_SDK_PACKAGE_ROOT"
+```
+
+此可选命令使用外部安装的 0.85.1
+SDK 和内存合成模型流，验证两轮历史、原生 abort 和释放，不使用模型凭据或网络。这是 SDK 接入证据，不是真实模型服务的验证。以下章节描述 RPC 策略。
 
 ## 在自己的应用中快速接入
 
@@ -232,7 +295,7 @@ await child.close();
 
 ## 相关包
 
-[全部包](../../README.zh-CN.md#npm-包导航)
+[SDK 指南](../../README.zh-CN.md#一个-sdk)
 
 | 包                                                               | 文档                                                   |
 | ---------------------------------------------------------------- | ------------------------------------------------------ |

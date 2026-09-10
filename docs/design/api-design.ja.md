@@ -22,6 +22,9 @@ Design であり、実装に先行する場合があります。現在実装済�
 [`harapter` README](../../packages/core/README.md)、Package
 Export、Source、Test によって定義されます。この文書の Signature や Example は、実装済みであることや Provider がサポートすることの証拠ではありません。
 
+実装済み SDK は Core の外に単発の `run()`
+を提供します。内蔵マッピングを選び、新規 Session のイベントを読み、ハンドルを解放します。この任意の入口は状態を持つポータブル契約を変更せず、Runtime のインストールや承認ポリシーを管理しません。[API リファレンス](../api-reference.ja.md#run)と[決定記録](../../.agents/notes/implemented/feature/2026-09-09-single-call-run.md)を参照してください。
+
 ## 2. Registry
 
 ```ts

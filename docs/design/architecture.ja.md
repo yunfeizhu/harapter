@@ -22,6 +22,9 @@ Store、Checkpoint、内部 Security Mechanism は引き続き各 Harness が所
 - 公式 Machine
   Interface に公開されていない Capability を正式な Support として模倣しない
 
+実装済み SDK は Core の外に単発の `run()`
+を提供します。内蔵マッピングを選び、新規 Session のイベントを読み、ハンドルを解放します。この任意の入口は状態を持つポータブル契約を変更せず、Runtime のインストールや承認ポリシーを管理しません。[API リファレンス](../api-reference.ja.md#run)と[決定記録](../../.agents/notes/implemented/feature/2026-09-09-single-call-run.md)を参照してください。
+
 ## 2. 論理アーキテクチャ
 
 ```text

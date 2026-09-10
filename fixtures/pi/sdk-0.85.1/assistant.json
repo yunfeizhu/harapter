@@ -1,0 +1,6 @@
+{
+  "role": "assistant",
+  "stopReason": "stop",
+  "content": [{ "type": "text", "text": "Synthetic SDK answer" }],
+  "usage": { "input": 1, "output": 2, "totalTokens": 3 }
+}

@@ -18,6 +18,11 @@
 API 以 [`harapter` README](../../packages/core/README.md)、Package
 Export、源码和测试为准。本文中的签名或示例不代表已经实现，也不代表某个 Provider 已经支持。
 
+已实现的 SDK 在 Core 之外提供单次调用
+`run()`：选择内置映射、创建新 Session、读取事件并释放句柄。此可选入口不改变可移植的有状态契约，不安装 Runtime，也不管理审批策略。参见
+[API 参考](../api-reference.zh-CN.md#run)
+和[决策记录](../../.agents/notes/implemented/feature/2026-09-09-single-call-run.md)。
+
 ## 2. Registry
 
 ```ts

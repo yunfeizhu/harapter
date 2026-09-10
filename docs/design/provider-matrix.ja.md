@@ -303,6 +303,23 @@ Runtime や SDK 依存を含みません。
 公式参照：[Pi Agent RPC Mode](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/rpc.md)、
 [Pi Agent](https://github.com/earendil-works/pi)。
 
+任意の `sdk` 接続は `@earendil-works/pi-coding-agent@0.85.1`
+の公式公開 AgentSession
+API を適応します（MIT、完全一致 Version）。下記 RPC 戦略も利用できます。Pi
+Runtime は Harapter の既定依存や Workspace
+Lockfile に入りません。Host が Runtime を用意して `PiSdkSessionFactory`
+を渡し、共有 ModelRuntime、認証、設定を所有します。
+
+SDK 戦略は新規 Session、多ターン Text Run、Message/Reasoning/Tool
+Event、確認済み native
+Abort、有界で秘匿化した未知 Event、所有 Resource の破棄をサポートします。Portable
+Resume、Fork、Interaction Response、Model/Workspace 上書き、任意の Native
+Access は対象外です。RPC 戦略は独自の対応 Control を保持します。SDK
+Extension の UI は Host が用意し、Harapter は承認 Handler を設置したり Tool
+Policy を変更したりしません。
+
+[SDK evidence](../../providers/pi/README.ja.md)
+
 ## 5. 想定 Portable Capability
 
 | Capability         | Codex    | OpenCode | Goose    | Qwen     | Crush    | Copilot  | Cursor   |

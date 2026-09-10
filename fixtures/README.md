@@ -35,3 +35,6 @@ provider traffic.
   current Pi Agent RPC source revision plus synthetic completed, cancelled,
   failed, interaction, and unknown-event payloads. The recorded Runtime version
   identifies fixture provenance; it is not a Runtime version pin.
+- [`pi/sdk-0.85.1`](./pi/sdk-0.85.1/manifest.json) records the exact public
+  embedded SDK version and a synthetic assistant outcome, exercised by the SDK
+  strategy tests independently of the RPC fixtures.

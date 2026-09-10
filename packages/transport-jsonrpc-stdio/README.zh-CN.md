@@ -19,7 +19,8 @@
 <!-- markdownlint-enable MD033 -->
 
 本指南描述单个 `harapter`
-SDK 内的模块。普通应用接入请先看[应用指南](../../packages/harapter/README.zh-CN.md)。单包入口的首次发布尚待完成，下面的安装命令适用于该版本发布后。
+SDK 内的模块。普通应用接入请先看[应用指南](../../packages/harapter/README.zh-CN.md)。安装
+`harapter` 即可，无需为此模块另装 npm 包。
 
 这个传输包面向通过 stdin/stdout 或等价 Node
 Stream 交换一行一个 JSON 对象的 Provider
@@ -140,7 +141,7 @@ Loop。完整限制与所有配置项见[英文详细文档](./README.md)。
 
 ## 相关包
 
-[全部包](../../README.zh-CN.md#npm-包导航)
+[SDK 指南](../../README.zh-CN.md#一个-sdk)
 
 | 包                                                                            | 文档                                                   |
 | ----------------------------------------------------------------------------- | ------------------------------------------------------ |

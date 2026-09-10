@@ -20,8 +20,8 @@
 
 This guide describes a module included in the single `harapter` SDK. For
 ordinary application setup, start with the
-[application guide](../../packages/harapter/README.md). The first single-package
-release is pending; the installation commands apply after that release.
+[application guide](../../packages/harapter/README.md). Install `harapter`; this
+module does not require a separate npm dependency.
 
 `harapter/transports/jsonl-process` is a bounded strict-JSONL transport for
 Provider Adapters that communicate with a host-supplied harness process.
@@ -198,7 +198,7 @@ capabilities belong to the consuming Provider Adapter.
 
 ## Related packages
 
-[All packages](../../README.md#packages-on-npm)
+[SDK guide](../../README.md#one-sdk)
 
 | Package                                                                       | Documentation                                 |
 | ----------------------------------------------------------------------------- | --------------------------------------------- |
