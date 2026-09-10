@@ -136,6 +136,7 @@ function completed(sessionId, messageId, text) {
 }
 
 function currentProfileCompleted(sessionId, messageId, text) {
+  const modern = mode.startsWith('sdk-0.1.5');
   event(sessionId, 'permission/preset', { preset: 'workspace-write' });
   event(sessionId, 'sandbox/mode', { mode: 'workspace-write' });
   event(sessionId, 'approval/policy', { policy: 'ask' });
@@ -149,6 +150,24 @@ function currentProfileCompleted(sessionId, messageId, text) {
     inserted: [],
   });
   event(sessionId, 'step/start', { turn: 1, step: 1 });
+  if (modern) {
+    event(sessionId, 'system/message', {
+      turn: 1,
+      step: 1,
+      message: {
+        id: 'synthetic-system',
+        role: 'system',
+        content: [
+          { type: 'text', text: 'Synthetic private system instructions' },
+        ],
+        source: { kind: 'plugin', plugin: 'synthetic-system-plugin' },
+      },
+    });
+    if (mode === 'sdk-0.1.5-system-only') {
+      status(sessionId, 'idle');
+      return;
+    }
+  }
   event(sessionId, 'user/message', {
     id: messageId,
     role: 'user',
@@ -173,15 +192,35 @@ function currentProfileCompleted(sessionId, messageId, text) {
     provider: 'synthetic-provider',
     model: 'synthetic-model',
   });
-  event(sessionId, 'assistant/chunk', {
-    turn: 1,
-    step: 1,
-    chunk: { type: 'text-delta', index: 0, text },
-  });
+  if (modern) {
+    event(sessionId, 'assistant/attempt', {
+      turn: 1,
+      step: 1,
+      stream: [
+        {
+          type: 'text-chunks',
+          time0: 1,
+          index: 0,
+          dt: [0],
+          texts: ['Synthetic private uncommitted answer'],
+        },
+      ],
+    });
+    if (mode === 'sdk-0.1.5-attempt-only') {
+      status(sessionId, 'idle');
+      return;
+    }
+  } else
+    event(sessionId, 'assistant/chunk', {
+      turn: 1,
+      step: 1,
+      chunk: { type: 'text-delta', index: 0, text },
+    });
   event(sessionId, 'assistant/message', {
     turn: 1,
     step: 1,
     message: assistantMessage(`assistant-${messageId}`, text),
+    ...(modern ? { stream: [] } : {}),
   });
   event(sessionId, 'step/end', { turn: 1, step: 1 });
   event(sessionId, 'turn/end', {
@@ -206,7 +245,7 @@ function terminalRun(sessionId, messageId, reason, text = 'synthetic answer') {
 }
 
 function runScenario(sessionId, messageId, text, currentPromptCount) {
-  if (mode === 'current-profile') {
+  if (mode === 'current-profile' || mode.startsWith('sdk-0.1.5')) {
     currentProfileCompleted(sessionId, messageId, text);
     return;
   }

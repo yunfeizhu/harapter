@@ -1,0 +1,18 @@
+{
+  "fixtureFormatVersion": 1,
+  "providerId": "deepseek.harness",
+  "interface": "DeepSeek Harness SDK stdio JSON-RPC protocol",
+  "upstreamEvidence": {
+    "repository": "https://github.com/deepseek-ai/deepseek-harness",
+    "runtimePackage": "@deepseek-ai/dsh",
+    "runtimePackageVersion": "0.1.5-alpha.2",
+    "protocolPackage": "@deepseek-ai/dsh-sdk-protocol",
+    "protocolPackageVersion": "0.1.5-rc.1",
+    "protocolPackageIntegrity": "sha512-xTleAtWust5wpcjv3HQnFLB0KJIBFthwWerriVtXUz4JUw2b08m7S0JNveKIVDstulNxBvHqgXThtpz7nI9Pow==",
+    "sessionPackage": "@deepseek-ai/dsh-session",
+    "sessionPackageVersion": "0.1.5-rc.1",
+    "sessionPackageIntegrity": "sha512-0YBBrzkCbVEJolS/OpD0DZMSozmYxUTZopiG76MXInjOFBW9J4ca1a8WUjJjqelP1nJTmWGKXp92HcvNEny0Dg=="
+  },
+  "captureMethod": "Deterministic synthetic traces authored from the exact published SDK protocol and SessionEventMap types. The minimal Profile logs system/message, settled assistant/message with an embedded stream, and assistant/attempt for uncommitted attempts. The npm integrity values fingerprint the inspected published artifacts.",
+  "redactionMethod": "All identifiers, content, failures, timestamps and stream records are synthetic. No credentials, real prompts, host paths or provider traffic are captured."
+}

@@ -78,12 +78,14 @@ type JsonRecord = Record<string, unknown>;
 
 const knownPassthroughEvents = new Set([
   'agent/inbox/spliced',
+  'assistant/attempt',
   'request/context',
   'request/header',
   'session/end-seed',
   'session/title',
   'step/end',
   'step/start',
+  'system/message',
   'turn/start',
   'user/message',
 ]);
@@ -576,6 +578,25 @@ export function mapDshSessionEvent(
 
   if (event.type === 'session/title') {
     validateSessionTitle(event.data);
+  }
+  if (event.type === 'system/message') {
+    requireTurnStep(event.data, event.type);
+    const message = record(event.data['message']);
+    const source = record(message?.['source']);
+    if (
+      !nonEmptyString(message?.['id']) ||
+      message['role'] !== 'system' ||
+      !contentBlocks(message['content']) ||
+      source?.['kind'] !== 'plugin' ||
+      !nonEmptyString(source['plugin'])
+    ) {
+      throw incompatible(event.type);
+    }
+  }
+  if (event.type === 'assistant/attempt') {
+    requireTurnStep(event.data, event.type);
+    // Attempt streams are uncommitted Provider data, not portable response or terminal authority.
+    if (!Array.isArray(event.data['stream'])) throw incompatible(event.type);
   }
 
   if (knownPassthroughEvents.has(event.type) || event.ignorable === true) {

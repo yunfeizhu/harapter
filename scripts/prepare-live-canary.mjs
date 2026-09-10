@@ -113,6 +113,12 @@ const DSH_EXPECTED_ROWS = new Map([
   ['timer', ['@deepseek-ai/cordis-plugin-timer', false]],
   ['tools', ['@deepseek-ai/dsh-tools', false]],
 ]);
+// SDK 0.1.5 removes both legacy filesystem rows from its minimal composition.
+const DSH_CURRENT_ROWS = new Map(
+  [...DSH_EXPECTED_ROWS].filter(
+    ([id]) => id !== 'fs-local' && id !== 'str-replace-editor',
+  ),
+);
 
 class SafeFailure extends Error {}
 
@@ -361,7 +367,10 @@ function validateDshConfig(path) {
   } catch {
     throw new SafeFailure('The DSH effective config is invalid.');
   }
-  if (!Array.isArray(rows) || rows.length !== DSH_EXPECTED_ROWS.size) {
+  const expectedRows = [DSH_EXPECTED_ROWS, DSH_CURRENT_ROWS].find(
+    (expected) => Array.isArray(rows) && rows.length === expected.size,
+  );
+  if (!Array.isArray(rows) || expectedRows === undefined) {
     throw new SafeFailure(
       'The DSH effective config does not match the reviewed canary surface.',
     );
@@ -381,7 +390,7 @@ function validateDshConfig(path) {
     ) {
       throw new SafeFailure('The DSH effective config is invalid.');
     }
-    const expected = DSH_EXPECTED_ROWS.get(id);
+    const expected = expectedRows.get(id);
     if (
       expected === undefined ||
       name !== expected[0] ||

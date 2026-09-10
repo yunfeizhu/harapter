@@ -34,6 +34,15 @@ validates the complete contiguous event interval. The current `session/title`
 structure is a recognized, redacted Provider event; an unknown required event
 still fails closed.
 
+The SDK 0.1.5 `system/message` and `assistant/attempt` events retain only
+redacted Provider observations after outer structure validation. System
+instructions, empty system-message clears, and uncommitted model attempts never
+supply portable response text or terminal authority. SDK 0.1.5 embeds stream
+records in its settled Assistant Message instead of emitting stdio
+`assistant/chunk` notifications. Harapter maps the committed message and usage;
+it does not replay stored chunks as live deltas. Legacy chunk mapping remains
+valid for Profiles that still emit those notifications.
+
 Prompt timeouts, transport interruptions, and malformed prompt receipts have an
 uncertain upstream acceptance state and quarantine the connection. Explicit
 JSON-RPC rejection is authoritative and leaves it reusable. Subagent ownership
@@ -74,6 +83,14 @@ Both observations can occur after blocked, aborted, failed, interrupted, or
 unrecognized work. The durable `turn/end` reason is the available upstream
 terminal authority, so weaker observations cannot safely produce success.
 
+### Accept every new event or replay stored attempts as Assistant output
+
+Unknown required events can alter ownership or terminal semantics. Recognizing
+the two reviewed nonterminal event types keeps new required events fail-closed;
+replaying uncommitted attempt text or system instructions would corrupt the
+portable response. The compact stream belongs to Provider-native diagnostics,
+not a reconstructed real-time transport.
+
 ## Consequences
 
 - Harapter can create a lazy SDK Session, stream portable events, and settle a
@@ -88,6 +105,23 @@ terminal authority, so weaker observations cannot safely produce success.
   `@deepseek-ai/dsh-sdk-app@0.1.2-rc.1`, and verified an exact text result,
   started and completed Events, the authoritative completed terminal, and no
   tool or interaction Events. Live revalidation remains opt-in.
+- The
+  [SDK 0.1.5 fixtures](../../../../fixtures/dsh/sdk-jsonrpc-0.1.5/manifest.json)
+  fingerprint the exact published protocol and Session packages with npm
+  integrity values. They cover committed text and failed uncommitted attempts.
+  The live-canary configuration checker accepts only the complete reviewed
+  legacy composition or the 0.1.5 composition without its two retired filesystem
+  rows; missing services, unknown rows and enabled tools still fail validation.
+- On 2026-09-10, a standalone local candidate tarball passed six real DeepSeek
+  text submissions through the public `run()` and persistent
+  `ChatSession.send()` APIs. The tested CLI versions were `0.1.5-alpha.2`
+  (minimal Profile and SDK Runtime `0.1.5-rc.1`) and `0.1.2-rc.1` (Profile and
+  SDK Runtime `0.1.2-rc.1`). Each completed one independent task and two chat
+  turns with exact replies, authoritative terminal Events, Session/process
+  reuse, no tool or interaction Events, and no surviving Runtime process. Twelve
+  controlled cases with those real Runtimes and a local model separately covered
+  isolation, unsupported native cancellation, active close, timeout, and
+  callback-failure cleanup. This evidence covers the SDK process strategy.
 - Hosts must supply an isolated SDK Profile. Native calls that inject competing
   work into the owned Session interval fall outside the compatibility boundary.
 - Harapter gives up native mid-Run cancellation, Session resume, Session

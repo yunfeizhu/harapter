@@ -154,6 +154,16 @@ pnpm add harapter
 
 ## SDK process strategy
 
+2026-09-10、ローカルでビルドした Harapter
+tarball から実際の DeepSeek サービスへのテキスト呼び出し 6 回が成功しました。各 Runtime で
+`run()` を 1 回、同じ Session の `ChatSession.send()`
+を 2 回実行しました。検証対象は DSH CLI `0.1.5-alpha.2`（minimal Profile と SDK
+Runtime は `0.1.5-rc.1`）と、CLI・Profile・SDK Runtime がすべて `0.1.2-rc.1`
+の構成です。応答の完全一致、Session と子プロセスの再利用、権威ある終端 Event、Tool・Interaction
+Event がないこと、Runtime プロセスが残らないことを確認しました。さらに、同じ実 Runtime とローカルの模擬モデルによる 12 件の制御テストで、タスクの分離、Native
+Cancel 未対応、実行中の Close、Timeout、Callback 例外後の Cleanup などを確認しました。この証拠はローカル候補パッケージの SDK
+process 接続に適用されます。
+
 ### クイックスタート
 
 ```ts
@@ -217,6 +227,15 @@ try {
   observation に残り、終端には変換されません。
 
 ### Compatibility と Evidence
+
+SDK 0.1.5 は必須イベント `system/message` と `assistant/attempt`
+を追加します。Harapter は外側のメッセージまたは試行の構造を検証し、サイズ制限と秘匿処理を適用した Provider イベントとして保持します。システム指示や未確定のモデル試行を回答や終端の根拠にはしません。この SDK
+Profile は stdio でリアルタイムの `assistant/chunk` を送らず、確定した
+`assistant/message` に `stream`
+を含めます。Harapter は確定メッセージと使用量を返し、記録済みストリームをリアルタイムの差分として再送しません。旧 Profile の
+`assistant/chunk` 差分マッピングは維持します。
+[新版プロトコルの fixture](../../fixtures/dsh/sdk-jsonrpc-0.1.5/manifest.json)
+は検証した npm 成果物の正確な指紋を記録します。Gateway の証拠は下記で別途管理します。
 
 接続は `deepseek-harness-sdk-runtime`
 identity と、使用する Response、Event、Terminal の structure を検証します。Runtime は診断 Version を返しますが protocol

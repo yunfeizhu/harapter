@@ -205,6 +205,17 @@ configuration before receiving the real model credential. Any composition drift,
 unexpected response, missing terminal Event, or observed tool or interaction
 Event fails the lifecycle.
 
+On 2026-09-10, a locally built Harapter tarball passed six text-only submissions
+to the real DeepSeek service: one `run()` and two `ChatSession.send()` calls per
+Runtime. The tested CLI versions were `0.1.5-alpha.2` (minimal Profile and SDK
+Runtime `0.1.5-rc.1`) and `0.1.2-rc.1` (Profile and SDK Runtime `0.1.2-rc.1`).
+Checks verified exact replies, Session and child-process reuse, authoritative
+terminal Events, no tool or interaction Events, and no surviving Runtime
+processes. Twelve additional controlled cases using those real Runtimes with a
+local model covered lifecycle behavior, including task isolation, unsupported
+native cancellation, active close, timeouts, and callback-failure cleanup. This
+evidence applies to the local candidate's SDK process strategy.
+
 DeepSeek Harness is MIT licensed. Harapter does not redistribute its Runtime or
 SDK packages; see the [license record](../../licenses/deepseek-harness.md).
 
@@ -350,6 +361,18 @@ the official `shutdown` request within `shutdownTimeoutMs`, then terminates the
 adapter-owned child process with a bounded forced-cleanup fallback.
 
 ### Events, redaction, and native access
+
+SDK 0.1.5 also emits required `system/message` and `assistant/attempt` events.
+Harapter validates their outer message/attempt structure and exposes only
+bounded, redacted Provider observations: system instructions and an uncommitted
+model attempt cannot become response text or terminal authority. This SDK
+Profile no longer publishes live `assistant/chunk` events over stdio; its
+settled `assistant/message` carries an embedded stream. Harapter returns the
+committed message and usage without replaying that stream as live deltas. Older
+Profiles that emit `assistant/chunk` retain their incremental mapping. The
+[new protocol fixtures](../../fixtures/dsh/sdk-jsonrpc-0.1.5/manifest.json)
+record the exact inspected npm artifacts; the Gateway strategy has separate
+evidence below.
 
 Assistant text, reasoning, Tool lifecycle, usage, final Assistant Message, and
 turn outcome events map to the portable vocabulary. Known structural events and

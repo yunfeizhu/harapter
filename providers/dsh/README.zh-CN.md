@@ -151,6 +151,14 @@ pnpm add harapter
 
 ## SDK process strategy
 
+2026-09-10，本地构建的 Harapter
+tarball 通过了 6 次真实 DeepSeek 文本调用：每个 Runtime 各执行一次 `run()`
+和两次连续的 `ChatSession.send()`。验证版本为 DSH CLI `0.1.5-alpha.2`（minimal
+Profile 与 SDK Runtime `0.1.5-rc.1`）和 CLI、Profile、SDK Runtime 均为
+`0.1.2-rc.1`
+的组合。检查确认了精确回复、Session 与子进程复用、权威终态、无工具或交互事件，且无残留 Runtime 进程。另外，新旧真实 Runtime 配合本地模拟模型通过了 12 项受控验证，覆盖任务隔离、不支持原生取消、活动会话关闭、超时及回调异常后的清理等生命周期行为。该证据适用于本地候选包的 SDK
+process 接入。
+
 ### 快速开始
 
 ```ts
@@ -212,6 +220,14 @@ try {
 - 未知通知进入有界、脱敏 Observation，不会被猜测为终态。
 
 ### 兼容性与 Evidence
+
+SDK 0.1.5 新增必需的 `system/message` 和 `assistant/attempt`
+事件。Harapter 校验其外层消息或尝试结构，仅通过有界、脱敏的 Provider 通道保留观察；系统指令和未提交的模型尝试不会成为回答或终态依据。该 SDK
+Profile 不再通过 stdio 发布实时 `assistant/chunk`，而是在已完成的
+`assistant/message` 中携带
+`stream`。Harapter 返回已提交的消息和用量，不把这些记录重放为实时增量；旧版 Profile 的
+`assistant/chunk` 增量映射继续保留。
+[新版协议样本](../../fixtures/dsh/sdk-jsonrpc-0.1.5/manifest.json)记录所核对 npm 产物的精确指纹；Gateway 接入仍使用下文单独列出的证据。
 
 连接会验证 `deepseek-harness-sdk-runtime`
 身份以及实际使用的每个 Response、Event 和 Terminal 结构。Runtime 会报告诊断 Version，但协议没有协商版本，因此不使用版本白名单：新版本默认尝试，结构不兼容时在边界 fail
