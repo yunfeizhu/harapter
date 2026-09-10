@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1](https://github.com/yunfeizhu/harapter/compare/harapter-v1.1.0...harapter-v1.1.1) (2026-09-10)
+
+
+### Bug Fixes
+
+* **dsh:** accept SDK 0.1.5 session events ([#141](https://github.com/yunfeizhu/harapter/issues/141)) ([57ad82c](https://github.com/yunfeizhu/harapter/commit/57ad82c95942d53690a0e580fab7a355fab7688d))
+
 ## [1.1.0](https://github.com/yunfeizhu/harapter/compare/harapter-v1.0.0...harapter-v1.1.0) (2026-09-10)
 
 
