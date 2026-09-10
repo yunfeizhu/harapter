@@ -46,17 +46,60 @@ Loop。每个 Runtime 仍由宿主选择、安装、认证并实施安全策略�
 
 ## 快速上手
 
-使用 Node.js 24+ 和 ESM 项目：
+使用 Node.js 24+ 和 ESM 项目。按你已经在用的 Runtime，选择下面的 **DSH**、**Pi**
+或 **OpenCode** 示例。
+
+**版本要求：**下面使用的 `run()` 和 `openSession()` 均在 `harapter@1.0.0`
+之后新增。请使用包含这些 API 的后续版本或源码构建；1.0.0 发布包无法运行这些示例。
+
+在新的应用目录中安装：
 
 ```sh
+npm init -y
+npm pkg set type=module
 npm install harapter
 ```
 
-`run()` 是 `harapter@1.0.0`
-之后新增的 API。1.0.0 不包含它，请使用包含此 API 的后续版本或源码构建。
+Harapter 连接你已有的 Runtime。只需安装并登录选中的 Harness，或启动它的 HTTP 服务。任务沿用该 Runtime 的工具和权限，可能访问其工作目录并产生模型调用费用。
 
-本机已经在使用 Pi？将下面内容保存为 `app.ts`。Harapter 会从 `PATH` 查找
-`pi`，沿用它已有的模型和登录配置。
+任选下面**一个完整示例**保存为 `app.ts`，然后运行：
+
+```sh
+node app.ts
+```
+
+### 用同一个调用接入 DSH
+
+先确保 `PATH` 中有 `dsh`，并已配置可用的模型路由。将 `your-provider` 和
+`your-model`
+换成该路由的 Provider 与模型 ID；DSH 的 SDK 握手要求同时提供这两个值。Harapter 自动补齐机器接口启动参数。
+
+<!-- sdk-example: quick-dsh-run.ts -->
+
+```ts
+import { run, isHarnessError } from 'harapter';
+
+try {
+  const result = await run({
+    harness: 'dsh',
+    input: 'Hello!',
+    model: { provider: 'your-provider', id: 'your-model' },
+  });
+  // Return result.finalMessage to your application's caller.
+  console.log({ status: result.status });
+  if (result.status !== 'completed') process.exitCode = 1;
+} catch (error) {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+}
+```
+
+### Pi：沿用本地登录和模型配置
+
+先确保 `PATH` 中有 `pi`，且已配置模型和凭据。Pi 直接沿用这些设置，无需传入
+`run.model`；此入口也不接受该覆盖项。
 
 <!-- sdk-example: quick-run.ts -->
 
@@ -76,26 +119,65 @@ try {
 }
 ```
 
-`result.finalMessage` 是可选的回答内容，`result.status`
-是最终状态。示例只打印状态；SDK 会持续读取事件，并为你关闭 Client 和 Session。
+### OpenCode：连接已有 HTTP 服务
 
-新项目先运行 `npm init -y` 和 `npm pkg set type=module`。用 Node.js
-24 执行文件：
+下面连接**已经启动的 OpenCode 服务**，地址为
+`http://127.0.0.1:4096`。按实际服务修改 `url`。如果服务要求认证，再通过
+`headers` 传入应用从密钥存储取得的请求头；模型凭据仍由 OpenCode 管理。
 
-```sh
-node app.ts
+```ts
+import { run, isHarnessError } from 'harapter';
+
+try {
+  const result = await run({
+    harness: 'opencode',
+    url: 'http://127.0.0.1:4096',
+    input: 'Hello!',
+  });
+  // Return result.finalMessage to your application's caller.
+  console.log({ status: result.status });
+  if (result.status !== 'completed') process.exitCode = 1;
+} catch (error) {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+}
 ```
 
-选中的 Harness 需要已安装并登录，或已有运行中的 HTTP 服务。Harapter 沿用该 Runtime 的工具和权限策略。任务可能访问选中的工作目录，并产生模型调用费用。
+三个示例都返回同一种 `RunResult`：`status` 是最终状态，`finalMessage`
+是可选回答，可交给应用的调用方或对话界面。示例只打印状态。每次 `run()`
+都创建新的 Session、消费事件并清理所拥有的 Client 和 Session；返回 `failed`
+与连接时抛错分别处理。
 
-[SDK](./packages/harapter/README.zh-CN.md) ·
-[API](./docs/api-reference.zh-CN.md#run) ·
-[DSH](./packages/harapter/README.zh-CN.md#用同一个调用接入-dsh)
+### Codex、Hermes 和 OpenClaw
+
+保留上面的导入、结果处理和 `try/catch`，只将 `run()` 调用替换为所需的一项：
+
+| Harness  | 替换后的调用                                          | Runtime 准备                                                   |
+| -------- | ----------------------------------------------------- | -------------------------------------------------------------- |
+| Codex    | `await run({ harness: 'codex', input: 'Hello!' })`    | `PATH` 中有已登录的 `codex`；Harapter 启动 App Server stdio。  |
+| Hermes   | `await run({ harness: 'hermes', input: 'Hello!' })`   | 已有 `http://127.0.0.1:8642` HTTP 服务；需要时覆盖 `url`。     |
+| OpenClaw | `await run({ harness: 'openclaw', input: 'Hello!' })` | `PATH` 中有已配置的 `openclaw`；Harapter 启动 `openclaw acp`。 |
+
+Runtime 准备和兼容范围： [DSH](./providers/dsh/README.zh-CN.md) ·
+[Pi](./providers/pi/README.zh-CN.md) ·
+[OpenCode](./providers/opencode/README.zh-CN.md) ·
+[Codex](./providers/codex/README.zh-CN.md) ·
+[Hermes](./providers/hermes/README.zh-CN.md) ·
+[OpenClaw](./providers/openclaw/README.zh-CN.md)
+
+完整参数、事件与 Runtime 绑定： [API](./docs/api-reference.zh-CN.md#run) ·
+[SDK](./packages/harapter/README.zh-CN.md)
 
 ## 连续对话
 
 只调用一次 `openSession()`，之后每条消息调用 `send()`。同一个 native
 Session 会保留对话历史。此 API 在 1.0.0 之后新增，1.0.0 发布版尚未包含。
+
+`openSession()` 接受上面相同的 Runtime 选项：需要时传入 DSH 的 `model`
+或 OpenCode 的 `url` / `headers`，后面的 `chat.send()`
+调用保持一致。已经打开的 Session 始终绑定原来的 Runtime。
 
 <!-- sdk-example: quick-chat.ts -->
 

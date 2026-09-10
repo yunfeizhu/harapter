@@ -46,18 +46,63 @@ Loop ではありません。各 Runtime の選択、インストール、認証
 
 ## クイックスタート
 
-Node.js 24+ と ESM アプリケーションを使用します：
+Node.js
+24+ と ESM アプリケーションを使用します。すでに利用している Runtime に合わせて、**DSH**、**Pi**、**OpenCode**
+の例を選びます。
+
+**必要なバージョン：**以下の `run()` と `openSession()` は `harapter@1.0.0`
+の後に追加された API です。これらを含む後続リリースまたはソースビルドを使用してください。1.0.0 パッケージでは実行できません。
+
+新しいアプリケーションのディレクトリでインストールします：
 
 ```sh
+npm init -y
+npm pkg set type=module
 npm install harapter
 ```
 
-`run()` は `harapter@1.0.0`
-の後に追加された API です。1.0.0 には含まれないため、この API を含む後続リリースまたはソースビルドを使用してください。
+Harapter は既存の Runtime に接続します。選択する Harness だけをインストールして認証するか、その HTTP サーバーを起動してください。タスクは Runtime のツールと権限を使用し、Workspace へのアクセスやモデル利用料金が発生する場合があります。
 
-このマシンですでに Pi を使用していますか？次を `app.ts`
-として保存します。Harapter は `PATH` から `pi`
-を探し、既存のモデルとログイン設定を使用します。
+以下の完全な例から**一つだけ**を `app.ts` として保存し、実行します：
+
+```sh
+node app.ts
+```
+
+### 同じ呼び出しで DSH を使う
+
+`PATH` に `dsh`
+があり、利用するモデルルートが設定済みであることを確認します。`your-provider` と
+`your-model`
+を、そのルートの Provider とモデル ID に置き換えます。DSH の SDK ハンドシェイクには両方が必要です。マシンインターフェースの起動引数は Harapter が設定します。
+
+<!-- sdk-example: quick-dsh-run.ts -->
+
+```ts
+import { run, isHarnessError } from 'harapter';
+
+try {
+  const result = await run({
+    harness: 'dsh',
+    input: 'Hello!',
+    model: { provider: 'your-provider', id: 'your-model' },
+  });
+  // Return result.finalMessage to your application's caller.
+  console.log({ status: result.status });
+  if (result.status !== 'completed') process.exitCode = 1;
+} catch (error) {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+}
+```
+
+### Pi：ローカルの認証とモデル設定を使う
+
+`PATH` に `pi`
+があり、モデルと認証情報が設定済みであることを確認します。Pi はその設定を使用します。`run.model`
+による上書きは受け付けません。
 
 <!-- sdk-example: quick-run.ts -->
 
@@ -77,25 +122,70 @@ try {
 }
 ```
 
-`result.finalMessage` は任意の回答、`result.status`
-は最終状態です。この例は状態だけを表示します。SDK がイベントを読み取り、Client と Session を閉じます。
+### OpenCode：既存の HTTP サーバーに接続する
 
-新規プロジェクトでは先に `npm init -y` と `npm pkg set type=module`
-を実行します。Node.js 24 でファイルを実行します：
+以下は `http://127.0.0.1:4096`
+で**起動済みの OpenCode サーバー**に接続する例です。実際のサーバーに合わせて
+`url` を変更します。認証が必要な場合は、アプリケーションの Secret
+Store から取得したヘッダーを `headers`
+に渡します。モデルの認証情報は OpenCode が管理します。
 
-```sh
-node app.ts
+```ts
+import { run, isHarnessError } from 'harapter';
+
+try {
+  const result = await run({
+    harness: 'opencode',
+    url: 'http://127.0.0.1:4096',
+    input: 'Hello!',
+  });
+  // Return result.finalMessage to your application's caller.
+  console.log({ status: result.status });
+  if (result.status !== 'completed') process.exitCode = 1;
+} catch (error) {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+}
 ```
 
-選択した Harness はインストールとログインが済んでいるか、HTTP サービスが稼働している必要があります。Harapter は Runtime 本来のツールと権限ポリシーを使用します。タスクは選択した Workspace にアクセスし、モデル利用料金が発生する場合があります。
+三つの例は同じ `RunResult` を返します。`status` は終端状態、`finalMessage`
+は呼び出し元や会話 UI に渡す任意の回答です。例では状態だけを出力します。各
+`run()`
+は新しい Session を作成し、イベントを消費して、所有する Client と Session を解放します。返された
+`failed` と接続時の例外は別々に処理します。
 
-[SDK](./packages/harapter/README.ja.md) · [API](./docs/api-reference.ja.md#run)
-· [DSH](./packages/harapter/README.ja.md#同じ呼び出しで-dsh-を使う)
+### Codex、Hermes、OpenClaw
+
+上記の import、結果処理、`try/catch` を維持し、`run()`
+の呼び出しだけを必要なものに置き換えます：
+
+| Harness  | 置き換える呼び出し                                    | Runtime の準備                                                                        |
+| -------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Codex    | `await run({ harness: 'codex', input: 'Hello!' })`    | 認証済みの `codex` が `PATH` に必要です。Harapter が App Server stdio を起動します。  |
+| Hermes   | `await run({ harness: 'hermes', input: 'Hello!' })`   | `http://127.0.0.1:8642` の HTTP サーバーが必要です。必要に応じて `url` を変更します。 |
+| OpenClaw | `await run({ harness: 'openclaw', input: 'Hello!' })` | 設定済みの `openclaw` が `PATH` に必要です。Harapter が `openclaw acp` を起動します。 |
+
+Runtime の準備と互換性： [DSH](./providers/dsh/README.ja.md) ·
+[Pi](./providers/pi/README.ja.md) ·
+[OpenCode](./providers/opencode/README.ja.md) ·
+[Codex](./providers/codex/README.ja.md) ·
+[Hermes](./providers/hermes/README.ja.md) ·
+[OpenClaw](./providers/openclaw/README.ja.md)
+
+全オプション、イベント、Runtime Binding： [API](./docs/api-reference.ja.md#run)
+· [SDK](./packages/harapter/README.ja.md)
 
 ## 会話を続ける
 
 `openSession()` を一度呼び、各メッセージを `send()` で送信します。同じ native
 Session が履歴を保持します。この API は 1.0.0 より後の追加であり、1.0.0 リリースには含まれません。
+
+`openSession()`
+は上記と同じ Runtime オプションを受け取ります。必要に応じて DSH の
+`model`、OpenCode の `url` / `headers` を渡し、その後の `chat.send()`
+は共通のまま使えます。既存の Session は元の Runtime に紐付いたままです。
 
 <!-- sdk-example: quick-chat.ts -->
 

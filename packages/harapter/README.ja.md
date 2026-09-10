@@ -1,16 +1,36 @@
-# Harapter
+<!-- markdownlint-disable MD033 MD041 -->
 
-[English](https://github.com/yunfeizhu/harapter/blob/main/packages/harapter/README.md)
-·
-[简体中文](https://github.com/yunfeizhu/harapter/blob/main/packages/harapter/README.zh-CN.md)
-·
-[日本語](https://github.com/yunfeizhu/harapter/blob/main/packages/harapter/README.ja.md)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/yunfeizhu/harapter/main/docs/assets/harapter-banner.png" alt="1 つのポータブル Core と複数の Agent Harness Runtime を接続する Harapter" width="1200">
+</p>
 
-[![npm version](https://img.shields.io/npm/v/harapter?style=flat-square&label=npm)](https://www.npmjs.com/package/harapter)
-[![npm downloads](https://img.shields.io/npm/dm/harapter?style=flat-square)](https://www.npmjs.com/package/harapter)
-[![CI status](https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&style=flat-square&label=ci)](https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml)
-![Node.js 24 or newer](https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&logo=nodedotjs&logoColor=white)
-[![Apache-2.0 license](https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square)](https://github.com/yunfeizhu/harapter/blob/main/LICENSE)
+<h1 align="center">Harapter</h1>
+
+<p align="center">
+  <strong>複数の Agent Harness を利用するアプリケーション向けの、Provider に依存しない統一 TypeScript API。</strong><br>
+  ホストは同一の Client、Session、Run、ストリーミング Event、Capability、Error ライフサイクルで各 Runtime を扱い、Adapter は Provider の状態所有権、観測した Capability、ネイティブ Extension を保持します。
+</p>
+
+<p align="center">
+  <a href="https://github.com/yunfeizhu/harapter/blob/main/packages/harapter/README.md">English</a> ·
+  <a href="https://github.com/yunfeizhu/harapter/blob/main/packages/harapter/README.zh-CN.md">简体中文</a> ·
+  <a href="https://github.com/yunfeizhu/harapter/blob/main/packages/harapter/README.ja.md">日本語</a> ·
+  <a href="https://github.com/yunfeizhu/harapter/blob/main/docs/api-reference.ja.md">API リファレンス</a> ·
+  <a href="https://github.com/yunfeizhu/harapter/blob/main/docs/design/README.ja.md">設計</a> ·
+  <a href="https://github.com/yunfeizhu/harapter/blob/main/examples/README.md">サンプル</a> ·
+  <a href="https://github.com/yunfeizhu/harapter/blob/main/CONTRIBUTING.md">コントリビューション</a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm バージョン"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm ダウンロード数"></a>
+  <a href="https://github.com/yunfeizhu/harapter/releases"><img src="https://img.shields.io/github/v/release/yunfeizhu/harapter?display_name=tag&amp;include_prereleases&amp;sort=semver&amp;style=flat-square&amp;label=release" alt="GitHub Release"></a>
+  <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI ステータス"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 以降">
+  <a href="https://github.com/yunfeizhu/harapter/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 ライセンス"></a>
+</p>
+
+<!-- markdownlint-enable MD033 -->
 
 `harapter` は Agent Harness
 Runtime を共通のアプリケーション API に適合させます。DSH、OpenCode、Codex、Hermes、OpenClaw、Pi を、同じ Client、Session、Run、イベントの外側の構造、最終結果の契約で扱えます。
@@ -22,18 +42,63 @@ Runtime を共通のアプリケーション API に適合させます。DSH、O
 
 ## クイックスタート
 
-Node.js 24+ と ESM アプリケーションを使用します：
+Node.js
+24+ と ESM アプリケーションを使用します。すでに利用している Runtime に合わせて、**DSH**、**Pi**、**OpenCode**
+の例を選びます。
+
+**必要なバージョン：**以下の `run()` と `openSession()` は `harapter@1.0.0`
+の後に追加された API です。これらを含む後続リリースまたはソースビルドを使用してください。1.0.0 パッケージでは実行できません。
+
+新しいアプリケーションのディレクトリでインストールします：
 
 ```sh
+npm init -y
+npm pkg set type=module
 npm install harapter
 ```
 
-`run()` は `harapter@1.0.0`
-の後に追加された API です。1.0.0 には含まれないため、この API を含む後続リリースまたはソースビルドを使用してください。
+Harapter は既存の Runtime に接続します。選択する Harness だけをインストールして認証するか、その HTTP サーバーを起動してください。タスクは Runtime のツールと権限を使用し、Workspace へのアクセスやモデル利用料金が発生する場合があります。
 
-このマシンですでに Pi を使用していますか？次を `app.ts`
-として保存します。Harapter は `PATH` から `pi`
-を探し、既存のモデルとログイン設定を使用します。
+以下の完全な例から**一つだけ**を `app.ts` として保存し、実行します：
+
+```sh
+node app.ts
+```
+
+### 同じ呼び出しで DSH を使う
+
+`PATH` に `dsh`
+があり、利用するモデルルートが設定済みであることを確認します。`your-provider` と
+`your-model`
+を、そのルートの Provider とモデル ID に置き換えます。DSH の SDK ハンドシェイクには両方が必要です。マシンインターフェースの起動引数は Harapter が設定します。
+
+<!-- sdk-example: quick-dsh-run.ts -->
+
+```ts
+import { run, isHarnessError } from 'harapter';
+
+try {
+  const result = await run({
+    harness: 'dsh',
+    input: 'Hello!',
+    model: { provider: 'your-provider', id: 'your-model' },
+  });
+  // Return result.finalMessage to your application's caller.
+  console.log({ status: result.status });
+  if (result.status !== 'completed') process.exitCode = 1;
+} catch (error) {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+}
+```
+
+### Pi：ローカルの認証とモデル設定を使う
+
+`PATH` に `pi`
+があり、モデルと認証情報が設定済みであることを確認します。Pi はその設定を使用します。`run.model`
+による上書きは受け付けません。
 
 <!-- sdk-example: quick-run.ts -->
 
@@ -53,22 +118,76 @@ try {
 }
 ```
 
-`result.finalMessage` は任意の回答、`result.status`
-は最終状態です。この例は状態だけを表示します。SDK がイベントを読み取り、Client と Session を閉じます。
+### OpenCode：既存の HTTP サーバーに接続する
 
-新規プロジェクトでは先に `npm init -y` と `npm pkg set type=module`
-を実行します。Node.js 24 でファイルを実行します：
+以下は `http://127.0.0.1:4096`
+で**起動済みの OpenCode サーバー**に接続する例です。実際のサーバーに合わせて
+`url` を変更します。認証が必要な場合は、アプリケーションの Secret
+Store から取得したヘッダーを `headers`
+に渡します。モデルの認証情報は OpenCode が管理します。
 
-```sh
-node app.ts
+```ts
+import { run, isHarnessError } from 'harapter';
+
+try {
+  const result = await run({
+    harness: 'opencode',
+    url: 'http://127.0.0.1:4096',
+    input: 'Hello!',
+  });
+  // Return result.finalMessage to your application's caller.
+  console.log({ status: result.status });
+  if (result.status !== 'completed') process.exitCode = 1;
+} catch (error) {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+}
 ```
 
-選択した Harness はインストールとログインが済んでいるか、HTTP サービスが稼働している必要があります。Harapter は Runtime 本来のツールと権限ポリシーを使用します。タスクは選択した Workspace にアクセスし、モデル利用料金が発生する場合があります。
+三つの例は同じ `RunResult` を返します。`status` は終端状態、`finalMessage`
+は呼び出し元や会話 UI に渡す任意の回答です。例では状態だけを出力します。各
+`run()`
+は新しい Session を作成し、イベントを消費して、所有する Client と Session を解放します。返された
+`failed` と接続時の例外は別々に処理します。
+
+### Codex、Hermes、OpenClaw
+
+上記の import、結果処理、`try/catch` を維持し、`run()`
+の呼び出しだけを必要なものに置き換えます：
+
+| Harness  | 置き換える呼び出し                                    | Runtime の準備                                                                        |
+| -------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Codex    | `await run({ harness: 'codex', input: 'Hello!' })`    | 認証済みの `codex` が `PATH` に必要です。Harapter が App Server stdio を起動します。  |
+| Hermes   | `await run({ harness: 'hermes', input: 'Hello!' })`   | `http://127.0.0.1:8642` の HTTP サーバーが必要です。必要に応じて `url` を変更します。 |
+| OpenClaw | `await run({ harness: 'openclaw', input: 'Hello!' })` | 設定済みの `openclaw` が `PATH` に必要です。Harapter が `openclaw acp` を起動します。 |
+
+Runtime の準備と互換性：
+[DSH](https://github.com/yunfeizhu/harapter/blob/main/providers/dsh/README.ja.md)
+·
+[Pi](https://github.com/yunfeizhu/harapter/blob/main/providers/pi/README.ja.md)
+·
+[OpenCode](https://github.com/yunfeizhu/harapter/blob/main/providers/opencode/README.ja.md)
+·
+[Codex](https://github.com/yunfeizhu/harapter/blob/main/providers/codex/README.ja.md)
+·
+[Hermes](https://github.com/yunfeizhu/harapter/blob/main/providers/hermes/README.ja.md)
+·
+[OpenClaw](https://github.com/yunfeizhu/harapter/blob/main/providers/openclaw/README.ja.md)
+
+全オプション、イベント、Runtime Binding：
+[API](https://github.com/yunfeizhu/harapter/blob/main/docs/api-reference.ja.md#run)
 
 ## 会話を続ける
 
 `openSession()` を一度呼び、各メッセージを `send()` で送信します。同じ native
 Session が履歴を保持します。この API は 1.0.0 より後の追加であり、1.0.0 リリースには含まれません。
+
+`openSession()`
+は上記と同じ Runtime オプションを受け取ります。必要に応じて DSH の
+`model`、OpenCode の `url` / `headers` を渡し、その後の `chat.send()`
+は共通のまま使えます。既存の Session は元の Runtime に紐付いたままです。
 
 <!-- sdk-example: quick-chat.ts -->
 
@@ -199,57 +318,6 @@ Cancellation の証明ではありません。Interaction は継承した `start
 で同じ Connection の Capability、Extension、Resume、Native
 Control にアクセスできます。chat の Close は Client も閉じるため、独立管理や Resume が必要なら Client/Session
 API を使ってください。
-
-## 同じ呼び出しで DSH を使う
-
-DSH の SDK ハンドシェイクにはモデル Provider とモデル ID が必要です。二つのプレースホルダーを既存の DSH モデルルートに置き換えてください。Harapter が機械インターフェースの起動引数を指定するため、Harapter
-Profile ファイルは不要です。
-
-<!-- sdk-example: quick-dsh-run.ts -->
-
-```ts
-import { run, isHarnessError } from 'harapter';
-
-try {
-  const result = await run({
-    harness: 'dsh',
-    input: 'Hello!',
-    model: { provider: 'your-provider', id: 'your-model' },
-  });
-  // Return result.finalMessage to your application's caller.
-  console.log({ status: result.status });
-  if (result.status !== 'completed') process.exitCode = 1;
-} catch (error) {
-  console.error({
-    error: isHarnessError(error) ? error.code : 'application_failed',
-  });
-  process.exitCode = 1;
-}
-```
-
-[DSH](https://github.com/yunfeizhu/harapter/blob/main/providers/dsh/README.ja.md)
-·
-[Pi](https://github.com/yunfeizhu/harapter/blob/main/providers/pi/README.ja.md)
-
-## HTTP Harness に接続する
-
-既存の OpenCode サーバーには選択名を変え、既定値と異なる場合に `url`
-を渡します。サーバーが認証を要求する場合だけ、アプリケーションの秘密情報ストレージから取得した
-`headers` を指定します。モデルの認証情報は Runtime が管理します。
-
-```ts
-import { run } from 'harapter';
-
-const result = await run({
-  harness: 'opencode',
-  input: 'Hello!',
-  url: 'http://127.0.0.1:4096',
-});
-```
-
-[OpenCode](https://github.com/yunfeizhu/harapter/blob/main/providers/opencode/README.ja.md)
-·
-[Hermes](https://github.com/yunfeizhu/harapter/blob/main/providers/hermes/README.ja.md)
 
 ## アプリケーションでイベントを受け取る
 
