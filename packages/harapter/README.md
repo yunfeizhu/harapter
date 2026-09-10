@@ -1,16 +1,36 @@
-# Harapter
+<!-- markdownlint-disable MD033 MD041 -->
 
-[English](https://github.com/yunfeizhu/harapter/blob/main/packages/harapter/README.md)
-·
-[简体中文](https://github.com/yunfeizhu/harapter/blob/main/packages/harapter/README.zh-CN.md)
-·
-[日本語](https://github.com/yunfeizhu/harapter/blob/main/packages/harapter/README.ja.md)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/yunfeizhu/harapter/main/docs/assets/harapter-banner.png" alt="Harapter connects one portable core to multiple agent harness runtimes" width="1200">
+</p>
 
-[![npm version](https://img.shields.io/npm/v/harapter?style=flat-square&label=npm)](https://www.npmjs.com/package/harapter)
-[![npm downloads](https://img.shields.io/npm/dm/harapter?style=flat-square)](https://www.npmjs.com/package/harapter)
-[![CI status](https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&style=flat-square&label=ci)](https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml)
-![Node.js 24 or newer](https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&logo=nodedotjs&logoColor=white)
-[![Apache-2.0 license](https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square)](https://github.com/yunfeizhu/harapter/blob/main/LICENSE)
+<h1 align="center">Harapter</h1>
+
+<p align="center">
+  <strong>One provider-agnostic TypeScript API for applications that orchestrate multiple agent harnesses.</strong><br>
+  Use the same Client, Session, Run, streaming Event, Capability, and Error lifecycle across runtimes while each Adapter preserves Provider-owned state, observed capabilities, and native extensions.
+</p>
+
+<p align="center">
+  <a href="https://github.com/yunfeizhu/harapter/blob/main/packages/harapter/README.md">English</a> ·
+  <a href="https://github.com/yunfeizhu/harapter/blob/main/packages/harapter/README.zh-CN.md">简体中文</a> ·
+  <a href="https://github.com/yunfeizhu/harapter/blob/main/packages/harapter/README.ja.md">日本語</a> ·
+  <a href="https://github.com/yunfeizhu/harapter/blob/main/docs/api-reference.md">API reference</a> ·
+  <a href="https://github.com/yunfeizhu/harapter/blob/main/docs/design/README.md">Design</a> ·
+  <a href="https://github.com/yunfeizhu/harapter/blob/main/examples/README.md">Examples</a> ·
+  <a href="https://github.com/yunfeizhu/harapter/blob/main/CONTRIBUTING.md">Contributing</a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/v/harapter?style=flat-square&amp;label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/harapter"><img src="https://img.shields.io/npm/dm/harapter?style=flat-square" alt="npm downloads"></a>
+  <a href="https://github.com/yunfeizhu/harapter/releases"><img src="https://img.shields.io/github/v/release/yunfeizhu/harapter?display_name=tag&amp;include_prereleases&amp;sort=semver&amp;style=flat-square&amp;label=release" alt="GitHub Release"></a>
+  <a href="https://github.com/yunfeizhu/harapter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yunfeizhu/harapter/ci.yml?branch=main&amp;style=flat-square&amp;label=ci" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D24-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer">
+  <a href="https://github.com/yunfeizhu/harapter/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0B7285?style=flat-square" alt="Apache-2.0 license"></a>
+</p>
+
+<!-- markdownlint-enable MD033 -->
 
 `harapter` adapts agent harness Runtimes to one application API. Connect DSH,
 OpenCode, Codex, Hermes, OpenClaw or Pi using the same Client, Session, Run,
@@ -25,17 +45,63 @@ harness.
 
 ## Quick start
 
-Use Node.js 24+ and an ESM application:
+Use Node.js 24+ and an ESM application. Choose the example for the Runtime you
+already use: **DSH**, **Pi** or **OpenCode**.
+
+**Version requirement:** these examples use `run()` and `openSession()`, which
+were added after `harapter@1.0.0`. Use a release or source build that includes
+these APIs; the 1.0.0 package cannot run them.
+
+In a new application directory:
 
 ```sh
+npm init -y
+npm pkg set type=module
 npm install harapter
 ```
 
-`run()` is an additive API introduced after `harapter@1.0.0`. Version 1.0.0 does
-not contain it; use a release or source build that includes this API.
+Harapter connects to your existing Runtime. Install and authenticate only the
+harness you choose, or start its HTTP server. It retains that Runtime's tools
+and permissions; tasks may access its workspace and incur model charges.
 
-Already use Pi on this machine? Save the following as `app.ts`. Harapter finds
-`pi` on `PATH` and uses its existing model and login settings.
+Save **one** of the complete examples below as `app.ts`, then run:
+
+```sh
+node app.ts
+```
+
+### Use DSH with the same call
+
+Have `dsh` on `PATH` and a configured model route. Replace `your-provider` and
+`your-model` with that route's provider and model IDs; both are required by
+DSH's SDK handshake. Harapter supplies the machine-interface arguments.
+
+<!-- sdk-example: quick-dsh-run.ts -->
+
+```ts
+import { run, isHarnessError } from 'harapter';
+
+try {
+  const result = await run({
+    harness: 'dsh',
+    input: 'Hello!',
+    model: { provider: 'your-provider', id: 'your-model' },
+  });
+  // Return result.finalMessage to your application's caller.
+  console.log({ status: result.status });
+  if (result.status !== 'completed') process.exitCode = 1;
+} catch (error) {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+}
+```
+
+### Pi: use your local login and model
+
+Have `pi` on `PATH`, with its model and credentials already configured. Pi uses
+those settings directly; do not pass `run.model`.
 
 <!-- sdk-example: quick-run.ts -->
 
@@ -55,27 +121,73 @@ try {
 }
 ```
 
-`result.finalMessage` is the optional answer; `result.status` is the terminal
-outcome. The example prints only the status. The SDK consumes the event stream
-and closes the Client and Session for you.
+### OpenCode: connect to an existing HTTP server
 
-In a new project, run `npm init -y` and `npm pkg set type=module` first. Run the
-file with Node.js 24:
+This example connects to an **already running OpenCode server** at
+`http://127.0.0.1:4096`. Change `url` for your server. If it requires
+authentication, add `headers` from your application's secret store. Model
+credentials stay in OpenCode.
 
-```sh
-node app.ts
+```ts
+import { run, isHarnessError } from 'harapter';
+
+try {
+  const result = await run({
+    harness: 'opencode',
+    url: 'http://127.0.0.1:4096',
+    input: 'Hello!',
+  });
+  // Return result.finalMessage to your application's caller.
+  console.log({ status: result.status });
+  if (result.status !== 'completed') process.exitCode = 1;
+} catch (error) {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+}
 ```
 
-The selected harness must already be installed and authenticated, or its HTTP
-service must be running. Harapter uses that Runtime and its native
-tool/permission policy. A task may access the chosen workspace and incur model
-charges.
+All three examples return the same `RunResult`: `status` is the terminal outcome
+and `finalMessage` is the optional answer for your application's caller or
+conversation UI. These examples log only the status. Each `run()` creates a
+fresh Session, consumes events and releases its Client and Session. A returned
+`failed` result and a thrown connection error are handled separately.
+
+### Codex, Hermes and OpenClaw
+
+Keep the import, result handling and `try/catch` above; replace only the `run()`
+call with the one you need:
+
+| Harness  | Replacement call                                      | Runtime prerequisite                                                          |
+| -------- | ----------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Codex    | `await run({ harness: 'codex', input: 'Hello!' })`    | `codex` on `PATH`, already authenticated; Harapter starts App Server stdio.   |
+| Hermes   | `await run({ harness: 'hermes', input: 'Hello!' })`   | An existing HTTP server at `http://127.0.0.1:8642`; override `url` if needed. |
+| OpenClaw | `await run({ harness: 'openclaw', input: 'Hello!' })` | `openclaw` on `PATH`, already configured; Harapter starts `openclaw acp`.     |
+
+Runtime setup and compatibility:
+[DSH](https://github.com/yunfeizhu/harapter/blob/main/providers/dsh/README.md) ·
+[Pi](https://github.com/yunfeizhu/harapter/blob/main/providers/pi/README.md) ·
+[OpenCode](https://github.com/yunfeizhu/harapter/blob/main/providers/opencode/README.md)
+·
+[Codex](https://github.com/yunfeizhu/harapter/blob/main/providers/codex/README.md)
+·
+[Hermes](https://github.com/yunfeizhu/harapter/blob/main/providers/hermes/README.md)
+·
+[OpenClaw](https://github.com/yunfeizhu/harapter/blob/main/providers/openclaw/README.md)
+
+Full options, events and Runtime bindings:
+[API](https://github.com/yunfeizhu/harapter/blob/main/docs/api-reference.md#run)
 
 ## Continue a conversation
 
 Use `openSession()` once, then call `send()` for each message. The same native
 Session keeps the conversation history. This API is added after 1.0.0 and is not
 yet in that release.
+
+`openSession()` accepts the same Runtime options used above. Pass the DSH
+`model` or OpenCode `url`/`headers` when needed, then keep using the same
+`chat.send()` calls. An existing Session remains bound to its original Runtime.
 
 <!-- sdk-example: quick-chat.ts -->
 
@@ -206,58 +318,6 @@ capability-supported cancellation. `chat.client` exposes the same connection’s
 capabilities, extensions, resume and native controls. Closing the chat also
 closes that Client; keep the Client/Session API for independently owned or
 resumed Sessions.
-
-## Use DSH with the same call
-
-DSH requires the model provider and model ID in its SDK handshake. Replace the
-two placeholders with your existing DSH model route. Harapter supplies the
-machine-interface arguments; no Harapter Profile file is needed.
-
-<!-- sdk-example: quick-dsh-run.ts -->
-
-```ts
-import { run, isHarnessError } from 'harapter';
-
-try {
-  const result = await run({
-    harness: 'dsh',
-    input: 'Hello!',
-    model: { provider: 'your-provider', id: 'your-model' },
-  });
-  // Return result.finalMessage to your application's caller.
-  console.log({ status: result.status });
-  if (result.status !== 'completed') process.exitCode = 1;
-} catch (error) {
-  console.error({
-    error: isHarnessError(error) ? error.code : 'application_failed',
-  });
-  process.exitCode = 1;
-}
-```
-
-[DSH](https://github.com/yunfeizhu/harapter/blob/main/providers/dsh/README.md) ·
-[Pi](https://github.com/yunfeizhu/harapter/blob/main/providers/pi/README.md)
-
-## Connect to an HTTP harness
-
-For an existing OpenCode server, change the selector and pass its URL if it
-differs from the default. Supply `headers` only when your server requires
-authentication, using credentials from your own secret storage. Model
-credentials stay in the Runtime.
-
-```ts
-import { run } from 'harapter';
-
-const result = await run({
-  harness: 'opencode',
-  input: 'Hello!',
-  url: 'http://127.0.0.1:4096',
-});
-```
-
-[OpenCode](https://github.com/yunfeizhu/harapter/blob/main/providers/opencode/README.md)
-·
-[Hermes](https://github.com/yunfeizhu/harapter/blob/main/providers/hermes/README.md)
 
 ## Receive events in your application
 

@@ -51,17 +51,63 @@ needed for a single call.
 
 ## Quick start
 
-Use Node.js 24+ and an ESM application:
+Use Node.js 24+ and an ESM application. Choose the example for the Runtime you
+already use: **DSH**, **Pi** or **OpenCode**.
+
+**Version requirement:** these examples use `run()` and `openSession()`, which
+were added after `harapter@1.0.0`. Use a release or source build that includes
+these APIs; the 1.0.0 package cannot run them.
+
+In a new application directory:
 
 ```sh
+npm init -y
+npm pkg set type=module
 npm install harapter
 ```
 
-`run()` is an additive API introduced after `harapter@1.0.0`. Version 1.0.0 does
-not contain it; use a release or source build that includes this API.
+Harapter connects to your existing Runtime. Install and authenticate only the
+harness you choose, or start its HTTP server. It retains that Runtime's tools
+and permissions; tasks may access its workspace and incur model charges.
 
-Already use Pi on this machine? Save the following as `app.ts`. Harapter finds
-`pi` on `PATH` and uses its existing model and login settings.
+Save **one** of the complete examples below as `app.ts`, then run:
+
+```sh
+node app.ts
+```
+
+### Use DSH with the same call
+
+Have `dsh` on `PATH` and a configured model route. Replace `your-provider` and
+`your-model` with that route's provider and model IDs; both are required by
+DSH's SDK handshake. Harapter supplies the machine-interface arguments.
+
+<!-- sdk-example: quick-dsh-run.ts -->
+
+```ts
+import { run, isHarnessError } from 'harapter';
+
+try {
+  const result = await run({
+    harness: 'dsh',
+    input: 'Hello!',
+    model: { provider: 'your-provider', id: 'your-model' },
+  });
+  // Return result.finalMessage to your application's caller.
+  console.log({ status: result.status });
+  if (result.status !== 'completed') process.exitCode = 1;
+} catch (error) {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+}
+```
+
+### Pi: use your local login and model
+
+Have `pi` on `PATH`, with its model and credentials already configured. Pi uses
+those settings directly; do not pass `run.model`.
 
 <!-- sdk-example: quick-run.ts -->
 
@@ -81,30 +127,67 @@ try {
 }
 ```
 
-`result.finalMessage` is the optional answer; `result.status` is the terminal
-outcome. The example prints only the status. The SDK consumes the event stream
-and closes the Client and Session for you.
+### OpenCode: connect to an existing HTTP server
 
-In a new project, run `npm init -y` and `npm pkg set type=module` first. Run the
-file with Node.js 24:
+This example connects to an **already running OpenCode server** at
+`http://127.0.0.1:4096`. Change `url` for your server. If it requires
+authentication, add `headers` from your application's secret store. Model
+credentials stay in OpenCode.
 
-```sh
-node app.ts
+```ts
+import { run, isHarnessError } from 'harapter';
+
+try {
+  const result = await run({
+    harness: 'opencode',
+    url: 'http://127.0.0.1:4096',
+    input: 'Hello!',
+  });
+  // Return result.finalMessage to your application's caller.
+  console.log({ status: result.status });
+  if (result.status !== 'completed') process.exitCode = 1;
+} catch (error) {
+  console.error({
+    error: isHarnessError(error) ? error.code : 'application_failed',
+  });
+  process.exitCode = 1;
+}
 ```
 
-The selected harness must already be installed and authenticated, or its HTTP
-service must be running. Harapter uses that Runtime and its native
-tool/permission policy. A task may access the chosen workspace and incur model
-charges.
+All three examples return the same `RunResult`: `status` is the terminal outcome
+and `finalMessage` is the optional answer for your application's caller or
+conversation UI. These examples log only the status. Each `run()` creates a
+fresh Session, consumes events and releases its Client and Session. A returned
+`failed` result and a thrown connection error are handled separately.
 
-[SDK](./packages/harapter/README.md) · [API](./docs/api-reference.md#run) ·
-[DSH](./packages/harapter/README.md#use-dsh-with-the-same-call)
+### Codex, Hermes and OpenClaw
+
+Keep the import, result handling and `try/catch` above; replace only the `run()`
+call with the one you need:
+
+| Harness  | Replacement call                                      | Runtime prerequisite                                                          |
+| -------- | ----------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Codex    | `await run({ harness: 'codex', input: 'Hello!' })`    | `codex` on `PATH`, already authenticated; Harapter starts App Server stdio.   |
+| Hermes   | `await run({ harness: 'hermes', input: 'Hello!' })`   | An existing HTTP server at `http://127.0.0.1:8642`; override `url` if needed. |
+| OpenClaw | `await run({ harness: 'openclaw', input: 'Hello!' })` | `openclaw` on `PATH`, already configured; Harapter starts `openclaw acp`.     |
+
+Runtime setup and compatibility: [DSH](./providers/dsh/README.md) ·
+[Pi](./providers/pi/README.md) · [OpenCode](./providers/opencode/README.md) ·
+[Codex](./providers/codex/README.md) · [Hermes](./providers/hermes/README.md) ·
+[OpenClaw](./providers/openclaw/README.md)
+
+Full options, events and Runtime bindings: [API](./docs/api-reference.md#run) ·
+[SDK](./packages/harapter/README.md)
 
 ## Continue a conversation
 
 Use `openSession()` once, then call `send()` for each message. The same native
 Session keeps the conversation history. This API is added after 1.0.0 and is not
 yet in that release.
+
+`openSession()` accepts the same Runtime options used above. Pass the DSH
+`model` or OpenCode `url`/`headers` when needed, then keep using the same
+`chat.send()` calls. An existing Session remains bound to its original Runtime.
 
 <!-- sdk-example: quick-chat.ts -->
 
