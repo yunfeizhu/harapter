@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0](https://github.com/yunfeizhu/harapter/compare/harapter-v1.0.0...harapter-v1.1.0) (2026-09-10)
+
+
+### Features
+
+* simplify runtime connections and chat sessions ([#137](https://github.com/yunfeizhu/harapter/issues/137)) ([d4067de](https://github.com/yunfeizhu/harapter/commit/d4067de2f5d74f8a3222028d9bd12d8896547daf))
+
 ## [1.0.0](https://github.com/yunfeizhu/harapter/compare/harapter-v0.3.0...harapter-v1.0.0) (2026-09-09)
 
 
