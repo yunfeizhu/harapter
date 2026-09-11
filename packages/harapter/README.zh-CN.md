@@ -45,8 +45,7 @@ Runtime 适配为同一套应用 API。接入 DSH、OpenCode、Codex、Hermes、
 使用 Node.js 24+ 和 ESM 项目。按你已经在用的 Runtime，选择下面的 **DSH**、**Pi**
 或 **OpenCode** 示例。
 
-**版本要求：**下面使用的 `run()` 和 `openSession()` 均在 `harapter@1.0.0`
-之后新增。请使用包含这些 API 的后续版本或源码构建；1.0.0 发布包无法运行这些示例。
+**版本要求：**以下示例请使用 `harapter@1.1.1` 或更新版本。
 
 在新的应用目录中安装：
 
@@ -175,7 +174,7 @@ Runtime 准备和兼容范围：
 ## 连续对话
 
 只调用一次 `openSession()`，之后每条消息调用 `send()`。同一个 native
-Session 会保留对话历史。此 API 在 1.0.0 之后新增，1.0.0 发布版尚未包含。
+Session 会保留对话历史。
 
 `openSession()` 接受上面相同的 Runtime 选项：需要时传入 DSH 的 `model`
 或 OpenCode 的 `url` / `headers`，后面的 `chat.send()`
