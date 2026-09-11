@@ -48,9 +48,7 @@ harness.
 Use Node.js 24+ and an ESM application. Choose the example for the Runtime you
 already use: **DSH**, **Pi** or **OpenCode**.
 
-**Version requirement:** these examples use `run()` and `openSession()`, which
-were added after `harapter@1.0.0`. Use a release or source build that includes
-these APIs; the 1.0.0 package cannot run them.
+**Version requirement:** use `harapter@1.1.1` or later for the examples below.
 
 In a new application directory:
 
@@ -182,8 +180,7 @@ Full options, events and Runtime bindings:
 ## Continue a conversation
 
 Use `openSession()` once, then call `send()` for each message. The same native
-Session keeps the conversation history. This API is added after 1.0.0 and is not
-yet in that release.
+Session keeps the conversation history.
 
 `openSession()` accepts the same Runtime options used above. Pass the DSH
 `model` or OpenCode `url`/`headers` when needed, then keep using the same
