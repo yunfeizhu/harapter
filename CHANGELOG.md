@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2](https://github.com/yunfeizhu/harapter/compare/harapter-v1.1.1...harapter-v1.1.2) (2026-09-14)
+
+
+### Bug Fixes
+
+* **deps:** bump ws from 8.21.0 to 8.21.3 ([#147](https://github.com/yunfeizhu/harapter/issues/147)) ([8ba90f5](https://github.com/yunfeizhu/harapter/commit/8ba90f53b2d4702089a1b6fed654783054b0d1e9))
+
 ## [1.1.1](https://github.com/yunfeizhu/harapter/compare/harapter-v1.1.0...harapter-v1.1.1) (2026-09-10)
 
 
