@@ -103,7 +103,7 @@
     "@harapter/adapter-openclaw": "workspace:*",
     "@harapter/adapter-opencode": "workspace:*",
     "@harapter/adapter-pi": "workspace:*",
-    "rolldown": "1.2.5",
+    "rolldown": "1.2.8",
     "@harapter/core": "workspace:*",
     "@harapter/transport-jsonrpc-stdio": "workspace:*",
     "@harapter/transport-jsonl-process": "workspace:*",
