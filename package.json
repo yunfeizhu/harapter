@@ -34,18 +34,18 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@types/node": "24.13.4",
+    "@types/node": "24.19.1",
     "@vitest/coverage-v8": "4.1.11",
     "@vitest/eslint-plugin": "1.6.27",
-    "eslint": "10.10.0",
+    "eslint": "10.11.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-node-import": "1.2.0",
-    "globals": "17.12.0",
-    "js-yaml": "5.4.1",
-    "markdownlint-cli2": "0.23.2",
-    "prettier": "3.9.6",
+    "globals": "17.13.0",
+    "js-yaml": "5.4.2",
+    "markdownlint-cli2": "0.23.3",
+    "prettier": "3.9.9",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.70.0",
+    "typescript-eslint": "8.71.0",
     "vitest": "4.1.11"
   }
 }

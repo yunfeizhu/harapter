@@ -18,7 +18,7 @@
     "harapter": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "24.13.4",
+    "@types/node": "24.19.1",
     "typescript": "5.9.3"
   }
 }
