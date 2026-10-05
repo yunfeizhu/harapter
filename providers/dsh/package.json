@@ -27,11 +27,11 @@
   "dependencies": {
     "@harapter/core": "workspace:*",
     "@harapter/transport-jsonrpc-stdio": "workspace:*",
-    "ws": "8.21.3"
+    "ws": "8.22.0"
   },
   "devDependencies": {
     "@harapter/conformance": "workspace:*",
-    "@types/ws": "8.18.1"
+    "@types/ws": "8.18.2"
   },
   "private": true
 }
