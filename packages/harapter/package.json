@@ -94,7 +94,7 @@
     "build": "tsc --project tsconfig.build.json && node ../../scripts/build-harapter.mjs"
   },
   "dependencies": {
-    "ws": "8.21.3"
+    "ws": "8.22.0"
   },
   "devDependencies": {
     "@harapter/adapter-codex": "workspace:*",
