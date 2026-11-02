@@ -1,4 +1,4 @@
-# Agent Note: Scheduled Provider live canaries
+# Agent Note: Trusted Provider live canaries
 
 Status: implemented
 
@@ -10,6 +10,10 @@ live lifecycle. Requiring maintainers to keep every Runtime installed locally
 would mix host state with repository evidence and would not provide recurring
 drift detection.
 
+Persistent upstream failures can also produce recurring failed runs and
+notifications without new repository changes. Maintainers need to control when
+credential-backed drift checks run while retaining the trusted manual path.
+
 Credential-backed automation also creates a separate trust boundary. A live test
 that executes pull request code, exposes a general-purpose credential to model
 tools, logs Provider traffic, or reports a skipped test as passing would create
@@ -17,16 +21,15 @@ misleading or unsafe evidence.
 
 ## Decision
 
-Harapter has a separate Provider live-canary workflow triggered only by a weekly
-schedule or manual dispatch. It verifies that the workflow runs from the default
-branch before any model-facing job receives Secrets, checks out the immutable
-trigger commit without persisting Git credentials, and uses read-only repository
-permissions. Pull requests and ordinary pushes cannot invoke the trusted live
-path.
+Harapter has a separate Provider live-canary workflow triggered only by manual
+dispatch. It verifies that the workflow runs from the default branch before any
+model-facing job receives Secrets, checks out the immutable trigger commit
+without persisting Git credentials, and uses read-only repository permissions.
+Pull requests and ordinary pushes cannot invoke the trusted live path.
 
-Each Provider is enabled independently for scheduled runs through a repository
-variable. An enabled or manually selected model-facing job fails explicitly when
-the shared model-service Secret set is incomplete; an unconfigured Run is not
+The dispatch input selects one Provider or all Providers; former schedule-enable
+variables are not read. A selected model-facing job fails explicitly when the
+shared model-service Secret set is incomplete; an unconfigured Run is not
 passing evidence. Runtime packages are installed only in an ephemeral
 GitHub-hosted job from their current release channel. The workflow records the
 installed package identity and the scoped live lifecycle result without
@@ -148,10 +151,10 @@ Agent-side tool resolver pass their fail-closed checks. It retains no container,
 data volume, logs, Prompt, response, or Provider traffic artifact.
 
 A separate interaction matrix reuses the trusted selection gate and Provider
-flags. Its official Runtimes receive only a synthetic loopback model endpoint
-and fixed dummy credentials. This separation allows explicit test-owned tool
-approvals without weakening the no-tools policy for credential-backed runs. The
-local model emits a fixed command targeting a newly created empty directory;
+selection. Its official Runtimes receive only a synthetic loopback model
+endpoint and fixed dummy credentials. This separation allows explicit test-owned
+tool approvals without weakening the no-tools policy for credential-backed runs.
+The local model emits a fixed command targeting a newly created empty directory;
 tests prove it cannot execute before approval or after a denied/late answer. Pi
 instead loads one fixed extension through a host-owned executable wrapper, while
 automatic extension discovery stays disabled. That setup does not add a Runtime
@@ -187,6 +190,12 @@ Policy tests reject a non-editable install or a build-guard override.
 
 ## Alternatives considered
 
+### Keep weekly runs and suppress only notifications
+
+Suppressing email would reduce inbox noise but leave the recurring failed jobs
+and model-service usage running unattended. Manual dispatch retains the same
+isolated checks while making each run an explicit maintainer action.
+
 ### Pin every Runtime to one exact version
 
 This would make the job reproducible but would stop detecting new upstream
@@ -221,10 +230,11 @@ conformance, and live evidence.
 
 ## Consequences
 
-- New Runtime drift becomes visible without long-lived local installations.
+- Manual checks expose Runtime drift without long-lived local installations;
+  automatic weekly drift detection is given up.
 - Missing Secret configuration is distinguishable from a passing lifecycle.
 - Runtime identities remain diagnostic evidence rather than an allowlist.
 - The workflow is not a required pull request check and does not weaken the
   deterministic merge gates.
 - Additional Providers require an isolated install, a bounded live test, and a
-  reviewed credential/tool boundary before their schedule flag is enabled.
+  reviewed credential/tool boundary before maintainers select them for a run.

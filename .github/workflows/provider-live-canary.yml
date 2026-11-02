@@ -1,8 +1,6 @@
 name: Provider live canary
 
 on:
-  schedule:
-    - cron: '17 3 * * 1'
   workflow_dispatch:
     inputs:
       provider:
@@ -48,32 +46,9 @@ jobs:
       - name: Select provider jobs
         id: providers
         env:
-          CODEX_ENABLED: ${{ vars.HARAPTER_LIVE_CODEX_ENABLED }}
-          DSH_ENABLED: ${{ vars.HARAPTER_LIVE_DSH_ENABLED }}
-          HERMES_ENABLED: ${{ vars.HARAPTER_LIVE_HERMES_ENABLED }}
-          OPENCLAW_ENABLED: ${{ vars.HARAPTER_LIVE_OPENCLAW_ENABLED }}
-          OPENCODE_ENABLED: ${{ vars.HARAPTER_LIVE_OPENCODE_ENABLED }}
-          PI_ENABLED: ${{ vars.HARAPTER_LIVE_PI_ENABLED }}
           REQUESTED_PROVIDER: ${{ inputs.provider }}
         run: |
           set -eu
-
-          validate_flag() {
-            case "$2" in
-              ''|true|false) ;;
-              *)
-                echo "::error title=Invalid live-canary variable::$1 must be true or false."
-                exit 1
-                ;;
-            esac
-          }
-
-          validate_flag HARAPTER_LIVE_CODEX_ENABLED "$CODEX_ENABLED"
-          validate_flag HARAPTER_LIVE_DSH_ENABLED "$DSH_ENABLED"
-          validate_flag HARAPTER_LIVE_HERMES_ENABLED "$HERMES_ENABLED"
-          validate_flag HARAPTER_LIVE_OPENCLAW_ENABLED "$OPENCLAW_ENABLED"
-          validate_flag HARAPTER_LIVE_OPENCODE_ENABLED "$OPENCODE_ENABLED"
-          validate_flag HARAPTER_LIVE_PI_ENABLED "$PI_ENABLED"
 
           codex=false
           dsh=false
@@ -81,33 +56,19 @@ jobs:
           openclaw=false
           opencode=false
           pi=false
-          if [ "$GITHUB_EVENT_NAME" = schedule ]; then
-            [ "$CODEX_ENABLED" = true ] && codex=true
-            [ "$DSH_ENABLED" = true ] && dsh=true
-            [ "$HERMES_ENABLED" = true ] && hermes=true
-            [ "$OPENCLAW_ENABLED" = true ] && openclaw=true
-            [ "$OPENCODE_ENABLED" = true ] && opencode=true
-            [ "$PI_ENABLED" = true ] && pi=true
-          else
-            case "$REQUESTED_PROVIDER" in
-              all) codex=true; dsh=true; hermes=true; openclaw=true; opencode=true; pi=true ;;
-              codex) codex=true ;;
-              dsh) dsh=true ;;
-              hermes) hermes=true ;;
-              openclaw) openclaw=true ;;
-              opencode) opencode=true ;;
-              pi) pi=true ;;
-              *)
-                echo "::error title=Invalid live-canary selection::Select one listed Provider."
-                exit 1
-                ;;
-            esac
-          fi
-
-          if [ "$codex" = false ] && [ "$dsh" = false ] && [ "$hermes" = false ] && [ "$openclaw" = false ] && [ "$opencode" = false ] && [ "$pi" = false ]; then
-            echo "::error title=No scheduled live canary enabled::Enable at least one Provider repository variable."
-            exit 1
-          fi
+          case "$REQUESTED_PROVIDER" in
+            all) codex=true; dsh=true; hermes=true; openclaw=true; opencode=true; pi=true ;;
+            codex) codex=true ;;
+            dsh) dsh=true ;;
+            hermes) hermes=true ;;
+            openclaw) openclaw=true ;;
+            opencode) opencode=true ;;
+            pi) pi=true ;;
+            *)
+              echo "::error title=Invalid live-canary selection::Select one listed Provider."
+              exit 1
+              ;;
+          esac
 
           echo "codex=$codex" >> "$GITHUB_OUTPUT"
           echo "dsh=$dsh" >> "$GITHUB_OUTPUT"
