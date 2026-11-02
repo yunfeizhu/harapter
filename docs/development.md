@@ -201,12 +201,11 @@ three deterministic checks or unresolved conversations.
 ## Trusted Provider live canaries
 
 [`provider-live-canary.yml`](../.github/workflows/provider-live-canary.yml) runs
-weekly or by manual dispatch from the trusted default branch. Pull requests and
-ordinary pushes cannot execute it with model credentials.
+only by manual dispatch from the trusted default branch. Pull requests and
+ordinary pushes cannot run it with model credentials.
 
-Schedule flags are `HARAPTER_LIVE_<PROVIDER>_ENABLED` for Codex, OpenCode, DSH,
-Hermes, OpenClaw, and Pi. Enable one only after review and a passing manual run;
-manual dispatch does not change these flags.
+The `provider` input selects Codex, OpenCode, DSH, Hermes, OpenClaw, Pi, or
+`all`. Former schedule-enable repository variables are ignored.
 
 The model-facing Codex, OpenCode, DSH, and Hermes Agent jobs require these
 repository Secrets:

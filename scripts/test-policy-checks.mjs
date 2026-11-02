@@ -632,10 +632,7 @@ const liveCanaryWorkflow = readFileSync(
 const liveCanary = load(liveCanaryWorkflow, { schema: JSON_SCHEMA });
 assert.ok(isObject(liveCanary));
 assert.ok(isObject(liveCanary['on']));
-assert.deepEqual(Object.keys(liveCanary['on']).sort(), [
-  'schedule',
-  'workflow_dispatch',
-]);
+assert.deepEqual(Object.keys(liveCanary['on']), ['workflow_dispatch']);
 assert.deepEqual(liveCanary['permissions'], { contents: 'read' });
 assert.ok(isObject(liveCanary['jobs']));
 const liveJobs = liveCanary['jobs'];
